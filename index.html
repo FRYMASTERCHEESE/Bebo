@@ -454,8 +454,146 @@ main.wrap{max-width:1010px;background:#fff;min-height:80vh;border-left:1px solid
  .bebo-admin-page .admin-announcement-card h3{font-size:14px;padding:10px}
 }
 
+
+/* Classic Bebo homepage — lively 2006–2008 box layout, original CSS decorations. */
+.classic-home.classic-home-2007{
+ display:grid;grid-template-columns:minmax(0,365px) minmax(0,1fr);
+ gap:15px;align-items:start;min-width:0;
+ padding:11px;border:1px solid #c988a9;
+ background:repeating-linear-gradient(90deg,#ffe4f0 0 17px,#ffeaf3 17px 18px);
+ box-shadow:0 2px 7px #6d31501c;
+}
+.classic-home-2007 .classic-home-left,
+.classic-home-2007 .classic-home-right{min-width:0}
+.classic-home-2007>.classic-home-left>.panel,
+.classic-home-2007>.classic-home-right>.panel{
+ border:1px solid #ba8da4;margin-bottom:13px;
+ background:#fff;box-shadow:0 2px 3px #702e4a17;
+}
+.classic-home-2007>.classic-home-left>.panel>h2,
+.classic-home-2007>.classic-home-right>.panel>h2{
+ padding:10px 11px;
+ background:linear-gradient(180deg,#e16492,#bd3569 55%,#7f2652);
+ color:#fff;font:700 14px/1.35 Verdana,Arial,sans-serif;
+ border-bottom:3px solid #762449;
+ text-shadow:0 1px 2px #452238;
+}
+.classic-home-2007 .panel>.body{padding:12px}
+.classic-home-welcome{
+ border:2px solid #f6b8d3;outline:1px solid #b13b70;
+ background:#fff5fa;isolation:isolate;overflow:hidden;
+}
+.classic-home-welcome-art{
+ background:
+ radial-gradient(circle at 18% 17%,#ffffff8a 0 12%,transparent 13%),
+ radial-gradient(circle at 76% 66%,#ffffff38 0 18%,transparent 19%),
+ linear-gradient(135deg,#e46e9f 0%,#c03770 45%,#661c53 100%);
+ padding:20px 15px 23px;min-height:215px;position:relative;
+ color:#fff;text-shadow:0 1px 3px #561a42;overflow:hidden;
+}
+.classic-home-kicker{display:block;position:relative;z-index:1;font:700 11px/1.4 Verdana,Arial,sans-serif;letter-spacing:.5px}
+.classic-home-welcome-art h1{position:relative;z-index:1;font:700 clamp(24px,3vw,31px)/1.2 Georgia,serif;overflow-wrap:anywhere;margin:13px 0 9px;color:white}
+.classic-home-welcome-art p{position:relative;z-index:1;margin:0 0 16px;font-size:12px;line-height:1.6;color:#fff}
+.classic-home-sticker{position:absolute;color:#ffdeee;opacity:.3;line-height:1;pointer-events:none}
+.classic-home-star{right:12px;top:6px;font-size:100px;transform:rotate(-18deg)}
+.classic-home-heart{right:49px;bottom:-50px;font-size:140px;transform:rotate(20deg)}
+.classic-home-hero-actions{display:flex;position:relative;z-index:1;flex-wrap:wrap;gap:8px}
+.classic-home-hero-actions a{display:inline-block;border:1px solid #fff;border-radius:2px;font:700 12px/1.3 Verdana,Arial,sans-serif;text-decoration:none;padding:10px 9px;box-shadow:0 2px 1px #5b194442}
+.classic-home-hero-actions .classic-home-primary{background:linear-gradient(#fff,#ffe8f3);color:#7d2756}
+.classic-home-hero-actions .classic-home-secondary{background:#672244bf;color:#fff}
+.classic-home-heart-note{text-align:center;color:#8f2b5a;font:700 11px/1.4 Verdana,Arial,sans-serif;padding:11px 6px;background:#fff1f8}
+.classic-home-heart-note span{color:#cf396f;font-size:16px}
+.classic-home-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.classic-home-shortcuts a{
+ background:linear-gradient(#fff,#f6edf5);border:1px solid #d5b5c6;
+ padding:10px 6px;color:#2d6088;text-decoration:none;
+ font:700 12px/1.45 Verdana,Arial,sans-serif;
+ text-align:center;box-shadow:0 1px 1px #0001;overflow-wrap:anywhere;
+}
+.classic-home-shortcuts a:hover,.classic-home-shortcuts a:focus-visible{
+ background:#ffe3f0;color:#862b59;border-color:#bd5990;
+}
+.classic-home-people,.classic-home-friend-grid{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:3px 0 9px;
+}
+.classic-home-member{
+ display:flex;flex-direction:column;align-items:center;
+ padding:9px 4px 7px;min-width:0;
+ border:1px solid #e0ced8;background:linear-gradient(#fff,#fff4fa);
+ text-align:center;text-decoration:none;box-shadow:0 1px 2px #9b527722;
+}
+.classic-home-member strong{display:block;margin:7px 0 2px;font:700 11px/1.4 Verdana,Arial,sans-serif;color:#76274d;overflow-wrap:anywhere;max-width:100%}
+.classic-home-member small{display:block;font:10px/1.3 Verdana,Arial,sans-serif;color:#695968;overflow-wrap:anywhere;max-width:100%}
+.classic-home-member:hover{border-color:#b02e68;background:#fff0f8}
+.classic-home-avatar{
+ display:grid;place-items:center;width:74px;height:74px;max-width:100%;
+ padding:3px;object-fit:contain;
+ border:3px solid #fff;outline:1px solid #caa4b9;
+ background:#f8e8f1;color:#a22f63;
+ box-shadow:0 2px 4px #0002;
+}
+.classic-home-initial{font:700 34px Georgia,serif;background:linear-gradient(135deg,#e4b7d4,#ffd7e8)}
+.classic-home-linkline{text-align:center;margin:9px 0 0;font:700 12px Verdana,Arial,sans-serif}
+.classic-home-empty{
+ padding:22px 15px;text-align:center;
+ border:1px dashed #dcb8cc;background:#fff6fb;color:#795469;font-size:12px;
+ line-height:1.6;
+}
+.classic-home-empty>span{display:block;margin:2px 0 7px;font-size:24px;color:#bc4f88}
+.classic-home-empty p{margin:7px auto 11px;max-width:330px}
+.classic-home-feed{display:grid;gap:7px}
+.classic-home-feed-item{
+ display:grid;grid-template-columns:43px minmax(0,1fr);gap:10px;
+ padding:10px 8px;border-bottom:1px dotted #d9adca;font-size:12px;
+}
+.classic-home-feed-item:last-child{border-bottom:0}
+.classic-home-activity-icon{
+ display:grid;place-items:center;height:41px;width:41px;
+ border:1px solid #d9b4c9;background:#fff0f7;color:#a23068;font-size:22px;
+}
+.classic-home-feed-item strong{display:block;line-height:1.5;color:#67354d}
+.classic-home-feed-item p{margin:5px 0}
+.classic-home-feed-item small{color:#6d6470;overflow-wrap:anywhere}
+.classic-home-skin-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.classic-home-skin{display:block;min-width:0;border:1px solid #d3b5c5;background:#fff;overflow:hidden;text-decoration:none;text-align:center}
+.classic-home-skin-art{
+ display:flex;position:relative;justify-content:flex-start;align-items:flex-end;
+ height:80px;padding:7px 4px;color:#fff;overflow:hidden;
+ text-shadow:0 1px 2px #200b1d;
+ font:700 12px/1 Georgia,serif;
+}
+.classic-home-skin-art>span:last-child{position:relative;z-index:1}
+.classic-home-skin-icon{
+ position:absolute;right:4px;top:3px;
+ font-size:36px;line-height:1;opacity:.35;
+}
+.classic-home-skin-label{display:block;min-height:34px;padding:7px 3px;color:#822953;font:700 10px/1.25 Verdana,Arial,sans-serif}
+.classic-home-skin:hover{border-color:#aa3060;box-shadow:0 2px 5px #8a365430}
+.classic-home-feature-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.classic-home-feature-row a{
+ display:block;padding:12px 9px;min-width:0;
+ border:1px solid #cfaac2;background:linear-gradient(#fff,#fff1f8);
+ font:700 13px/1.4 Verdana,Arial,sans-serif;text-align:center;text-decoration:none;color:#a32c5b;
+}
+.classic-home-feature-row a span{display:block;margin-top:4px;color:#666;font:normal 11px/1.3 Verdana,Arial,sans-serif}
+.classic-home-feature-row a:hover{background:#ffe5f1}
+@media(max-width:780px){
+ .classic-home.classic-home-2007{grid-template-columns:1fr;padding:7px;gap:0}
+ .classic-home-2007 .classic-home-welcome-art{min-height:190px}
+ .classic-home-people,.classic-home-friend-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .classic-home-skin-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+ .classic-home-skin-art{height:75px}
+}
+@media(max-width:410px){
+ .classic-home-2007 .panel>.body{padding:9px}
+ .classic-home-member{padding:8px 2px}
+ .classic-home-avatar{width:64px;height:64px}
+ .classic-home-hero-actions a{font-size:11px}
+ .classic-home-skin-label{font-size:9px}
+}
+
 </style>
-<script type="module" src="./social.js?v=20261010-classic-bebo-bulletin-v1"></script></head>
+<script type="module" src="./social.js?v=20261010-classic-home-v2"></script></head>
 <body><header class="top"><div class="wrap head"><div class="brand">be<span>bo</span> ★</div><div><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p></div></div></header>
 <nav class="nav"><div class="wrap" id="nav"><button data-nav="home">Home</button><button data-nav="profile">My Profile</button><button data-nav="friends">Friends</button><button data-nav="photos">Photos</button><button data-nav="blogs">Blog</button><button data-nav="messages">Mail ✉</button><button data-nav="groups">Groups</button><button data-nav="other-half">Other Half ♥</button><button data-nav="skins">Skins</button><button data-nav="polls">Polls</button><button data-nav="quizzes">Quizzes</button><button data-nav="creators">Bands &amp; Authors</button><button data-nav="account">Account</button><button data-nav="safety">Safety &amp; Privacy</button></div></nav>
 <aside id="bebo-announcement-bar" class="bebo-announcement-strip" aria-label="Bebo announcements" hidden></aside>
