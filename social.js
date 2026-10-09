@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import { createRetro } from './nostalgia.js';
 import { createSafety } from './safety.js';
+import { createClassic } from './classic-modules.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
 const configured=/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL||'')&&SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_');
@@ -31,6 +32,7 @@ const escapeError=e=>(e?.message||'Something went wrong. Please try again.').sli
 async function query(table,fn){const q=fn(sb.from(table));const {data,error}=await q;if(error)throw error;return data}
 const retro=createRetro(sb,{safe,panel,btn,query});
 const safety=createSafety(sb,{safe,panel,btn,query});
+const classic=createClassic(sb,{safe,panel,btn,query});
 async function loadMine(){if(!me){profile=null;return}profile=await query('bebo_profiles',q=>q.select('*').eq('id',me.id).maybeSingle())}
 async function init(){
  if(!sb){render();return}
@@ -91,6 +93,7 @@ async function showProfile(username){
  if(blocked)friendAction='<span class="muted">Blocked member</span>';
  const visiblePosts=posts.filter(post=>!blockedIds.has(post.author_id));
  const extras=blocked?panel('Member blocked','<p>You have blocked this member. Use Unblock to interact again.</p>'):await retro.sharedPanel(who,me);
+ const classicExtras=await classic.publicModules(who,me);
  const p1=panel('My Profile',`<div style="text-align:center">${badge(who)}<h3>${safe(who.display_name)}</h3><p>@${safe(who.username)}</p>${friendAction}${tools}<p class="muted">${safe(who.location)}</p></div><hr><strong>My Status:</strong><p>${safe(who.status)}</p><strong>About Me:</strong><p style="white-space:pre-wrap">${safe(who.bio)}</p><strong>Music:</strong><p>${safe(who.music)}</p>${own?btn('Edit profile','go','edit','secondary'):''}`);
  const form=me&&!blocked?`<form data-form="wall" class="fields"><textarea name="body" maxlength="1200" required placeholder="Leave ${safe(who.display_name)} a comment ♥"></textarea><button class="button">Post comment</button></form>`:'<p><a href="#/account">Log in</a> to leave a comment.</p>';
  const wall=panel('My Wall — Leave Me a Comment ♥',`${form}<hr>${visiblePosts.length?visiblePosts.map(post=>`<article class="item">
@@ -102,7 +105,7 @@ async function showProfile(username){
  const skinPreset=skins.find(s=>s[0]===(who.skin||'classic'))||skins[0];
  const themePrimary=who.skin==='custom'&&/^#[0-9a-fA-F]{6}$/.test(who.skin_primary)?who.skin_primary:skinPreset[3];
  const themeSecondary=who.skin==='custom'&&/^#[0-9a-fA-F]{6}$/.test(who.skin_secondary)?who.skin_secondary:skinPreset[2];
- app.innerHTML=note()+`<div class="themed-profile" style="--retro-primary:${safe(themePrimary)};--retro-secondary:${safe(themeSecondary)}"><div class="profile-art" style="--banner:${safe(retro.imageStyle(who,grad(who)))}">${safe(who.display_name)} ★</div><div class="cols"><div>${p1}</div><div>${wall}</div></div>${extras}</div>`;
+ app.innerHTML=note()+`<div class="themed-profile" style="--retro-primary:${safe(themePrimary)};--retro-secondary:${safe(themeSecondary)}"><div class="profile-art" style="--banner:${safe(retro.imageStyle(who,grad(who)))}">${safe(who.display_name)} ★</div><div class="cols"><div>${p1}</div><div>${wall}</div></div>${classicExtras}${extras}</div>`;
 }
 async function showFriends(){
  const profiles=await query('bebo_profiles',q=>q.select('id,username,display_name,status,avatar_path').order('created_at',{ascending:false}).limit(80));
@@ -139,16 +142,29 @@ async function refresh(){
  page=raw||'home';
  if(!configured){app.innerHTML=note()+authPage();return}
  if(page==='safety'){app.innerHTML=note()+safetyInfoPage();return}
- if(!me){if(['polls','quizzes','creators'].includes(page)){app.innerHTML=note()+await retro.route(page,null);return}app.innerHTML=note()+authPage();return}
+ if(!me){
+  if(['polls','quizzes','creators'].includes(page)){app.innerHTML=note()+await retro.route(page,null);return}
+  if(page==='photos'||page.startsWith('photos/')||page.startsWith('album/')||
+     page==='blogs'||page.startsWith('blogs/')||page.startsWith('blog/')||page==='groups'){
+    app.innerHTML=note()+await classic.route(page,null);return
+  }
+  app.innerHTML=note()+authPage();return
+ }
  if(!profile){app.innerHTML=note()+createProfile();return}
  switch(page){
  case 'profile':await showProfile();break;
  case 'friends':await showFriends();break;
  case 'polls':case 'quizzes':case 'creators':app.innerHTML=note()+await retro.route(page,me);break;
+ case 'photos':case 'blogs':case 'groups':case 'other-half':case 'messages':
+   app.innerHTML=note()+await classic.route(page,me);break;
+ default:
+   if(page.startsWith('photos/')||page.startsWith('album/')||page.startsWith('blogs/')||
+      page.startsWith('blog/')||page.startsWith('messages/'))app.innerHTML=note()+await classic.route(page,me);
+   else app.innerHTML=note()+welcome();
+   break;
  case 'skins':await showSkins();break;
  case 'edit':app.innerHTML=note()+editProfile();break;
  case 'account':app.innerHTML=note()+panel('Your Bebo Account',`<p>Signed in as ${safe(me.email)}</p>${btn('Log out','logout')}`)+await safety.accountPanel(me);break;
- default:app.innerHTML=note()+welcome();
  }
 }
 function render(){refresh().then(()=>retro.afterRender()).catch(e=>{app.innerHTML=note()+panel('Could not load this page',safe(escapeError(e))+'<p><a href="#/home">Return home</a></p>')})}
@@ -199,6 +215,8 @@ document.addEventListener('submit',async e=>{
   const {error}=await sb.storage.from('bebo-avatars').upload(path,file,{contentType:file.type,upsert:false});if(error)throw error;
   await query('bebo_profiles',q=>q.update({avatar_path:path}).eq('id',me.id));await loadMine();
   message='New profile photo uploaded ♥';success=true;location.hash='#/profile';
+ }else if(type.startsWith('classic-')){
+  message=await classic.form(type,d,{me,profile,userViewed});success=true;
  }else if(type==='safety-delete-account'){
   const result=await safety.form(type,d,{me,profile,userViewed});
   if(result.deleted){me=null;profile=null;location.hash='#/home';message='Your Bebo account was permanently deleted.';success=true;}
@@ -214,6 +232,7 @@ document.addEventListener('click',async e=>{
  try{
  if(a==='go'){location.hash='#/'+id;return}
  if(a==='retro-clear'){retro.clear();return}
+ if(a.startsWith('classic-')){message=await classic.action(a,id,{me,profile,userViewed});success=true}
  if(a.startsWith('safety-')){message=await safety.action(a,id,{me,profile,userViewed});success=true}
  else if(a.startsWith('retro-')){message=await retro.action(a,id,{me,profile,userViewed});success=true}
  else if(a==='logout'){await sb.auth.signOut();me=null;profile=null;message='You are signed out.';location.hash='#/home'}
