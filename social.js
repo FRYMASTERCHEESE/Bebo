@@ -251,6 +251,7 @@ async function refreshBeboAnnouncement(){
    (hasMore?'<details class="bebo-announcement-details"><summary>Read the full announcement ♥</summary>'+
    '<div class="bebo-announcement-full">'+safe(fullText)+'</div></details>':'')+
    '</div></div>';
+  strip.classList.toggle('bebo-announcement-compact',page==='polls'||page==='quizzes');
   strip.hidden=false;
  }catch(error){
   if(token!==announcementsRequestId)return;
