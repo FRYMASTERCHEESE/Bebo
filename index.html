@@ -73,6 +73,58 @@ main.wrap{max-width:1010px;background:#fff;min-height:80vh;border-left:1px solid
  main.wrap{padding:13px 10px!important}
 }
 
+
+/* 2007-style Skin Shop: 56 original CSS designs with real mini profile previews. */
+.skins-intro{display:flex;justify-content:space-between;gap:16px;align-items:center;border:1px solid #efc1d3;background:linear-gradient(105deg,#fff1f8,#f3d9ed);padding:13px;margin-bottom:12px}
+.skins-intro strong{font-size:16px;color:#922953}
+.skins-intro p{margin:5px 0 0;line-height:1.5}
+.skins-intro>span{flex:0 0 auto;font:italic 19px Georgia,serif;color:#b12a65}
+.skin-controls{display:flex;align-items:end;justify-content:space-between;gap:10px;padding:8px 0}
+.skin-search-label{display:block;width:min(100%,360px);font-weight:bold;font-size:12px;color:#853c64}
+.skin-search-label input{display:block;width:100%;margin-top:6px;border:1px solid #b9a3b8;border-radius:2px;background:#fff;padding:10px}
+.skin-filters{display:flex;flex-wrap:wrap;gap:6px;padding:7px 0 15px}
+.skin-filter{padding:8px 11px;border:1px solid #bfc5d1;background:#fff;color:#675a65;cursor:pointer;font-weight:bold;font-size:11px}
+.skin-filter:hover,.skin-filter.active{background:#ba2959;border-color:#8c2047;color:white}
+#skin-gallery.skin-grid{grid-template-columns:repeat(auto-fill,minmax(164px,1fr));gap:12px}
+.skin-card{border:1px solid #d7c2d1;background:#fff;padding:6px;box-shadow:0 2px 2px #e6e0e6;text-align:center}
+.skin-card[hidden]{display:none!important}
+.skin-preview-button{background:none;border:0;padding:0;display:block;width:100%;color:inherit;cursor:pointer;text-align:left}
+.skin-preview-button:focus-visible{outline:3px solid #b93b6c;outline-offset:2px}
+.skin-preview-button strong{display:block;font-size:12px;margin:8px 3px 2px;color:#79284d}
+.skin-category-name{display:block;font-size:10px;color:#867789;margin:0 3px 6px}
+.skin-card .skin-use-button{font-size:11px;width:calc(100% - 6px);padding:7px 3px;background:linear-gradient(#cc5680,#a72554);border-color:#912248;margin:4px 3px}
+.skin-card:hover{border-color:#c55482;box-shadow:0 3px 9px #bd80a050;transform:translateY(-1px)}
+.skin-mini{border:1px solid #aaa8b1;background:#fff;width:100%;overflow:hidden}
+.skin-mini-banner{height:86px;display:flex;align-items:end;position:relative;isolation:isolate;overflow:hidden;padding:8px;color:#fff;text-shadow:0 1px 3px #24172d}
+.skin-mini-banner:before{content:attr(data-motif);position:absolute;right:10px;top:-12px;opacity:.55;font-size:70px;line-height:1.4;transform:rotate(-18deg);pointer-events:none}
+.skin-mini-banner span{position:relative;font:bold 15px Georgia,serif}
+.skin-mini-layout{background:#faf8fa;padding:7px;display:grid;grid-template-columns:42px 1fr;grid-template-rows:28px 14px;gap:5px;min-height:63px}
+.skin-mini-avatar{grid-row:1/3;background:linear-gradient(135deg,#ffe4f2,#f7adc8);border:2px solid white;outline:1px solid #c5b4bf;color:#c54475;display:flex;align-items:center;justify-content:center;font-size:23px}
+.skin-mini-lines{display:grid;gap:5px;align-content:center}
+.skin-mini-lines span{display:block;height:5px;background:#dcd1df}
+.skin-mini-lines span:last-child{width:75%}
+.skin-mini-blocks{display:flex;gap:5px}
+.skin-mini-blocks span{height:12px;flex:1;opacity:.78}
+.skin-tryout{max-width:680px;margin:0 auto 20px;background:#f9f7fa;border:1px solid #bbabb9;padding:10px;box-shadow:0 3px 8px #bfafbd30}
+.skin-tryout-banner{min-height:115px;position:relative;display:flex;align-items:end;overflow:hidden;padding:14px;color:#fff;font:28px Georgia,serif;text-shadow:0 1px 3px #222}
+.skin-tryout-banner::before{content:attr(data-motif);font-size:110px;line-height:1.1;position:absolute;right:25px;top:-15px;opacity:.45;transform:rotate(-16deg)}
+.skin-tryout-banner strong{position:relative}
+.skin-tryout-flex{display:grid;grid-template-columns:110px 1fr;gap:12px;margin-top:10px}
+.skin-tryout-left{display:grid;align-content:start;justify-items:center;gap:6px;font-size:11px;color:#766c78}
+.skin-tryout-avatar{width:75px;height:75px;background:linear-gradient(145deg,#f9c7dc,#ffedf4);color:#bf4074;font-size:42px;display:grid;place-items:center;border:4px solid white;outline:1px solid #d5b6c7}
+.skin-tryout-main{background:#fff;border:1px solid #e2d5df}
+.skin-tryout-main p{padding:3px 10px;font-size:11px;color:#666}
+.skin-tryout-bar{color:#fff;font-weight:bold;padding:5px 10px;font-size:12px}
+.skin-tryout-caption{display:flex;gap:12px;justify-content:space-between;margin:10px 2px 2px;color:#713050;font-size:12px}
+.skin-tryout-caption span{color:#968099}
+.themed-profile .profile-art{position:relative;overflow:hidden;isolation:isolate}
+.themed-profile .profile-art::before{content:attr(data-decor);position:absolute;right:8%;top:-21px;font-size:125px;transform:rotate(-19deg);opacity:.28;text-shadow:none;pointer-events:none}
+.themed-profile .profile-art{font-family:Georgia,Verdana,serif;letter-spacing:1px}
+.themed-profile .panel h2{background:linear-gradient(135deg,var(--retro-primary,#ab2953),var(--retro-dark,#612145));border-bottom:2px solid var(--retro-dark,#612145);text-shadow:0 1px 2px #0005}
+.themed-profile .panel{box-shadow:0 2px 3px #12091918}
+@media(max-width:750px){#skin-gallery.skin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.skins-intro>span{display:none}.skin-tryout-flex{grid-template-columns:80px minmax(0,1fr)}.skin-tryout-avatar{width:62px;height:62px}.skin-tryout-banner{font-size:24px;min-height:100px}}
+@media(max-width:375px){#skin-gallery.skin-grid{grid-template-columns:1fr 1fr;gap:7px}.skin-mini-banner{height:68px}.skin-filters{gap:4px}.skin-filter{padding:7px}.skin-card{padding:4px}}
+
 </style>
 <script type="module" src="./social.js"></script></head>
 <body><header class="top"><div class="wrap head"><div class="brand">be<span>bo</span> ★</div><div><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p></div></div></header>
