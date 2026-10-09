@@ -358,8 +358,104 @@ main.wrap{max-width:1010px;background:#fff;min-height:80vh;border-left:1px solid
  .bebo-announcement-strip{margin:6px 10px}
 }
 
+
+/* Classic Bebo News (2007-inspired): pink frames, readable bulletin header and mobile-friendly expand/collapse. */
+.bebo-announcement-strip[hidden] {display:none!important}
+.bebo-announcement-strip{
+ width:min(calc(100% - 20px),990px);
+ max-width:990px;margin:12px auto 0;padding:7px;
+ border:1px solid #a83762;
+ background:repeating-linear-gradient(90deg,#ffddeb 0,#ffddeb 8px,#ffeaf3 8px,#ffeaf3 16px);
+ box-shadow:0 3px 8px #4e1a3826;
+}
+.bebo-announcement-inner{
+ padding:0;border:2px solid #fff;background:#fff;
+ outline:1px solid #d29bb4;
+}
+.bebo-announcement-head{
+ position:relative;overflow:hidden;
+ padding:10px 15px 13px;
+ background:linear-gradient(180deg,#da5b89 0%,#ac285c 52%,#701a46 100%);
+ border-bottom:3px solid #682040;
+ text-align:center;
+}
+.bebo-announcement-head::before,.bebo-announcement-head::after{
+ position:absolute;top:6px;content:"♥";font-size:28px;opacity:.55;color:#fff;
+ pointer-events:none
+}
+.bebo-announcement-head::before{left:11px}
+.bebo-announcement-head::after{right:11px}
+.bebo-announcement-tag{
+ display:block;margin:0 0 5px;
+ font:700 11px/1.5 Verdana,Arial,sans-serif;letter-spacing:1.3px;
+ color:#fff6ca;text-shadow:0 1px 2px #44152e;
+}
+.bebo-announcement-title{
+ display:block;position:relative;z-index:1;
+ font:700 clamp(17px,3vw,25px)/1.32 Georgia,Verdana,serif!important;
+ color:#fff!important;
+ text-shadow:0 2px 3px #4d1436;
+ overflow-wrap:anywhere;
+}
+.bebo-announcement-content{
+ padding:12px 16px;background:#fff;
+ border-top:1px solid #f9d2e5;
+ font-size:13px;line-height:1.55;color:#45333e;
+}
+.bebo-announcement-content .bebo-announcement-preview{
+ margin:0 0 6px;color:#45333e;
+ white-space:normal;overflow-wrap:anywhere;
+}
+.bebo-announcement-details{margin:5px 0 0;border-top:1px dotted #dba6bf;padding:8px 0 0}
+.bebo-announcement-details summary{
+ display:list-item;width:fit-content;
+ padding:3px 5px;cursor:pointer;
+ font-weight:700;color:#7d2755;
+ text-decoration:underline;
+ text-underline-offset:3px;
+}
+.bebo-announcement-details summary:hover,.bebo-announcement-details summary:focus-visible{color:#aa2458}
+.bebo-announcement-details summary:focus-visible{outline:2px solid #296caa;outline-offset:3px}
+.bebo-announcement-full{
+ border:1px solid #e6bfd1;background:#fff7fb;
+ margin-top:9px;padding:12px;
+ white-space:pre-wrap;overflow-wrap:anywhere;color:#332833;
+ font-size:13px;line-height:1.7;
+}
+.bebo-announcement-details[open] + .bebo-announcement-preview{display:none}
+/* A published item's text must be white on dark, not dark maroon on a pink gradient. */
+.bebo-admin-page .admin-announcement-card{padding:14px;border:1px solid #d5a8bc;background:#fff}
+.bebo-admin-page .admin-announcement-card h3{
+ display:flex;flex-wrap:wrap;gap:9px;align-items:center;
+ margin:0 0 11px;padding:12px 14px;
+ border:1px solid #792149;border-bottom:3px solid #5d1939;
+ background:linear-gradient(180deg,#d45181,#ad2e62 56%,#84244e);
+ font:700 16px/1.4 Verdana,Arial,sans-serif;
+ color:#fff!important;text-shadow:0 1px 2px #4d1231;
+ overflow-wrap:anywhere;
+}
+.bebo-admin-page .admin-announcement-card h3 small{
+ display:inline-block;padding:3px 9px;
+ background:#fff;color:#67364e!important;
+ border:1px solid #fff;border-radius:13px;
+ font:700 11px/1.5 Verdana,Arial,sans-serif;
+ text-shadow:none;letter-spacing:.2px;
+}
+.bebo-admin-page .admin-announcement-card .admin-long-text{
+ color:#342934;font-size:13px;line-height:1.65;
+}
+@media(max-width:700px){
+ .bebo-announcement-strip{margin:8px auto 0;padding:5px;width:calc(100% - 20px)}
+ .bebo-announcement-head{padding:10px 28px 12px}
+ .bebo-announcement-head::before,.bebo-announcement-head::after{font-size:18px}
+ .bebo-announcement-head::before{left:6px}
+ .bebo-announcement-head::after{right:6px}
+ .bebo-announcement-content{padding:11px 12px}
+ .bebo-admin-page .admin-announcement-card h3{font-size:14px;padding:10px}
+}
+
 </style>
-<script type="module" src="./social.js?v=20261010-owner-me-fix"></script></head>
+<script type="module" src="./social.js?v=20261010-classic-bebo-bulletin-v1"></script></head>
 <body><header class="top"><div class="wrap head"><div class="brand">be<span>bo</span> ★</div><div><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p></div></div></header>
 <nav class="nav"><div class="wrap" id="nav"><button data-nav="home">Home</button><button data-nav="profile">My Profile</button><button data-nav="friends">Friends</button><button data-nav="photos">Photos</button><button data-nav="blogs">Blog</button><button data-nav="messages">Mail ✉</button><button data-nav="groups">Groups</button><button data-nav="other-half">Other Half ♥</button><button data-nav="skins">Skins</button><button data-nav="polls">Polls</button><button data-nav="quizzes">Quizzes</button><button data-nav="creators">Bands &amp; Authors</button><button data-nav="account">Account</button><button data-nav="safety">Safety &amp; Privacy</button></div></nav>
 <aside id="bebo-announcement-bar" class="bebo-announcement-strip" aria-label="Bebo announcements" hidden></aside>
