@@ -123,3 +123,18 @@ For the dedicated Bebo project, in [Supabase Authentication → URL Configuratio
 `social.js` explicitly sets `emailRedirectTo` and password-reset `redirectTo` to the production URL. **However, the Supabase Auth dashboard's Site URL and allowed redirect list must ALSO be configured**; the available Supabase connector currently cannot change those settings.
 
 Do not ask users to paste confirmation links, verification tokens or passwords into chat. If their email is already verified, they can return to Bebo and log in directly; there is no need to register again.
+
+## Bebo Owner Control Centre — October 2026
+
+The private **#/admin** dashboard now provides six owner-only sections on top of the existing reviewable Reports panel:
+
+- **Members:** Search by Bebo username, issue warnings, suspend posting or restore access. Affected members see their private moderation status and reason when they sign in.
+- **Analytics:** Counts of profiles, wall comments, blogs, photos, skins and friendships over their stated windows. These are database activity counts, **not visitor tracking or verified monthly active users**.
+- **Announcements:** Create drafts, publish/unpublish and remove updates. The latest published announcement displays in a separate banner above public pages when the announcement setting is enabled.
+- **Community skins:** Hide and restore member-made skins in the public gallery. This does not automatically strip already-applied skins or remove files.
+- **Moderation:** Inspect restricted members, dated owner actions, and existing reports. Report/comment moderation is handled by the previously deployed secure report panel.
+- **Website settings:** Owner-only toggles for accepting new wall posts, new custom-skin submissions, new groups, and display of published announcements. Existing content is never deleted by toggling a switch.
+
+Implementation: `admin-advanced.js`, existing `admin.js`, `social.js` (announcement strip and member notices) and `index.html` (responsive UI). The applied migrations are in `supabase/bebo_owner_six_admin_sections_v1.sql` and `supabase/bebo_public_guest_read_role_isolation_v1.sql`. The dedicated database enforces admin rights using verified Supabase Auth identity with a private moderator whitelist. Row-level security, trigger-enforced publishing controls, audit trails and anti-suspension bypass guards are installed; the browser has **no** service-role key. Owner role was assigned to the previously verified member, **not** to whoever types an admin email in the frontend.
+
+Safety limitations: Suspended accounts retain sign-in and public-read ability; their attempts to create/update social records are rejected server-side. The feature switches intentionally do not block registration or private content already stored. Admin actions and two-user account restrictions need supervised end-to-end testing before launching to a wider public audience. Supabase security advisors still warn about the two legacy authenticated SECURITY DEFINER functions and disabled leaked-password protection; these pre-existing issues should be reviewed separately.
