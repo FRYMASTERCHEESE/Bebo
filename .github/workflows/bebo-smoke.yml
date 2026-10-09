@@ -1,0 +1,35 @@
+name: Bebo Safe Pre-Launch Browser Test
+on:
+  push:
+    paths:
+      - 'tests/smoke-browser.mjs'
+      - '.github/workflows/bebo-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-smoke:
+    name: Test public Bebo routes without writing data
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out Bebo source
+        uses: actions/checkout@v4
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test runner
+        run: npm install --no-save --no-package-lock playwright@1.56.1
+      - name: Install headless Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run mobile and desktop read-only smoke tests
+        run: node tests/smoke-browser.mjs
+      - name: Keep audit results and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bebo-public-smoke-evidence
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
