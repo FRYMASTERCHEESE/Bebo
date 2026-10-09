@@ -74,3 +74,27 @@ The SQL defining the new schema is in `supabase/nostalgia-features.sql`, and the
 5. Review Supabase security advisor warnings for the intentionally authenticated `bebo_give_luv` and `bebo_set_top_friends` SECURITY DEFINER RPCs before handling high traffic. See <https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable>.
 
 **The Bebo revival is still an independent community project.** Using the slogan “Bebo Is Officially Back” does not establish affiliation with the historical Bebo owners.
+
+## 2006–2008 Bebo experience expansion — 10 October 2026
+
+The modern frontend uses original (newly authored) CSS and modules to evoke Bebo's familiar profile experience without claiming rights to the historical Bebo brand or recovered accounts.
+
+**New working code paths (signed-in writes still require real-account testing):**
+- New \`classic-modules.js\`: photo **albums**, up to **96 images per album**, individual images with captions, album/photo deletion.
+- Personal **blogs** with public reading, entry creation, comments and owner/author deletion.
+- **Private Bebo Mail** inbox, sent items, username-based composition, message sending.
+- **Other Half** request/accept/decline and prominently displayed public badge after acceptance (accepted friend required to request).
+- Public **Groups** creation, joining, leaving, owner deletion.
+- Signed-in **home activity dashboard** with members, recent blogs and photo albums.
+- Dedicated nostalgic navigation: Home, Profile, Friends, Photos, Blog, Mail, Groups, Other Half, Skins, Polls, Quizzes, Bands & Authors, Safety.
+- Refined classic-style black navigation, red masthead, framed pink modules and skinned two-column profile.
+
+**Database and storage:**
+- \`supabase/classic-modules.sql\` applied on the dedicated Bebo Supabase project, including RLS policies, a public **bebo-photos** Storage bucket restricted to user-owned upload folders, and author protections.
+- \`supabase/classic-guards.sql\` enforces 96-photo limit and trusted creation timestamps server-side.
+- \`supabase/classic-mail-privacy.sql\` ensures guests cannot read private messages.
+- \`supabase/classic-identity-hardening.sql\` restricts Other Half identity edits and validates photo upload paths.
+- \`bebo-delete-account\` Edge Function updated to version 2, including removal of member photos in addition to profile and skin images.
+
+**Not yet a literal recreation of every historical feature.** Features such as legacy Flash scripts, original music rights, the original Bebo source code and historical member data are not provided. New public uploads remain unmoderated; new user registration, full inbox flows, account deletion and multi-user safety behaviors have **not** been verified using two genuine accounts. Do not represent the service as an authorised relaunch of the original Bebo company.
+
