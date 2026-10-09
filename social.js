@@ -7,6 +7,7 @@ import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
 const configured=/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL||'')&&SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_');
 const sb=configured?createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
+const BEBO_SITE_URL='https://frymastercheese.github.io/Bebo/'; // Must also be added under Supabase Auth > URL Configuration.
 let me=null, profile=null, page='home', userViewed=null, message='', success=false;
 
 const safe=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
@@ -196,7 +197,7 @@ document.addEventListener('submit',async e=>{
  if(type==='signup'){
   if(d.get('adult')!=='on')throw Error('Confirm you are 18 or older first.');
   if(String(d.get('password')||'').length<8)throw Error('Choose a password with at least 8 characters.');
-  const {data,error}=await sb.auth.signUp({email:String(d.get('email')).trim(),password:String(d.get('password')),options:{emailRedirectTo:location.origin+location.pathname}});
+  const {data,error}=await sb.auth.signUp({email:String(d.get('email')).trim(),password:String(d.get('password')),options:{emailRedirectTo:BEBO_SITE_URL}});
   if(error)throw error;message='Check your email to confirm your new Bebo account, then log in.';success=true;
   if(data.session){me=data.user;await loadMine();}
  }else if(type==='login'){
@@ -257,7 +258,7 @@ document.addEventListener('click',async e=>{
  if(a.startsWith('safety-')){message=await safety.action(a,id,{me,profile,userViewed});success=true}
  else if(a.startsWith('retro-')){message=await retro.action(a,id,{me,profile,userViewed});success=true}
  else if(a==='logout'){await sb.auth.signOut();me=null;profile=null;message='You are signed out.';location.hash='#/home'}
- else if(a==='reset'){const email=prompt('Enter your account email');if(!email)return;const {error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo:location.origin+location.pathname});if(error)throw error;message='Check your email for the password reset link.';success=true}
+ else if(a==='reset'){const email=prompt('Enter your account email');if(!email)return;const {error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo:BEBO_SITE_URL});if(error)throw error;message='Check your email for the password reset link.';success=true}
  else if(a==='friend-request'){await query('bebo_friendships',q=>q.insert({requester_id:me.id,addressee_id:id}));message='Friend request sent ♥';success=true}
  else if(a==='friend-accept'||a==='friend-decline'){await query('bebo_friendships',q=>q.update({status:a==='friend-accept'?'accepted':'declined'}).eq('id',id));message=a==='friend-accept'?'Friend added ♥':'Request declined';success=true}
  else if(a==='friend-remove'){await query('bebo_friendships',q=>q.delete().eq('id',id));message='Friend removed';success=true}
