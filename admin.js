@@ -3,6 +3,7 @@
  * Security comes from Supabase Auth and the database RLS, NOT from this JavaScript.
  * This module contains no service-role credentials and never grants privileges.
  */
+import { createAdminAdvanced } from './admin-advanced.js';
 export function createAdmin(sb,{safe,panel}) {
   let filter='open';
   const date=v=>{
@@ -21,6 +22,7 @@ export function createAdmin(sb,{safe,panel}) {
     if(!role) throw Error('This page is for approved Bebo administrators only.');
     return role;
   }
+  const advanced=createAdminAdvanced(sb,{safe,panel},guard);
   async function count(table,where) {
     let request=sb.from(table).select('id',{count:'exact',head:true});
     if(where)request=request.eq(where[0],where[1]);
@@ -90,7 +92,7 @@ export function createAdmin(sb,{safe,panel}) {
         '<p class="muted">Review reports carefully. Removing a reported comment is permanent and will remove reports attached to that comment.</p>'+
         '<div class="admin-filters">'+tabs+'</div>'+
         (reportHTML||'<p class="admin-empty">♥ No '+safe(filter)+' reports. All caught up!</p>'))+
-      '</div>';
+      '</div>'+await advanced.panels(me,role);
   }
   function setFilter(value){
     if(!['open','dismissed','actioned'].includes(value))throw Error('Invalid filter');
@@ -99,6 +101,7 @@ export function createAdmin(sb,{safe,panel}) {
   async function action(name,id,me) {
     await guard(me);
     if(name==='admin-filter'){setFilter(id);return {message:'Showing '+filter+' reports.'};}
+    if(!['admin-dismiss','admin-delete-post'].includes(name))return advanced.action(name,id,me);
     if(!/^[0-9a-f-]{36}$/i.test(id))throw Error('Invalid report identifier');
     if(name==='admin-dismiss'){
       if(!confirm('Dismiss this report without removing any content?'))return {cancelled:true};
@@ -122,5 +125,6 @@ export function createAdmin(sb,{safe,panel}) {
     }
     throw Error('Unknown admin operation.');
   }
-  return {check,dashboard,action};
+  async function form(type,data,me){await guard(me);return advanced.form(type,data,me)}
+  return {check,dashboard,action,form};
 }
