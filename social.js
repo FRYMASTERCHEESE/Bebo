@@ -35,7 +35,7 @@ async function init(){
   const {data,error}=await sb.auth.getUser();if(error&&error.name!=='AuthSessionMissingError')throw error;
   me=data.user||null;await loadMine();
  }catch(e){message='Could not connect to Bebo database: '+escapeError(e)}
- sb.auth.onAuthStateChange((_event,session)=>{const id=session?.user?.id||null;if(id!==me?.id){me=session?.user||null;profile=null;setTimeout(async()=>{try{await loadMine()}catch(e){message=escapeError(e)}render()},0)}});
+ sb.auth.onAuthStateChange((_event,session)=>{const id=session?.user?.id||null;if(id!==me?.id){me=session?.user||null;profile=null;adminAccess=null;setTimeout(async()=>{try{await loadMine()}catch(e){message=escapeError(e)}render()},0)}});
  render();
 }
 function authPage(){
