@@ -92,7 +92,10 @@ async function showProfile(username){
  <p style="white-space:pre-wrap">${safe(post.body)}</p>
  ${me&&(post.author_id===me.id||who.id===me.id)?btn('Delete','delete-post',post.id,'secondary'):''}
  ${me?btn('Report','report-post',post.id,'secondary'):''}</article>`).join(''):'<p class="muted">No comments yet. Be the first!</p>'}`);
- app.innerHTML=note()+`<div class="profile-art" style="--banner:${safe(retro.imageStyle(who,grad(who)))}">${safe(who.display_name)} ★</div><div class="cols"><div>${p1}</div><div>${wall}</div></div>${extras}`;
+ const skinPreset=skins.find(s=>s[0]===(who.skin||'classic'))||skins[0];
+ const themePrimary=who.skin==='custom'&&/^#[0-9a-fA-F]{6}$/.test(who.skin_primary)?who.skin_primary:skinPreset[3];
+ const themeSecondary=who.skin==='custom'&&/^#[0-9a-fA-F]{6}$/.test(who.skin_secondary)?who.skin_secondary:skinPreset[2];
+ app.innerHTML=note()+`<div class="themed-profile" style="--retro-primary:${safe(themePrimary)};--retro-secondary:${safe(themeSecondary)}"><div class="profile-art" style="--banner:${safe(retro.imageStyle(who,grad(who)))}">${safe(who.display_name)} ★</div><div class="cols"><div>${p1}</div><div>${wall}</div></div>${extras}</div>`;
 }
 async function showFriends(){
  const profiles=await query('bebo_profiles',q=>q.select('id,username,display_name,status,avatar_path').order('created_at',{ascending:false}).limit(80));
@@ -104,7 +107,7 @@ async function showFriends(){
 async function showSkins(){
  const saved=await query('bebo_skins',q=>q.select('id,name,primary_color,secondary_color,creator_id,banner_path').order('created_at',{ascending:false}).limit(30));
  const cards=skins.map(x=>`<button class="skin" data-action="use-skin" data-id="${x[0]}"><div class="swatch" style="background:linear-gradient(120deg,${x[2]},${x[3]},${x[4]})"></div><strong>${safe(x[1])}</strong></button>`).join('');
- const userSkins=saved.map(x=>`<button class="skin" data-action="use-shared-skin" data-id="${x.id}"><div class="swatch" style="background:linear-gradient(120deg,${x.secondary_color},${x.primary_color})"></div><strong>${safe(x.name)}</strong></button>`).join('');
+ const userSkins=saved.map(x=>`<button class="skin" data-action="use-shared-skin" data-id="${x.id}"><div class="swatch" style="background:${safe(retro.imageStyle({skin_banner_path:x.banner_path},`linear-gradient(120deg,${x.secondary_color},${x.primary_color})`))}"></div><strong>${safe(x.name)}</strong></button>`).join('');
  app.innerHTML=note()+panel('Skin Gallery ♥',`<p>Click any skin to apply it to your public profile.</p><div class="skin-grid">${cards}</div><h3>Community skins</h3><div class="skin-grid">${userSkins||'<p class="muted">Be the first to share a skin!</p>'}</div>`)
  +(me&&profile?panel('Create & Share Your Own Skin',`<form class="fields" data-form="skin">
  <label>Skin name<input name="name" maxlength="70" required placeholder="My amazing skin"></label>
