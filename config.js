@@ -1,5 +1,3 @@
-// Browser-safe settings for Bebo's dedicated Supabase project.
-// Only put the PROJECT URL and its PUBLIC PUBLISHABLE key here.
-// NEVER put secret, service_role, private passwords or admin keys into this file.
-export const SUPABASE_URL = '';
-export const SUPABASE_PUBLISHABLE_KEY = '';
+// Public browser configuration. This is NOT an admin key.
+export const SUPABASE_URL = 'https://rnxiggzyqqzjtgdbpedb.supabase.co';
+export const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_iBFy2ByDZaRLiKOni0s4tA_vi0ikMDN';
