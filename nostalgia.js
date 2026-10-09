@@ -124,33 +124,143 @@ export function createRetro(sb, helpers) {
     if(arr.length<2 || arr.length>4 || arr.some(x=>x.length>100))throw Error('Add 2 to 4 choices, each under 100 characters.');
     return arr;
   }
+  /* Retro poll/quiz pages. Keep database formats and existing public links unchanged. */
+  const pollQuizExamples=Object.freeze({
+    poll:{question:'Which classic Bebo feature do you miss most?',options:['Profile skins','Top 16 friends','Daily Luv','Whiteboards']},
+    quiz:{question:'What year did Bebo first launch?',options:['2003','2005','2007','2010'],correct:2}
+  });
+  function updatePollPreview(form){
+    const target=form.querySelector('.retro-composer-preview');
+    if(!target)return;
+    const question=String(form.querySelector('[name="question"]')?.value||'').trim();
+    const options=String(form.querySelector('[name="options"]')?.value||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean).slice(0,4);
+    const quiz=form.dataset.form==='retro-quiz-create';
+    const correct=Number(form.querySelector('[name="correct"]')?.value||1);
+    target.innerHTML='<p class="retro-preview-heading">★ Live preview — this is what friends will see</p>'+
+      '<h4>'+safe(question||'Your question will appear here ♥')+'</h4>'+
+      '<div class="retro-preview-choices">'+(options.length?
+        options.map((opt,i)=>'<div class="retro-preview-choice">'+
+          '<span class="retro-preview-circle">'+(i+1)+'</span><span>'+safe(opt)+'</span>'+
+          (quiz&&correct===i+1?'<span class="retro-preview-correct">✓ Correct</span>':'')+'</div>').join(''):
+        '<p class="muted">Add 2–4 choices, one on each line.</p>')+
+      '</div>';
+  }
+  function initPollPreviews(){
+    document.querySelectorAll('.retro-play-form').forEach(form=>{
+      if(form.dataset.previewReady)return;
+      form.dataset.previewReady='1';
+      for(const event of ['input','change'])form.addEventListener(event,()=>updatePollPreview(form));
+      updatePollPreview(form);
+    });
+  }
+  function fillPollExample(quiz){
+    const form=document.querySelector('.retro-play-form');
+    if(!form)return false;
+    const preset=pollQuizExamples[quiz?'quiz':'poll'];
+    form.elements.namedItem('question').value=preset.question;
+    form.elements.namedItem('options').value=preset.options.join('\n');
+    if(quiz&&form.elements.namedItem('correct'))form.elements.namedItem('correct').value=preset.correct;
+    updatePollPreview(form);
+    return true;
+  }
   async function listPolls(me,quiz=false) {
-    const table=quiz?'bebo_quizzes':'bebo_polls',votesTable=quiz?'bebo_quiz_answers':'bebo_poll_votes';
+    const table=quiz?'bebo_quizzes':'bebo_polls';
+    const votesTable=quiz?'bebo_quiz_answers':'bebo_poll_votes';
     const list=await db(table,q=>q.select('*').order('created_at',{ascending:false}).limit(20));
     const ids=list.map(p=>p.id);
     const answers=ids.length?await db(votesTable,q=>q.select('*').in(quiz?'quiz_id':'poll_id',ids)):[];
-    const form='<form class="fields" data-form="'+(quiz?'retro-quiz-create':'retro-poll-create')+'">'+
-      '<label>Your question<input name="question" required maxlength="180" minlength="5"></label>'+
-      '<label>Answers (one per line; 2–4 choices)<textarea name="options" required placeholder="Option one&#10;Option two"></textarea></label>'+
-      (quiz?'<label>Correct answer (1–4)<input type="number" name="correct" min="1" max="4" value="1" required></label>':'')+
-      '<button class="button">Create '+(quiz?'Quiz':'Poll')+' ♥</button></form>';
-    let html=panel(quiz?'How Well Do You Know Me? — Quizzes':'Bebo Polls ♥',
-      '<p>Write questions for your friends, vote and view results.</p>'+(me?form:'<p>Sign in to create a quiz or poll.</p>'));
-    html+='<section class="retro-feed">';
-    for(const p of list){
-      const pv=answers.filter(v=>v[(quiz?'quiz_id':'poll_id')]===p.id);
-      const mine=pv.find(v=>v.voter_id===me?.id);
-      const options=Array.isArray(p.options)?p.options:[];
-      html+=panel(safe(p.question),'<p class="muted">'+pv.length+' answer(s)</p>'+
-        options.map((o,i)=>'<div class="quiz-option">'+
-          (mine||!me?'<strong>'+safe(o)+'</strong> — '+pv.filter(v=>v.choice===i).length+' vote(s)'+
-            (quiz&&i===p.correct_choice?' ✓ correct':''):
-           btn((i+1)+'. '+safe(o),'retro-'+(quiz?'quiz-answer':'poll-vote'),p.id+':'+i))+
-          '</div>').join('')+
-        (mine&&quiz?'<p class="'+(mine.choice===p.correct_choice?'correct':'wrong')+'">'+(mine.choice===p.correct_choice?'You got it right! ♥':'Not quite — try another quiz!')+'</p>':'')+
-        (me?.id===p.owner_id?btn('Delete','retro-'+(quiz?'quiz-delete':'poll-delete'),p.id,'secondary'):''));
-    }
-    return html+'</section>';
+    const authorsIDs=[...new Set(list.map(p=>p.owner_id).filter(Boolean))];
+    const authors=authorsIDs.length?await db('bebo_profiles',q=>q.select('id,username,display_name').in('id',authorsIDs)):[];
+    const authorMap=new Map(authors.map(p=>[p.id,p]));
+    const word=quiz?'quiz':'poll';
+    const headline=quiz?'How Well Do You Know Me?':'Bebo Polls';
+    const subline=quiz?'Think you know your mates? Create a quiz, choose the right answer and challenge everyone!':
+      'Vote for your favourites, settle a debate and see what everyone thinks!';
+    const image=quiz?'❓':'♥';
+    const navigation='<nav class="retro-play-tabs" aria-label="Bebo games">'+
+      '<a href="#/polls"'+(!quiz?' aria-current="page"':'')+'>♥ Bebo Polls</a>'+
+      '<a href="#/quizzes"'+(quiz?' aria-current="page"':'')+'>❓ My Quizzes</a>'+
+      '<a href="#/skins">🎨 Profile Skins</a>'+
+      '</nav>';
+    const header='<header class="retro-play-header">'+
+      '<div class="retro-play-sparkle" aria-hidden="true">★</div>'+
+      '<div class="retro-play-heading"><span>★ Old School Bebo ★</span>'+
+      '<h1>'+image+' '+headline+' '+image+'</h1><p>'+subline+'</p></div>'+
+      '<span class="retro-play-hearts" aria-hidden="true">♥ ✦ ♥</span></header>';
+    const form='<form class="fields retro-play-form" data-form="'+(quiz?'retro-quiz-create':'retro-poll-create')+'">'+
+      '<label class="retro-play-label" for="retro-play-question">Your question ♥'+
+      '<input id="retro-play-question" name="question" required maxlength="180" minlength="5" placeholder="'+
+      (quiz?'How well do your friends know you?':'What is your favourite Bebo memory?')+'" autocomplete="off"></label>'+
+      '<label class="retro-play-label" for="retro-play-options">Answer choices <span class="muted">(2–4, one per line)</span>'+
+      '<textarea id="retro-play-options" name="options" required maxlength="405" rows="5" placeholder="First choice&#10;Second choice&#10;Third choice&#10;Fourth choice"></textarea></label>'+
+      (quiz?'<label class="retro-play-label" for="retro-play-correct">Which one is correct?'+
+      '<select id="retro-play-correct" name="correct" required>'+
+      [1,2,3,4].map(n=>'<option value="'+n+'">Answer '+n+'</option>').join('')+
+      '</select></label>':'')+
+      '<div class="retro-composer-preview" aria-live="polite"></div>'+
+      '<div class="retro-play-compose-actions">'+
+        '<button class="button" type="submit">♥ Publish My '+(quiz?'Quiz':'Poll')+'</button>'+
+        '<button type="button" class="button secondary" data-action="retro-play-example" data-id="'+(quiz?'quiz':'poll')+'">★ Try an example</button>'+
+      '</div><p class="retro-play-hint">Your '+word+' will be shared with Bebo members. The example button only fills the form — it does not publish anything.</p></form>';
+    const compose=panel('✎ Create Your Own '+(quiz?'Quiz':'Poll')+' ♥',
+      me?form:'<div class="retro-play-signup"><p>Sign in or make a free Bebo profile to create a '+word+' and join in!</p>'+
+      '<a href="#/account" class="button">♥ Join Bebo / Log In</a></div>');
+    const cards=list.map(p=>{
+      const votes=answers.filter(v=>v[quiz?'quiz_id':'poll_id']===p.id);
+      const mine=me?votes.find(v=>v.voter_id===me.id):null;
+      const options=Array.isArray(p.options)?p.options.slice(0,4):[];
+      const count=votes.length;
+      const by=authorMap.get(p.owner_id);
+      const byline=by?'<a href="#/u/'+encodeURIComponent(by.username)+'">'+safe(by.display_name)+'</a>':'Bebo member';
+      const bydate=p.created_at?new Date(p.created_at).toLocaleDateString('en-NZ',{day:'numeric',month:'short',year:'numeric'}):'';
+      const reveal=!quiz||Boolean(mine); // Do not reveal the right quiz answer before the visitor votes.
+      const choices=options.map((option,i)=>{
+        const total=votes.filter(v=>v.choice===i).length;
+        const percent=count?Math.round(total/count*100):0;
+        const chosen=mine?.choice===i;
+        const isCorrect=quiz&&reveal&&p.correct_choice===i;
+        const marker='<span class="retro-choice-number">'+(i+1)+'</span>';
+        const label='<span class="retro-choice-text">'+safe(option)+'</span>';
+        const answer=!mine&&me?
+          '<button type="button" class="retro-choice-vote" data-action="retro-'+(quiz?'quiz-answer':'poll-vote')+'" data-id="'+safe(p.id)+':'+i+'" aria-label="Vote '+safe(option)+'">'+marker+label+'<span aria-hidden="true">♥</span></button>':
+          '<div class="retro-choice-label">'+marker+label+
+            (chosen?'<span class="retro-choice-you">Your choice ♥</span>':'')+
+            (isCorrect?'<span class="retro-choice-correct">✓ Correct</span>':'')+'</div>';
+        const score=reveal?'<div class="retro-result-track" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+percent+'" aria-label="'+safe(option)+' '+percent+' percent">'+
+          '<span class="retro-result-fill" style="width:'+percent+'%"></span></div>'+
+          '<span class="retro-result-number">'+percent+'% · '+total+' vote'+(total===1?'':'s')+'</span>':'';
+        return '<div class="retro-ballot-choice'+(chosen?' retro-ballot-picked':'')+'">'+answer+score+'</div>';
+      }).join('');
+      const outcome=mine&&quiz?
+        '<p class="retro-ballot-feedback '+(mine.choice===p.correct_choice?'retro-ballot-right':'retro-ballot-wrong')+'">'+
+          (mine.choice===p.correct_choice?'♥ You got it right!':'Not quite this time — try another quiz!')+'</p>':
+        mine?'<p class="retro-ballot-feedback retro-ballot-right">♥ Your vote was saved!</p>':
+        !me?'<p class="retro-ballot-guest"><a href="#/account">Log in to '+(quiz?'answer this quiz':'vote in this poll')+' ♥</a></p>':'';
+      return '<article class="retro-ballot-card"><div class="retro-ballot-title"><span class="retro-ballot-stamp">'+(quiz?'❓ QUIZ':'♥ POLL')+'</span>'+
+         '<h3>'+safe(p.question)+'</h3></div>'+
+         '<div class="retro-ballot-meta">By '+byline+(bydate?' · '+safe(bydate):'')+
+         ' · '+count+' '+(quiz?'answer':'vote')+(count===1?'':'s')+'</div>'+
+         '<div class="retro-ballot-choices">'+choices+'</div>'+outcome+
+         (me?.id===p.owner_id?
+            '<div class="retro-ballot-owner">'+btn('Delete '+word,'retro-'+(quiz?'quiz-delete':'poll-delete'),p.id,'secondary')+'</div>':'')+
+         '</article>';
+    }).join('');
+    const feed=list.length?cards:
+      '<div class="retro-play-empty"><span aria-hidden="true">'+(quiz?'❓ ★ ♥':'♥ ★ ♥')+'</span>'+
+      '<h3>No '+(quiz?'quizzes':'polls')+' yet!</h3>'+
+      '<p>Be the first to start something fun. Your question could become the next Bebo favourite.</p>'+
+      (me?'<a href="#retro-create" class="retro-play-start">✎ Create the first '+word+' ♥</a>':
+       '<a href="#/account" class="retro-play-start">♥ Join Bebo to get started</a>')+'</div>';
+    return '<div class="retro-play-page">'+header+navigation+
+      '<div class="retro-play-columns"><div class="retro-play-feed">'+
+        panel((quiz?'❓ Latest Bebo Quizzes':'♥ Latest Bebo Polls')+' <span class="retro-play-counter">'+list.length+'</span>',feed)+
+      '</div><aside id="retro-create" class="retro-play-compose">'+compose+
+        panel('★ How It Works', '<ol class="retro-play-how">'+
+          '<li>Write a fun question about yourself or your mates.</li>'+
+          '<li>Add 2–4 different answers.'+(quiz?' Pick the correct one.':'')+'</li>'+
+          '<li>Publish it and share it with your Bebo friends ♥</li>'+
+        '</ol><p class="muted">A Bebo member can answer each question once.</p>')+
+      '</aside></div></div>';
   }
   async function creatorPage(me) {
     const posts=await db('bebo_creations',q=>q.select('*').order('created_at',{ascending:false}).limit(30));
@@ -264,6 +374,7 @@ export function createRetro(sb, helpers) {
     }
   }
   function afterRender(){
+    initPollPreviews();
     document.querySelectorAll('canvas.drawing-preview').forEach(c=>{
       try{redraw(c.getContext('2d'),JSON.parse(c.dataset.strokes))}catch{redraw(c.getContext('2d'),[])}
     });
@@ -293,7 +404,7 @@ export function createRetro(sb, helpers) {
     canvasStrokes=[];drawing=null;
     const c=document.querySelector('#bebo-draw');if(c)redraw(c.getContext('2d'),[]);
   }
-  return { sharedPanel,imageStyle,uploadBanner,youtubeId,audioUrl,route:async(page,me)=>{
+  return { sharedPanel,imageStyle,uploadBanner,youtubeId,audioUrl,fillPollExample,route:async(page,me)=>{
     if(page==='polls')return listPolls(me,false);
     if(page==='quizzes')return listPolls(me,true);
     if(page==='creators')return creatorPage(me);
