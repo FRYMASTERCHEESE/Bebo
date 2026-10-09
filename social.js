@@ -85,9 +85,6 @@ async function showProfile(username){
  }
  const extras=await retro.sharedPanel(who,me);
  const p1=panel('My Profile',`<div style="text-align:center">${badge(who)}<h3>${safe(who.display_name)}</h3><p>@${safe(who.username)}</p>${friendAction}<p class="muted">${safe(who.location)}</p></div><hr><strong>My Status:</strong><p>${safe(who.status)}</p><strong>About Me:</strong><p style="white-space:pre-wrap">${safe(who.bio)}</p><strong>Music:</strong><p>${safe(who.music)}</p>${own?btn('Edit profile','go','edit','secondary'):''}`);
- const fids=new Set(friendships.filter(f=>f.status==='accepted'&&(f.requester_id===who.id||f.addressee_id===who.id)).map(f=>f.requester_id===who.id?f.addressee_id:f.requester_id));
- const friendList=top.filter(t=>fids.has(t.id));
- const p2=panel('Top Friends ♥',friendList.length?`<div class="friends">${friendList.map(f=>`<a class="friend" href="#/u/${encodeURIComponent(f.username)}">${safe(f.display_name)}</a>`).join('')}</div>`:'<p class="muted">Friends will appear here as people connect.</p>');
  const form=me?`<form data-form="wall" class="fields"><textarea name="body" maxlength="1200" required placeholder="Leave ${safe(who.display_name)} a comment ♥"></textarea><button class="button">Post comment</button></form>`:'<p><a href="#/account">Log in</a> to leave a comment.</p>';
  const wall=panel('My Wall — Leave Me a Comment ♥',`${form}<hr>${posts.length?posts.map(post=>`<article class="item">
  <strong><a href="#/u/${encodeURIComponent(byId.get(post.author_id)?.username||'')}">${safe(byId.get(post.author_id)?.display_name||'Member')}</a></strong>
@@ -95,7 +92,7 @@ async function showProfile(username){
  <p style="white-space:pre-wrap">${safe(post.body)}</p>
  ${me&&(post.author_id===me.id||who.id===me.id)?btn('Delete','delete-post',post.id,'secondary'):''}
  ${me?btn('Report','report-post',post.id,'secondary'):''}</article>`).join(''):'<p class="muted">No comments yet. Be the first!</p>'}`);
- app.innerHTML=note()+`<div class="profile-art" style="--banner:${safe(retro.imageStyle(who,grad(who)))}">${safe(who.display_name)} ★</div><div class="cols"><div>${p1}${p2}</div><div>${wall}</div></div>${extras}`;
+ app.innerHTML=note()+`<div class="profile-art" style="--banner:${safe(retro.imageStyle(who,grad(who)))}">${safe(who.display_name)} ★</div><div class="cols"><div>${p1}</div><div>${wall}</div></div>${extras}`;
 }
 async function showFriends(){
  const profiles=await query('bebo_profiles',q=>q.select('id,username,display_name,status,avatar_path').order('created_at',{ascending:false}).limit(80));
