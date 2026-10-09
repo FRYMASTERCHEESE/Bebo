@@ -21,7 +21,7 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
   const click=(caption,action,id,kind='secondary')=>
     '<button type="button" class="button '+kind+'" data-action="'+action+'" data-id="'+safe(id)+'">'+caption+'</button>';
   const link=p=>'<a href="#/u/'+encodeURIComponent(p.username)+'">'+safe(p.display_name)+' (@'+safe(p.username)+')</a>';
-  async function members(){
+  async function members(me){
     let q=sb.from('bebo_profiles').select('id,username,display_name,created_at').order('created_at',{ascending:false}).limit(40);
     if(search)q=q.ilike('username','%'+search+'%');
     const people=await request(q);
@@ -160,7 +160,7 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
     return panel('👑 Owner Control Centre',
       '<p>Choose an admin tool below. Only your verified Bebo owner account can make changes.</p>'+
       '<div class="admin-section-tabs">'+buttons+'</div>')+
-      await views[section]();
+      await views[section](me);
   }
   async function action(name,id,me) {
     const role=await requireOwner(me);
