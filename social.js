@@ -58,8 +58,10 @@ function editProfile(){return panel('Edit My Profile',`<form class="fields" data
  <label>Favourite music<input name="music" maxlength="120" value="${safe(profile.music)}"></label>
  <label>Song file URL (HTTPS MP3, OGG, WAV, M4A or WebM)<input type="url" name="music_url" maxlength="500" value="${safe(profile.music_url||'')}" placeholder="https://example.com/music.mp3"></label>
  <label>My Flashbox — YouTube video URL<input type="url" name="flashbox" maxlength="500" value="${profile.flashbox_video_id?'https://www.youtube.com/watch?v='+safe(profile.flashbox_video_id):''}" placeholder="https://www.youtube.com/watch?v=..."></label>
- <button class="button">Save profile</button></form>
- <hr><form class="fields" data-form="avatar"><label>Upload your profile photo (PNG/JPG/WebP, maximum 5MB)<input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" required></label><button class="button secondary">Upload photo</button></form>`)}
+ <hr><div class="profile-photo-editor"><strong>Your profile picture ♥</strong><div class="photo-current">${badge(profile)}</div>
+ <label>Change picture (optional, PNG/JPG/WebP up to 5MB)<input type="file" name="avatar" accept="image/jpeg,image/png,image/webp"></label>
+ <p class="muted">You can change the picture or leave it as it is. The button below saves your status, About Me, location, music and photo together.</p></div>
+ <button class="button" type="submit">Save Profile &amp; Photo ♥</button></form>`)}
 async function showProfile(username){
  const who=username?await query('bebo_profiles',q=>q.select('*').eq('username',username).maybeSingle()):profile;
  if(!who){app.innerHTML=note()+panel('Profile not found','This member has not created a profile yet.');return}
@@ -214,8 +216,29 @@ document.addEventListener('submit',async e=>{
   if(musicUrl&&!retro.audioUrl(musicUrl))throw Error('Enter a direct HTTPS audio file URL ending in MP3, OGG, WAV, M4A or WebM.');
   const videoId=flashInput?retro.youtubeId(flashInput):'';
   if(flashInput&&!videoId)throw Error('Enter a valid YouTube video URL for your Flashbox.');
-  await query('bebo_profiles',q=>q.update({display_name:clamp(d.get('display_name'),60),status:clamp(d.get('status'),180),bio:clamp(d.get('bio'),2000),location:clamp(d.get('location'),80),music:clamp(d.get('music'),120),music_url:musicUrl,flashbox_video_id:videoId}).eq('id',me.id));
-  await loadMine();message='Profile updated ♥';success=true;location.hash='#/profile';
+  if(!me||!profile)throw Error('Sign in and create a profile first.');
+  const changes={display_name:clamp(d.get('display_name'),60),status:clamp(d.get('status'),180),bio:clamp(d.get('bio'),2000),location:clamp(d.get('location'),80),music:clamp(d.get('music'),120),music_url:musicUrl,flashbox_video_id:videoId};
+  if(!changes.display_name)throw Error('Please enter a display name.');
+  const file=d.get('avatar');
+  let uploadedPath='';
+  if(file instanceof File && file.size){
+    if(file.size>5*1024*1024||!['image/png','image/jpeg','image/webp'].includes(file.type))throw Error('Your picture must be a PNG, JPG or WebP under 5MB.');
+    const extension={'image/png':'png','image/jpeg':'jpg','image/webp':'webp'}[file.type];
+    uploadedPath=`${me.id}/${crypto.randomUUID()}.${extension}`;
+    const {error:uploadError}=await sb.storage.from('bebo-avatars').upload(uploadedPath,file,{contentType:file.type,upsert:false});
+    if(uploadError)throw uploadError;
+    changes.avatar_path=uploadedPath;
+  }
+  try {
+    await query('bebo_profiles',q=>q.update(changes).eq('id',me.id));
+  }catch(error){
+    if(uploadedPath)await sb.storage.from('bebo-avatars').remove([uploadedPath]).catch(()=>{});
+    throw error;
+  }
+  // The photo and every profile field were saved in the same database update.
+  await loadMine();
+  message='Your profile details and photo are saved together ♥';
+  success=true;location.hash='#/profile';
  }else if(type==='wall'){
   if(!me||!userViewed)throw Error('Log in first.');const body=clamp(d.get('body'),1200);
   if(!body)throw Error('Write a message first.');
@@ -228,13 +251,6 @@ document.addEventListener('submit',async e=>{
   const rows=await query('bebo_skins',q=>q.insert({creator_id:me.id,name:clamp(d.get('name'),70),primary_color:primary,secondary_color:secondary,banner_path:bannerPath}).select().single());
   await query('bebo_profiles',q=>q.update({skin:'custom',skin_primary:rows.primary_color,skin_secondary:rows.secondary_color,skin_banner_path:bannerPath}).eq('id',me.id));
   await loadMine();message='Your skin is saved and shared ♥';success=true;
- }else if(type==='avatar'){
-  const file=d.get('avatar');if(!(file instanceof File)||!file.size)throw Error('Choose a photo.');
-  if(file.size>5*1024*1024||!['image/png','image/jpeg','image/webp'].includes(file.type))throw Error('Upload a PNG, JPG or WebP less than 5 MB.');
-  const ext={'image/png':'png','image/jpeg':'jpg','image/webp':'webp'}[file.type],path=`${me.id}/${crypto.randomUUID()}.${ext}`;
-  const {error}=await sb.storage.from('bebo-avatars').upload(path,file,{contentType:file.type,upsert:false});if(error)throw error;
-  await query('bebo_profiles',q=>q.update({avatar_path:path}).eq('id',me.id));await loadMine();
-  message='New profile photo uploaded ♥';success=true;location.hash='#/profile';
  }else if(type.startsWith('classic-')){
   message=await classic.form(type,d,{me,profile,userViewed});success=true;
  }else if(type==='safety-delete-account'){
@@ -244,7 +260,14 @@ document.addEventListener('submit',async e=>{
  }else if(type.startsWith('retro-')){
   message=await retro.form(type,d,{me,profile,userViewed});success=true;
  }
- }catch(err){message=escapeError(err);success=false}finally{f.dataset.busy='';if(b)b.disabled=false;render()}
+ }catch(err){message=escapeError(err);success=false}finally{
+  f.dataset.busy='';if(b)b.disabled=false;
+  if(type==='edit-profile'&&!success){
+    let notice=f.querySelector('.edit-profile-error');
+    if(!notice){notice=document.createElement('p');notice.className='notice bad edit-profile-error';notice.setAttribute('role','alert');f.prepend(notice);}
+    notice.textContent=message;
+  }else render();
+}
 });
 document.addEventListener('click',async e=>{
  const b=e.target.closest('[data-action]');if(!b)return;e.preventDefault();
