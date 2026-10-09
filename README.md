@@ -12,14 +12,14 @@ Bebo is an **independent, unofficial** project inspired by social-profile websit
 
 ## Current deployment state
 
-**The frontend is deployed, but live account sign-up is disabled until a dedicated Supabase project is connected.** The homepage intentionally shows a setup notice until then. This avoids directing people to a fake account flow or putting user information in the wrong database.
+**The Bebo frontend is deployed and configured with a dedicated Supabase URL and public publishable key.** On 10 October 2026 (NZ), anonymous read-only requests to `bebo_profiles`, `bebo_skins`, and `bebo_wall_posts` returned HTTP 200. The public homepage displays sign-up/login forms. **Email sign-up, email delivery, writes, friendship flows, and account security have not yet been end-to-end tested**; do not announce a full public launch until these pass.
 
-## One-time backend setup
+## Backend setup and verification
 
-1. Create a **new, dedicated Supabase project** called `Bebo` in your chosen organization (do NOT use or alter the existing play-to-earn database).
-2. In the Bebo project SQL editor, run `supabase/schema.sql` once. The script creates Bebo-prefixed social tables, policies and an avatar storage bucket.
+1. Use the existing **dedicated Bebo Supabase project** referenced by `config.js`. Do NOT use or alter the play-to-earn database.
+2. The public Bebo profile, skin and wall tables already respond to read-only requests; verify the remaining schema, RLS policies and storage bucket against `supabase/schema.sql` before attempting migrations. Never rerun unreviewed schema SQL in an existing project.
 3. In Supabase Authentication, leave email verification enabled, configure the SMTP provider for production email delivery, and set **Site URL** to `https://frymastercheese.github.io/Bebo/`; add that address to **Redirect URLs**.
-4. Edit `config.js` with only your new Supabase project API URL and **public publishable key** (normally `sb_publishable_...`). Never put a `service_role` key, secret key, password, or database connection string in any public GitHub file.
+4. `config.js` now contains the Bebo project API URL and **public publishable key**. Never put a `service_role` key, secret key, password, or database connection string in public GitHub files.
 5. Confirm registration → email verification → sign in → create profile → add friend → post comment → save skin → upload avatar across two separate user accounts. Review database security advisors and test unauthorized modifications before welcoming users.
 
 ## Safety & launch requirements
@@ -32,6 +32,6 @@ The `bebo_reports` table is deliberately write-only for ordinary members. Build 
 
 - `index.html` — real-account website, responsive UI
 - `social.js` — browser frontend and Supabase API operations
-- `config.js` — public backend URL and publishable key (unconfigured)
+- `config.js` — configured public backend URL and publishable key
 - `supabase/schema.sql` — social database, RLS and avatar bucket
 - `classic.html` — preserved 2007-like demo
