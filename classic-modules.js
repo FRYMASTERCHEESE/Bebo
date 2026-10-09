@@ -277,5 +277,34 @@ export function createClassic(sb,{safe,panel,btn,query}) {
     }
     throw Error('Unknown classic action.');
   }
-  return {publicModules,route,form,action};
+  async function home(me){
+    needMe(me);
+    const [own,people,blogs,albums,friends]=await Promise.all([
+      db('bebo_profiles',q=>q.select('username,display_name,status,avatar_path').eq('id',me.id).maybeSingle()),
+      db('bebo_profiles',q=>q.select('username,display_name,status,created_at').order('created_at',{ascending:false}).limit(12)),
+      db('bebo_blogs',q=>q.select('id,title,body,created_at,owner_id').order('created_at',{ascending:false}).limit(8)),
+      db('bebo_albums',q=>q.select('id,title,owner_id,created_at').order('created_at',{ascending:false}).limit(8)),
+      db('bebo_friendships',q=>q.select('requester_id,addressee_id').eq('status','accepted').or('requester_id.eq.'+me.id+',addressee_id.eq.'+me.id))
+    ]);
+    const ids=[...new Set([...blogs.map(x=>x.owner_id),...albums.map(x=>x.owner_id)])];
+    const owners=ids.length?await db('bebo_profiles',q=>q.select('id,display_name,username').in('id',ids)):[];
+    const peopleMap=new Map(owners.map(p=>[p.id,p]));
+    const links='<p>'+btn('My Profile','go','profile')+btn('Edit Profile','go','edit','secondary')+'</p>'+
+      '<p>'+btn('My Photo Albums','go','photos','secondary')+btn('My Blog','go','blogs','secondary')+'</p>'+
+      '<p>'+btn('My Mail ✉','go','messages','secondary')+btn('My Other Half ♥','go','other-half','secondary')+'</p>';
+    const intro=panel('♥ Welcome back, '+nickname(own),'<p>Share the real you. The skins, the Luv, the whiteboards and the Top 16 are back.</p>'+
+       '<p class="muted">You have '+friends.length+' Bebo friend'+(friends.length===1?'':'s')+'.</p>'+links);
+    const memberList=people.map(p=>'<div class="item"><a href="#/u/'+encodeURIComponent(p.username)+'"><strong>'+nickname(p)+'</strong></a>'+
+      (p.status?'<p>💬 '+teaser(p.status,120)+'</p>':'')+'</div>').join('');
+    const recent=blogs.map(b=>'<div class="item">✎ '+(peopleMap.has(b.owner_id)?link(peopleMap.get(b.owner_id)):'A member')+
+      ' wrote <a href="#/blog/'+b.id+'"><strong>'+safe(b.title)+'</strong></a><p>'+teaser(b.body,125)+'</p></div>').join('')+
+      albums.map(a=>'<div class="item">📸 '+(peopleMap.has(a.owner_id)?link(peopleMap.get(a.owner_id)):'A member')+
+      ' made <a href="#/album/'+a.id+'">'+safe(a.title)+'</a></div>').join('');
+    return '<div class="classic-home"><div>'+
+      intro+panel('★ People on Bebo',memberList||'<p class="muted">Invite your mates!</p>')+
+      '</div><div>'+panel('★ Latest Activity',recent||'<p class="muted">Be the first to share a blog entry or a new photo album!</p>')+
+      panel('Remember the old days?','<p><a href="#/skins">🎨 Pick a skin</a> · <a href="#/groups">★ Join a group</a> · <a href="#/quizzes">❓ Take a quiz</a></p>')+
+      '</div></div>';
+  }
+  return {publicModules,route,form,action,home};
 }
