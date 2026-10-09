@@ -54,3 +54,23 @@ The SQL defining the new schema is in `supabase/nostalgia-features.sql`, and the
 **Security:** all new public-data tables have RLS enabled. Authenticated-only privileged RPCs validate `auth.uid()`, user ownership and limits, use an empty function search path and revoke function EXECUTE from public/anonymous roles. Supabase security advisors flag the two callable SECURITY DEFINER RPCs as warnings; they are intentionally callable by logged-in users and should still be reviewed before high-traffic public launch.
 
 **Launch readiness remains limited:** a genuine two-account registration / email verification / friend acceptance / Luv / Whiteboard / storage upload test is still required. Abuse moderation, blocking, spam protection, self-delete, and image/content review require production hardening. Do not imply affiliation with Bebo's original trademark owners just because the top-page slogan reads "Bebo Is Officially Back".
+
+## Member safety update — 10 October 2026 (NZ)
+
+### Implemented
+- `safety.js` adds **Block / Unblock**, **Report Profile**, a blocked-members list, and **Delete My Account** controls. The website has a public **Safety & Privacy** information section.
+- `supabase/member-safety.sql` adds server-enforced bidirectional block checks on wall posts, whiteboards, friendship requests and daily Luv. Blocking also severs mutual friendship / Top 16 relationships. Server-side rate limits apply to wall posts (5/min and 120/day), whiteboards (5/min and 60/day), friend requests (4/min and 30/day) and reports (10/day). These are per-user safeguards, not a full bot defence.
+- `supabase/report-deletion-integrity.sql` preserves report referential integrity when a user or wall post is deleted.
+- `supabase/block-privilege-hardening.sql` prevents anonymous visitors from querying the block list; authenticated users are limited to **their own blocks** via RLS.
+- `supabase/moderation-admin.sql` creates a database-only moderator whitelist and adds report status fields. Ordinary members cannot read or resolve reports. There is **no web moderation dashboard deployed yet**. The site owner with Supabase project access can review reports privately in the Supabase Table Editor under `public.bebo_reports`.
+- `supabase/functions/bebo-delete-account/index.ts` was deployed as Edge Function `bebo-delete-account`, with JWT verification enabled. The client requires the current password and explicit deletion phrase. The server checks a recently issued, verified user token, removes member uploads from both Bebo buckets, and requests permanent Auth user deletion so related records cascade. **The destructive flow has NOT been tested on a genuine account**.
+- Sign-up now has a required **18+ self-declaration** linked to Safety & Privacy information. This checkbox is **not verified age assurance**.
+
+### Still required before a broad public launch
+1. Test two genuine accounts end-to-end: registration and email confirmation, mutual friendship, comment posting, blocking, report submission, moderation, Luv, skins, whiteboard and avatar upload.
+2. Carefully test account deletion with a disposable test account after backing up anything valuable; verify images and database references disappear. Do not test against a user's real primary account.
+3. Add a working administrator moderation interface, a trusted moderator assignment procedure, appeal/recovery procedures, support contact and rapid takedown process. The moderator whitelist is intentionally empty until an owner account is deliberately assigned; report review currently requires the Supabase dashboard.
+4. Improve spam/bot protection, storage-content screening, backups, retention/deletion policy, jurisdiction-appropriate legal/privacy terms and meaningful safeguards if minors are ever permitted.
+5. Review Supabase security advisor warnings for the intentionally authenticated `bebo_give_luv` and `bebo_set_top_friends` SECURITY DEFINER RPCs before handling high traffic. See <https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable>.
+
+**The Bebo revival is still an independent community project.** Using the slogan “Bebo Is Officially Back” does not establish affiliation with the historical Bebo owners.
