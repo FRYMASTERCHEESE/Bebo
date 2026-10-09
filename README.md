@@ -35,3 +35,22 @@ The `bebo_reports` table is deliberately write-only for ordinary members. Build 
 - `config.js` — configured public backend URL and publishable key
 - `supabase/schema.sql` — social database, RLS and avatar bucket
 - `classic.html` — preserved 2007-like demo
+
+
+## Classic 2000s Bebo features added (10 October 2026 NZ)
+
+The production site's browser code now supports:
+- **Top 16:** a public 16-slot grid using accepted friendships, with add/remove and up/down ranking. Changes are made atomically via `bebo_set_top_friends`.
+- **Daily Luv:** a publicly visible received counter, and 3 gifts per account per UTC day, enforced transactionally in Postgres via `bebo_give_luv` (not client-side counters).
+- **Whiteboard:** mouse and touch drawing saved to the profile with author attribution and removal by the author or profile owner.
+- **Skins:** preset colour themes and shared community themes, optional custom photo banners uploaded to the per-user `bebo-skin-banners` storage bucket. Skins style the profile header and modules.
+- **Music and Flashbox:** direct HTTPS audio file player and YouTube video ID validated for a privacy-enhanced YouTube embed. **Autoplay is not guaranteed** (modern browsers often block audible autoplay); executable Flash and arbitrary HTML skins are not supported due to security risks.
+- **Quizzes and polls:** create and vote on public single-question activities; server enforces one answer per account.
+- **Bebo Bands & Authors:** publish short stories and musician profiles with optional HTTPS links.
+- Guest-readable public quizzes, polls and creators pages.
+
+The SQL defining the new schema is in `supabase/nostalgia-features.sql`, and the atomic Top 16 function in `supabase/top16-rpc.sql`; **both migrations have already been applied to the existing dedicated Bebo project**. Do not reapply blindly. Client features are in `nostalgia.js` and integrated into `social.js`.
+
+**Security:** all new public-data tables have RLS enabled. Authenticated-only privileged RPCs validate `auth.uid()`, user ownership and limits, use an empty function search path and revoke function EXECUTE from public/anonymous roles. Supabase security advisors flag the two callable SECURITY DEFINER RPCs as warnings; they are intentionally callable by logged-in users and should still be reviewed before high-traffic public launch.
+
+**Launch readiness remains limited:** a genuine two-account registration / email verification / friend acceptance / Luv / Whiteboard / storage upload test is still required. Abuse moderation, blocking, spam protection, self-delete, and image/content review require production hardening. Do not imply affiliation with Bebo's original trademark owners just because the top-page slogan reads "Bebo Is Officially Back".
