@@ -312,13 +312,18 @@ document.addEventListener('click',async e=>{
  const a=b.dataset.action,id=b.dataset.id;
  try{
  if(a==='go'){location.hash='#/'+id;return}
+ if(a.startsWith('admin-')){
+  const result=await admin.action(a,id,me);
+  if(!result?.cancelled){message=result?.message||'Admin action completed';success=true;render()}
+  return;
+ }
  if(a==='skin-filter'){filterSkins(id);return}
  if(a==='skin-preview'){const preset=skins.find(s=>s[0]===id);if(preset){const target=document.querySelector('#skin-tryout');if(target)target.innerHTML=bigSkinPreview(preset)}return}
  if(a==='retro-clear'){retro.clear();return}
  if(a.startsWith('classic-')){message=await classic.action(a,id,{me,profile,userViewed});success=true}
  if(a.startsWith('safety-')){message=await safety.action(a,id,{me,profile,userViewed});success=true}
  else if(a.startsWith('retro-')){message=await retro.action(a,id,{me,profile,userViewed});success=true}
- else if(a==='logout'){await sb.auth.signOut();me=null;profile=null;message='You are signed out.';location.hash='#/home'}
+ else if(a==='logout'){await sb.auth.signOut();me=null;profile=null;adminAccess=null;message='You are signed out.';location.hash='#/home'}
  else if(a==='reset'){const email=prompt('Enter your account email');if(!email)return;const {error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo:BEBO_SITE_URL});if(error)throw error;message='Check your email for the password reset link.';success=true}
  else if(a==='friend-request'){await query('bebo_friendships',q=>q.insert({requester_id:me.id,addressee_id:id}));message='Friend request sent ♥';success=true}
  else if(a==='friend-accept'||a==='friend-decline'){await query('bebo_friendships',q=>q.update({status:a==='friend-accept'?'accepted':'declined'}).eq('id',id));message=a==='friend-accept'?'Friend added ♥':'Request declined';success=true}
