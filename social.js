@@ -216,7 +216,16 @@ async function refresh(){
  case 'account':app.innerHTML=note()+panel('Your Bebo Account',`<p>Signed in as ${safe(me.email)}</p>${btn('Log out','logout')}`)+await safety.accountPanel(me);break;
  }
 }
-function render(){refresh().then(()=>retro.afterRender()).catch(e=>{app.innerHTML=note()+panel('Could not load this page',safe(escapeError(e))+'<p><a href="#/home">Return home</a></p>')})}
+function syncAdminNav(){
+ const nav=document.querySelector('#nav');
+ let tab=nav.querySelector('[data-nav="admin"]');
+ if(adminAccess&&!tab){
+  tab=document.createElement('button');tab.type='button';tab.dataset.nav='admin';tab.textContent='★ Admin Panel';
+  const account=nav.querySelector('[data-nav="account"]');
+  if(account)nav.insertBefore(tab,account);else nav.append(tab);
+ }else if(!adminAccess&&tab)tab.remove();
+}
+function render(){syncAdminNav();refresh().then(()=>retro.afterRender()).catch(e=>{app.innerHTML=note()+panel('Could not load this page',safe(escapeError(e))+'<p><a href="#/home">Return home</a></p>')})}
 document.querySelector('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-nav]');if(!b)return;location.href=b.dataset.nav==='classic'?'./classic.html':'#/'+b.dataset.nav;render()});
 window.addEventListener('hashchange',()=>{message='';activeSkinCategory='All';render()});
 document.addEventListener('input',e=>{if(e.target?.id==='skin-search')filterSkins()});
