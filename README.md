@@ -98,3 +98,14 @@ The modern frontend uses original (newly authored) CSS and modules to evoke Bebo
 
 **Not yet a literal recreation of every historical feature.** Features such as legacy Flash scripts, original music rights, the original Bebo source code and historical member data are not provided. New public uploads remain unmoderated; new user registration, full inbox flows, account deletion and multi-user safety behaviors have **not** been verified using two genuine accounts. Do not represent the service as an authorised relaunch of the original Bebo company.
 
+
+## 56-skin Classic Bebo Gallery — 10 October 2026
+
+The live Skins page has **56 original, 2000s-inspired CSS designs** in seven categories (Classic, Glitter & Girly, Emo & Scene, Love & Hearts, Summer & Nature, Music & Retro, Dark & Gothic). Every design has a distinct colour palette, mini profile preview, banner decoration, and a responsive Skin Gallery with instant search/filter and a larger selectable preview. Browsing works without signing in; saving a preset requires an authenticated profile. The original eight skin IDs remain valid.
+
+- `skin-library.js` contains the full static safe preset catalog and procedural art styles. No third-party images, scripts, copyrighted artwork, Flash or arbitrary user HTML are embedded.
+- `social.js` uses that catalog for both the gallery and saved public profile designs; selecting a skin updates `bebo_profiles.skin` after checking the ID exists.
+- `index.html` contains the matching retro profile/gallery CSS with mobile layout and styled module panels.
+- `supabase/skin-presets-56.sql` records the new allowed-value CHECK constraint, already applied to the **dedicated Bebo Supabase project**.
+
+These are newly created skins **inspired by the original era**, not original Bebo-owned graphical assets or a pixel-for-pixel reproduction. The existing custom-colour and member-uploaded banner options remain available. Signed-in saving still needs an end-to-end test with a real member account.
