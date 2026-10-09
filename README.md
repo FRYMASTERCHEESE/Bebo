@@ -109,3 +109,17 @@ The live Skins page has **56 original, 2000s-inspired CSS designs** in seven cat
 - `supabase/skin-presets-56.sql` records the new allowed-value CHECK constraint, already applied to the **dedicated Bebo Supabase project**.
 
 These are newly created skins **inspired by the original era**, not original Bebo-owned graphical assets or a pixel-for-pixel reproduction. The existing custom-colour and member-uploaded banner options remain available. Signed-in saving still needs an end-to-end test with a real member account.
+
+## Fix confirmation redirect to localhost:3000 — Bebo production Auth setup
+
+If registration delivers a confirmation email but its link opens `http://localhost:3000` on a phone, **Supabase Auth is redirecting to an old development URL**. Confirming the email can still succeed on the Supabase backend even when the final redirect fails.
+
+For the dedicated Bebo project, in [Supabase Authentication → URL Configuration](https://supabase.com/dashboard/project/rnxiggzyqqzjtgdbpedb/auth/url-configuration):
+
+- Set **Site URL** to exactly `https://frymastercheese.github.io/Bebo/`.
+- Under **Redirect URLs**, add `https://frymastercheese.github.io/Bebo/` (exact URL, no wildcard). An optional `https://frymastercheese.github.io/Bebo/**` entry can cover paths if ever needed; prefer the exact URL for production.
+- Save. Remove `http://localhost:3000` entries if this project is not used for local development, to avoid accidentally accepting dev redirects.
+
+`social.js` explicitly sets `emailRedirectTo` and password-reset `redirectTo` to the production URL. **However, the Supabase Auth dashboard's Site URL and allowed redirect list must ALSO be configured**; the available Supabase connector currently cannot change those settings.
+
+Do not ask users to paste confirmation links, verification tokens or passwords into chat. If their email is already verified, they can return to Bebo and log in directly; there is no need to register again.
