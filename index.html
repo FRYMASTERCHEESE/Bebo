@@ -286,8 +286,30 @@ main.wrap{max-width:1010px;background:#fff;min-height:80vh;border-left:1px solid
  .bebo-profile-main .top-initial{width:30px;height:30px}
 }
 
+
+/* Bebo owner administration — compact, accessible and responsive. */
+.bebo-admin-page{max-width:1000px;margin:0 auto}
+.bebo-admin-page .panel{border-color:#b5c9d8}
+.bebo-admin-page .panel h2{background:linear-gradient(#d04e7d,#832656)}
+.admin-role{display:inline-block;padding:3px 10px;border:1px solid #d1a4bc;background:#f9e8f0;color:#7c294f;border-radius:15px;text-transform:capitalize;font-size:12px;font-weight:bold}
+.admin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:17px 0}
+.admin-stat{min-width:0;padding:15px 10px;text-align:center;border:1px solid #c7b8c4;background:linear-gradient(#fff,#fff1f8);box-shadow:0 2px 3px #8a49731b}
+.admin-stat strong{display:block;color:#a72355;font:bold 32px Georgia,serif}
+.admin-stat span{display:block;margin-top:5px;font-size:11px;font-weight:bold;color:#705d6e}
+.admin-filters{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 15px}
+.admin-filters .button{padding:9px 13px}
+.admin-report{border:1px solid #d4becb;background:#fff;padding:15px;margin:0 0 12px;overflow-wrap:anywhere}
+.admin-report>p{margin:7px 0;line-height:1.6}
+.admin-report-reason{white-space:pre-wrap}
+.admin-report strong{color:#97335c}
+.admin-post-preview{margin:10px 0;padding:12px 14px;border-left:4px solid #bd4a76;background:#faf1f7;white-space:pre-wrap;overflow-wrap:anywhere;color:#443640}
+.admin-report-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.admin-report-actions .button{white-space:normal}
+.admin-empty{padding:25px;border:1px dashed #d8adc4;background:#fff3f9;text-align:center;color:#924d70}
+@media(max-width:680px){.admin-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.admin-stat strong{font-size:28px}.admin-report{padding:10px}.admin-report-actions{flex-direction:column}.admin-report-actions .button{width:100%}}
+
 </style>
-<script type="module" src="./social.js?v=20261010-bebo-classic-profile-v1"></script></head>
+<script type="module" src="./social.js?v=20261010-bebo-owner-admin-v1"></script></head>
 <body><header class="top"><div class="wrap head"><div class="brand">be<span>bo</span> ★</div><div><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p></div></div></header>
 <nav class="nav"><div class="wrap" id="nav"><button data-nav="home">Home</button><button data-nav="profile">My Profile</button><button data-nav="friends">Friends</button><button data-nav="photos">Photos</button><button data-nav="blogs">Blog</button><button data-nav="messages">Mail ✉</button><button data-nav="groups">Groups</button><button data-nav="other-half">Other Half ♥</button><button data-nav="skins">Skins</button><button data-nav="polls">Polls</button><button data-nav="quizzes">Quizzes</button><button data-nav="creators">Bands &amp; Authors</button><button data-nav="account">Account</button><button data-nav="safety">Safety &amp; Privacy</button></div></nav>
 <main id="app" class="wrap"><div class="panel hero"><h2>Welcome to Bebo ♥</h2><div class="body">Loading your profile…</div></div></main>
