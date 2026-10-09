@@ -39,7 +39,7 @@ function authPage(){
  if(!configured)return panel('Bebo is being prepared',`<p>The public Bebo website is online, but its new community database is not connected yet. No accounts are being collected while setup is incomplete.</p><p><a href="./classic.html">Try the interactive 2007-style demo and skin creator ♥</a></p>`);
  return panel('Join Bebo — it’s free! ♥',`<div class="cols"><div>${panel('Create your account',`<form class="fields" data-form="signup">
  <label>Email address<input type="email" name="email" required maxlength="254" autocomplete="email"></label>
- <label>Password (12 characters minimum)<input type="password" name="password" required minlength="12" maxlength="128" autocomplete="new-password"></label>
+ <label>Password (8 characters minimum)<input type="password" name="password" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="At least 8 characters"></label>
  <label><input type="checkbox" name="adult" required> I confirm I am 18 or older and agree to the <a href="#/safety">community rules and privacy information</a>.</label><button class="button">Join Bebo ♥</button></form><p class="muted">You may need to confirm your email first. Do not use your old Bebo password.</p>`)}</div>
  <div>${panel('Already a member?',`<form class="fields" data-form="login"><label>Email<input type="email" name="email" required autocomplete="email"></label><label>Password<input type="password" name="password" required autocomplete="current-password"></label><button class="button">Log in</button></form><p><a href="#" data-action="reset">Forgot password?</a></p>`)}</div></div>`);
 }
@@ -195,6 +195,7 @@ document.addEventListener('submit',async e=>{
  try{
  if(type==='signup'){
   if(d.get('adult')!=='on')throw Error('Confirm you are 18 or older first.');
+  if(String(d.get('password')||'').length<8)throw Error('Choose a password with at least 8 characters.');
   const {data,error}=await sb.auth.signUp({email:String(d.get('email')).trim(),password:String(d.get('password')),options:{emailRedirectTo:location.origin+location.pathname}});
   if(error)throw error;message='Check your email to confirm your new Bebo account, then log in.';success=true;
   if(data.session){me=data.user;await loadMine();}
