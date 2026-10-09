@@ -39,7 +39,7 @@ async function init(){
  render();
 }
 function authPage(){
- if(!configured)return panel('Bebo is being prepared',`<p>The public Bebo website is online, but its new community database is not connected yet. No accounts are being collected while setup is incomplete.</p><p><a href="./classic.html">Try the interactive 2007-style demo and skin creator ♥</a></p>`);
+ if(!configured)return panel('Bebo is being prepared',`<p>The public Bebo website is online, but its new community database is not connected yet. No accounts are being collected while setup is incomplete.</p><p>Come back soon when our account system is available.</p>`);
  return panel('Join Bebo — it’s free! ♥',`<div class="cols"><div>${panel('Create your account',`<form class="fields" data-form="signup">
  <label>Email address<input type="email" name="email" required maxlength="254" autocomplete="email"></label>
  <label>Password (8 characters minimum)<input type="password" name="password" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="At least 8 characters"></label>
@@ -226,7 +226,7 @@ function syncAdminNav(){
  }else if(!adminAccess&&tab)tab.remove();
 }
 function render(){syncAdminNav();refresh().then(()=>retro.afterRender()).catch(e=>{app.innerHTML=note()+panel('Could not load this page',safe(escapeError(e))+'<p><a href="#/home">Return home</a></p>')})}
-document.querySelector('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-nav]');if(!b)return;location.href=b.dataset.nav==='classic'?'./classic.html':'#/'+b.dataset.nav;render()});
+document.querySelector('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-nav]');if(!b)return;location.hash='#/'+b.dataset.nav;render()});
 window.addEventListener('hashchange',()=>{message='';activeSkinCategory='All';render()});
 document.addEventListener('input',e=>{if(e.target?.id==='skin-search')filterSkins()});
 document.addEventListener('submit',async e=>{
