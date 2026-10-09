@@ -213,7 +213,7 @@ async function refresh(){
  case 'skins':await showSkins();break;
  case 'edit':app.innerHTML=note()+editProfile();break;
  case 'admin':app.innerHTML=note()+(adminAccess?await admin.dashboard(me):panel('Admin only','This panel is only available to approved Bebo administrators.'));break;
- case 'account':app.innerHTML=note()+panel('Your Bebo Account',`<p>Signed in as ${safe(me.email)}</p>${btn('Log out','logout')}`)+await safety.accountPanel(me);break;
+ case 'account':app.innerHTML=note()+panel('Your Bebo Account',`<p>Signed in as ${safe(me.email)}</p>${btn('Log out','logout')}${adminAccess?'<p><a href="#/admin">★ Open your Admin Panel</a></p>':''}`)+await safety.accountPanel(me);break;
  }
 }
 function syncAdminNav(){
