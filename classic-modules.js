@@ -1,5 +1,6 @@
 // Original-era Bebo modules built as a secure, browser-based social experience.
 // HTML is generated only from escaped member content; no arbitrary member scripts execute.
+import { skins, skinArtwork } from './skin-library.js';
 export function createClassic(sb,{safe,panel,btn,query}) {
   const db=(t,fn)=>query(t,fn);
   const clean=(v,n)=>String(v??'').trim().slice(0,n);
@@ -277,34 +278,109 @@ export function createClassic(sb,{safe,panel,btn,query}) {
     }
     throw Error('Unknown classic action.');
   }
-  async function home(me){
-    needMe(me);
+  /** 2007-style front page: real friends, real member avatars and real activity. */
+  async function home(me) {
+    const isMember=Boolean(me?.id);
     const [own,people,blogs,albums,friends]=await Promise.all([
-      db('bebo_profiles',q=>q.select('username,display_name,status,avatar_path').eq('id',me.id).maybeSingle()),
-      db('bebo_profiles',q=>q.select('username,display_name,status,created_at').order('created_at',{ascending:false}).limit(12)),
-      db('bebo_blogs',q=>q.select('id,title,body,created_at,owner_id').order('created_at',{ascending:false}).limit(8)),
-      db('bebo_albums',q=>q.select('id,title,owner_id,created_at').order('created_at',{ascending:false}).limit(8)),
-      db('bebo_friendships',q=>q.select('requester_id,addressee_id').eq('status','accepted').or('requester_id.eq.'+me.id+',addressee_id.eq.'+me.id))
+      isMember?db('bebo_profiles',q=>q.select('id,username,display_name,status,avatar_path').eq('id',me.id).maybeSingle()):Promise.resolve(null),
+      db('bebo_profiles',q=>q.select('id,username,display_name,status,avatar_path,created_at').order('created_at',{ascending:false}).limit(12)),
+      db('bebo_blogs',q=>q.select('id,title,body,created_at,owner_id').order('created_at',{ascending:false}).limit(7)),
+      db('bebo_albums',q=>q.select('id,title,owner_id,created_at').order('created_at',{ascending:false}).limit(7)),
+      isMember?db('bebo_friendships',q=>q.select('requester_id,addressee_id').eq('status','accepted').or('requester_id.eq.'+me.id+',addressee_id.eq.'+me.id)):Promise.resolve([])
     ]);
+    const avatar=p=>{
+      if(p?.avatar_path){
+        const photoURL=sb.storage.from('bebo-avatars').getPublicUrl(p.avatar_path).data.publicUrl;
+        return '<img class="classic-home-avatar" src="'+safe(photoURL)+'" alt="" loading="lazy" decoding="async">';
+      }
+      return '<span class="classic-home-avatar classic-home-initial" aria-hidden="true">'+safe((p?.display_name||'?').slice(0,1).toUpperCase())+'</span>';
+    };
+    const view=p=>'<a class="classic-home-member" href="#/u/'+encodeURIComponent(p.username)+'">'+avatar(p)+
+      '<strong>'+safe(p.display_name)+'</strong><small>@'+safe(p.username)+'</small></a>';
+    const myFriendIDs=isMember?[...new Set(friends.map(f=>f.requester_id===me.id?f.addressee_id:f.requester_id).filter(id=>id!==me.id))]:[];
+    const friendProfiles=myFriendIDs.length?await db('bebo_profiles',q=>q.select('id,username,display_name,avatar_path').in('id',myFriendIDs.slice(0,16))):[];
+    const friendGrid=friendProfiles.length?
+      '<div class="classic-home-friend-grid">'+friendProfiles.slice(0,16).map(view).join('')+'</div>':
+      '<div class="classic-home-empty"><span aria-hidden="true">♥ ★ ♥</span><p>Your friends will appear here when you connect with other Bebo members.</p>'+
+      '<a href="#/friends">Find your mates »</a></div>';
+    const friendPanel=isMember?panel('♥ My Friends ('+myFriendIDs.length+')',friendGrid):'';
+    const profileLink=isMember?'<a href="#/profile">My Profile</a>':'<a href="#/account">Join Bebo FREE</a>';
+    const headTitle=isMember?'Welcome back, '+safe(own?.display_name||'Bebo friend')+'! ♥':'Welcome to Bebo! ♥';
+    const headText=isMember?'Your profile, your skins, your friends. Make your corner of Bebo your own.':
+      'Your profile. Your skin. Your friends. Join the colourful social network experience!';
+    const cover='<section class="classic-home-welcome" aria-label="Welcome to Bebo">'+
+      '<div class="classic-home-welcome-art"><span class="classic-home-sticker classic-home-star" aria-hidden="true">★</span>'+
+      '<span class="classic-home-sticker classic-home-heart" aria-hidden="true">♥</span>'+
+      '<span class="classic-home-kicker">★ Your place on Bebo ★</span>'+
+      '<h1>'+headTitle+'</h1><p>'+headText+'</p>'+
+      '<div class="classic-home-hero-actions">'+
+      '<a class="classic-home-primary" href="'+(isMember?'#/profile':'#/account')+'">'+(isMember?'♥ Visit my page':'♥ Join Bebo — it’s free!')+'</a>'+
+      '<a class="classic-home-secondary" href="#/skins">🎨 Choose a skin</a></div></div>'+
+      '<div class="classic-home-heart-note"><span>♥</span> Friends · Luv · Skins · Whiteboards · Music</div></section>';
+    const shortcuts=(isMember?[
+      ['★ My Profile','profile'],['✎ Edit Profile','edit'],['📸 My Photos','photos'],
+      ['✉ My Mail','messages'],['♥ My Other Half','other-half'],['✿ My Blog','blogs']
+    ]:[
+      ['♥ Join Bebo','account'],['🎨 Profile Skins','skins'],
+      ['📸 Browse Photos','photos'],['✎ Read Blogs','blogs'],
+      ['★ Groups','groups'],['❓ Quizzes','quizzes']
+    ]).map(([label,dest])=>'<a href="#/'+dest+'">'+safe(label)+'</a>').join('');
+    const actions=panel(isMember?'♥ My Bebo Shortcuts':'★ Get Started on Bebo',
+      '<div class="classic-home-shortcuts">'+shortcuts+'</div>');
+    const recentMembers=people.length?'<div class="classic-home-people">'+people.slice(0,9).map(view).join('')+'</div>':
+      '<p class="classic-home-empty">The first members will appear here soon. ♥</p>';
+    const memberPanel=panel('★ People on Bebo',recentMembers+
+      '<p class="classic-home-linkline"><a href="#/friends">Find more Bebo friends »</a></p>');
     const ids=[...new Set([...blogs.map(x=>x.owner_id),...albums.map(x=>x.owner_id)])];
-    const owners=ids.length?await db('bebo_profiles',q=>q.select('id,display_name,username').in('id',ids)):[];
-    const peopleMap=new Map(owners.map(p=>[p.id,p]));
-    const links='<p>'+btn('My Profile','go','profile')+btn('Edit Profile','go','edit','secondary')+'</p>'+
-      '<p>'+btn('My Photo Albums','go','photos','secondary')+btn('My Blog','go','blogs','secondary')+'</p>'+
-      '<p>'+btn('My Mail ✉','go','messages','secondary')+btn('My Other Half ♥','go','other-half','secondary')+'</p>';
-    const intro=panel('♥ Welcome back, '+nickname(own),'<p>Share the real you. The skins, the Luv, the whiteboards and the Top 16 are back.</p>'+
-       '<p class="muted">You have '+friends.length+' Bebo friend'+(friends.length===1?'':'s')+'.</p>'+links);
-    const memberList=people.map(p=>'<div class="item"><a href="#/u/'+encodeURIComponent(p.username)+'"><strong>'+nickname(p)+'</strong></a>'+
-      (p.status?'<p>💬 '+teaser(p.status,120)+'</p>':'')+'</div>').join('');
-    const recent=blogs.map(b=>'<div class="item">✎ '+(peopleMap.has(b.owner_id)?link(peopleMap.get(b.owner_id)):'A member')+
-      ' wrote <a href="#/blog/'+b.id+'"><strong>'+safe(b.title)+'</strong></a><p>'+teaser(b.body,125)+'</p></div>').join('')+
-      albums.map(a=>'<div class="item">📸 '+(peopleMap.has(a.owner_id)?link(peopleMap.get(a.owner_id)):'A member')+
-      ' made <a href="#/album/'+a.id+'">'+safe(a.title)+'</a></div>').join('');
-    return '<div class="classic-home"><div>'+
-      intro+panel('★ People on Bebo',memberList||'<p class="muted">Invite your mates!</p>')+
-      '</div><div>'+panel('★ Latest Activity',recent||'<p class="muted">Be the first to share a blog entry or a new photo album!</p>')+
-      panel('Remember the old days?','<p><a href="#/skins">🎨 Pick a skin</a> · <a href="#/groups">★ Join a group</a> · <a href="#/quizzes">❓ Take a quiz</a></p>')+
-      '</div></div>';
+    const authors=ids.length?await db('bebo_profiles',q=>q.select('id,display_name,username,avatar_path').in('id',ids)):[];
+    const authorsById=new Map(authors.map(p=>[p.id,p]));
+    const byline=id=>{
+      const user=authorsById.get(id);
+      return user?'<a href="#/u/'+encodeURIComponent(user.username)+'">'+safe(user.display_name)+'</a>':'A Bebo member';
+    };
+    const feed=[
+      ...blogs.map(b=>({
+        date:b.created_at,type:'blog',html:'<span class="classic-home-activity-icon">✎</span><div><strong>'+byline(b.owner_id)+
+          ' wrote a blog</strong><p><a href="#/blog/'+encodeURIComponent(b.id)+'">'+safe(b.title)+'</a></p>'+
+          '<small>'+teaser(b.body,90)+'</small></div>'
+      })),
+      ...albums.map(a=>({
+        date:a.created_at,type:'album',html:'<span class="classic-home-activity-icon">📸</span><div><strong>'+byline(a.owner_id)+
+          ' shared photos</strong><p><a href="#/album/'+encodeURIComponent(a.id)+'">'+safe(a.title)+'</a></p></div>'
+      }))
+    ].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8);
+    const recent=feed.length?'<div class="classic-home-feed">'+feed.map(e=>'<div class="classic-home-feed-item">'+e.html+'</div>').join('')+'</div>':
+      '<div class="classic-home-empty"><span aria-hidden="true">✎ 📸 ♥</span>'+
+      '<p>Be the first to share a photo album or write a blog!</p>'+
+      '<a href="#/'+(isMember?'blogs':'account')+'">'+(isMember?'Write your first blog »':'Join and start sharing »')+'</a></div>';
+    const styles=skins.filter(s=>['classic','emo','glitter','ocean','scene','sunset','princess','gothic'].includes(s[0]));
+    const previews='<div class="classic-home-skin-grid">'+styles.map(s=>
+      '<a class="classic-home-skin" href="#/skins" aria-label="Browse '+safe(s[1])+' skin">'+
+      '<span class="classic-home-skin-art" style="background:'+safe(skinArtwork(s))+'"><span class="classic-home-skin-icon" aria-hidden="true">'+safe(s[7])+'</span><span>my bebo</span></span>'+
+      '<span class="classic-home-skin-label">'+safe(s[1])+'</span></a>'
+    ).join('')+'</div>';
+    const fun='<div class="classic-home-feature-row">'+
+      '<a href="#/skins">🎨 Skins <span>Make it yours</span></a>'+
+      '<a href="#/friends">♥ Top 16 <span>Your closest mates</span></a>'+
+      '<a href="#/quizzes">❓ Quizzes <span>How well do you know me?</span></a>'+
+      '<a href="#/groups">★ Groups <span>Find your people</span></a>'+
+      '</div>';
+    return '<div class="classic-home classic-home-2007">'+
+      '<div class="classic-home-left">'+
+        panel('♥ Welcome to My Bebo',cover)+
+        actions+friendPanel+
+        memberPanel+
+      '</div>'+
+      '<div class="classic-home-right">'+
+        panel('★ What’s Happening on Bebo?',recent)+
+        panel('🎨 Dress Up Your Bebo — Popular Skins',previews+
+          '<p class="classic-home-linkline"><a href="#/skins"><strong>Browse all 56 profile skins »</strong></a></p>')+
+        panel('♥ Remember the Good Old Days?',fun)+
+        panel('★ A Little Bebo Magic',
+          '<p><strong>Express yourself!</strong> Pick a skin, share the Luv, leave Whiteboard drawings and keep your Top 16 close.</p>'+
+          '<p><a href="#/'+(isMember?'profile':'account')+'">'+(isMember?'♥ Go to my Bebo profile »':'♥ Create a free Bebo profile »')+'</a></p>')+
+      '</div>'+
+      '</div>';
   }
   return {publicModules,route,form,action,home};
 }
