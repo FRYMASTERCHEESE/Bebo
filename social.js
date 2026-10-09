@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import { createRetro } from './nostalgia.js';
 import { createSafety } from './safety.js';
-import { createClassic } from './classic-modules.js';
+import { createClassic } from './classic-modules.js?v=20261010-classic-home-v2';
 import { createAdmin } from './admin.js?v=20261010-owner-me-fix';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
@@ -190,6 +190,7 @@ async function refresh(){
  if(!configured){app.innerHTML=note()+authPage();return}
  if(page==='safety'){app.innerHTML=note()+safetyInfoPage();return}
  if(!me){
+  if(page==='home'){app.innerHTML=note()+await classic.home(null);return}
   if(page==='skins'){await showSkins();return}
   if(['polls','quizzes','creators'].includes(page)){app.innerHTML=note()+await retro.route(page,null);return}
   if(page==='photos'||page.startsWith('photos/')||page.startsWith('album/')||
