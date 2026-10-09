@@ -160,7 +160,7 @@ async function refresh(){
  default:
    if(page.startsWith('photos/')||page.startsWith('album/')||page.startsWith('blogs/')||
       page.startsWith('blog/')||page.startsWith('messages/'))app.innerHTML=note()+await classic.route(page,me);
-   else app.innerHTML=note()+welcome();
+   else app.innerHTML=note()+await classic.home(me);
    break;
  case 'skins':await showSkins();break;
  case 'edit':app.innerHTML=note()+editProfile();break;
