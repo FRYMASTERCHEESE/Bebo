@@ -1,0 +1,4 @@
+-- Allow 56 safe Bebo preset IDs, all 8 existing legacy IDs, and the custom banner/colour option.
+-- Already applied to the dedicated Bebo Supabase project (do not reapply blindly).
+ALTER TABLE public.bebo_profiles DROP CONSTRAINT IF EXISTS bebo_profiles_skin_check;
+ALTER TABLE public.bebo_profiles ADD CONSTRAINT bebo_profiles_skin_check CHECK (skin IN ('classic','glitter','emo','ocean','sunset','mint','ruby','cloud','bubblegum','princess','candy','angel','butterfly','barbie','tiara','cupcake','scene','skater','punk','neon','checkers','broken','rockstar','blackpink','valentine','lovebirds','cherry','crush','sweetheart','rosepetal','strawberry','firstlove','tropical','watermelon','rainbow','aquagirl','mermaid','sunflower','autumn','snow','disco','mixtape','indie','denim','graffiti','comic','vinyl','retro','gothic','midnight','vampire','silver','blackout','purplehaze','icyblue','moonlight','custom'));
