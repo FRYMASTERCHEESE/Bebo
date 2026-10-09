@@ -238,8 +238,18 @@ async function refreshBeboAnnouncement(){
   if(token!==announcementsRequestId)return;
   if(!setting?.enabled||!latest.length){strip.hidden=true;strip.innerHTML='';return}
   const item=latest[0];
-  strip.innerHTML='<div class="bebo-announcement-inner"><span class="bebo-announcement-tag">📢 News from Bebo</span>'+
-   '<strong>'+safe(item.title)+'</strong><p>'+safe(item.body)+'</p></div>';
+  const fullText=String(item.body||'').trim();
+  const oneLine=fullText.replace(/\\s+/g,' ').trim();
+  const shortText=Array.from(oneLine).slice(0,175).join('');
+  const hasMore=Array.from(oneLine).length>175;
+  const teaser=shortText+(hasMore?'…':'');
+  strip.innerHTML='<div class="bebo-announcement-inner">'+
+   '<div class="bebo-announcement-head"><span class="bebo-announcement-tag">★ Bebo News ★</span>'+
+   '<strong class="bebo-announcement-title">'+safe(item.title)+'</strong></div>'+
+   '<div class="bebo-announcement-content"><p class="bebo-announcement-preview">'+safe(teaser)+'</p>'+
+   (hasMore?'<details class="bebo-announcement-details"><summary>Read the full announcement ♥</summary>'+
+   '<div class="bebo-announcement-full">'+safe(fullText)+'</div></details>':'')+
+   '</div></div>';
   strip.hidden=false;
  }catch(error){
   if(token!==announcementsRequestId)return;
