@@ -34,7 +34,12 @@ export function createClassic(sb,{safe,panel,btn,query}) {
   }
   async function albumsPage(me,username){
     const owner=username?await db('bebo_profiles',q=>q.select('id,username,display_name').eq('username',username).maybeSingle()):me?await db('bebo_profiles',q=>q.select('id,username,display_name').eq('id',me.id).maybeSingle()):null;
-    if(!owner)return panel('Photos','Member not found. <a href="#/friends">Browse members</a>.');
+    if(!owner){
+      const albums=await db('bebo_albums',q=>q.select('*').order('created_at',{ascending:false}).limit(30));
+      return panel('📸 Bebo Photo Albums','<p>Remember looking through your mates’ albums? Explore what members are sharing.</p>'+
+      (albums.map(a=>'<div class="item"><a href="#/album/'+a.id+'">📸 '+safe(a.title)+'</a><p class="muted">'+when(a.created_at)+'</p></div>').join('')||
+      '<p class="muted">There are no public albums yet. Join Bebo to make the first one!</p>'));
+    }
     const albums=await db('bebo_albums',q=>q.select('*').eq('owner_id',owner.id).order('created_at',{ascending:false}).limit(60));
     const mine=me?.id===owner.id;
     const make=mine?postForm('classic-album',
@@ -69,7 +74,12 @@ export function createClassic(sb,{safe,panel,btn,query}) {
   }
   async function blogsPage(me,username){
     const who=username?await db('bebo_profiles',q=>q.select('id,username,display_name').eq('username',username).maybeSingle()):me?await db('bebo_profiles',q=>q.select('id,username,display_name').eq('id',me.id).maybeSingle()):null;
-    if(!who)return panel('Blog','Member not found.');
+    if(!who){
+      const entries=await db('bebo_blogs',q=>q.select('*').order('created_at',{ascending:false}).limit(30));
+      return panel('✎ Bebo Blogs','<p>Blog Early, Blog Often — just like 2007.</p>'+
+        (entries.map(b=>'<div class="item"><strong><a href="#/blog/'+b.id+'">'+safe(b.title)+'</a></strong><p>'+teaser(b.body,150)+'</p></div>').join('')||
+        '<p class="muted">No blog entries yet. Sign up and write the first one.</p>'));
+    }
     const blogs=await db('bebo_blogs',q=>q.select('*').eq('owner_id',who.id).order('created_at',{ascending:false}).limit(40));
     const mine=me?.id===who.id;
     const form=mine?postForm('classic-blog',
