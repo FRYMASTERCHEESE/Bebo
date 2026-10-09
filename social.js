@@ -147,7 +147,7 @@ function bigSkinPreview(x){
  return `<div class="skin-tryout"><div class="skin-tryout-banner" data-motif="${safe(x[7])}" style="background:${safe(skinArtwork(x))}"><strong>your bebo ★</strong></div><div class="skin-tryout-flex"><div class="skin-tryout-left"><div class="skin-tryout-avatar">♥</div><span>your photo</span></div><div class="skin-tryout-main"><div class="skin-tryout-bar" style="background:${safe(x[3])}">my profile ♥</div><p>your status goes here...</p><div class="skin-tryout-bar" style="background:${safe(x[4])}">my top 16</div><p>friends • luv • whiteboard</p></div></div><p class="skin-tryout-caption"><strong>${safe(x[1])}</strong> <span>${safe(x[5])}</span></p></div>`;
 }
 async function showSkins(){
- const saved=await query('bebo_skins',q=>q.select('id,name,primary_color,secondary_color,creator_id,banner_path').order('created_at',{ascending:false}).limit(50));
+ const saved=await query('bebo_skins',q=>q.select('id,name,primary_color,secondary_color,creator_id,banner_path').eq('is_hidden',false).order('created_at',{ascending:false}).limit(50));
  const categories=skinCategories.map(c=>`<button type="button" class="skin-filter ${c===activeSkinCategory?'active':''}" data-action="skin-filter" data-id="${safe(c)}" aria-pressed="${c===activeSkinCategory}">${safe(c)}</button>`).join('');
  const cards=skins.map(x=>`<div class="skin skin-card" data-category="${safe(x[5])}" data-name="${safe(x[1].toLowerCase())}"><button type="button" class="skin-preview-button" data-action="skin-preview" data-id="${safe(x[0])}" aria-label="Preview ${safe(x[1])}">${miniSkin(x)}<strong>${safe(x[1])}</strong><span class="skin-category-name">${safe(x[5])}</span></button><button type="button" class="button skin-use-button" data-action="use-skin" data-id="${safe(x[0])}">Use skin ♥</button></div>`).join('');
  const userSkins=saved.map(x=>`<button type="button" class="skin" data-action="use-shared-skin" data-id="${safe(x.id)}"><div class="swatch" style="background:${safe(retro.imageStyle({skin_banner_path:x.banner_path},`linear-gradient(120deg,${x.secondary_color},${x.primary_color})`))}"></div><strong>${safe(x.name)}</strong></button>`).join('');
@@ -225,7 +225,29 @@ function syncAdminNav(){
   if(profileLink)nav.insertBefore(tab,profileLink);else nav.append(tab);
  }else if(!adminAccess&&tab)tab.remove();
 }
-function render(){syncAdminNav();refresh().then(()=>retro.afterRender()).catch(e=>{app.innerHTML=note()+panel('Could not load this page',safe(escapeError(e))+'<p><a href="#/home">Return home</a></p>')})}
+let announcementsRequestId=0;
+async function refreshBeboAnnouncement(){
+ const token=++announcementsRequestId;
+ const strip=document.querySelector('#bebo-announcement-bar');
+ if(!strip||!sb)return;
+ try{
+  const [setting,latest]=await Promise.all([
+   query('bebo_site_settings',q=>q.select('enabled').eq('key','announcements').maybeSingle()),
+   query('bebo_announcements',q=>q.select('title,body,created_at').eq('published',true).order('created_at',{ascending:false}).limit(1))
+  ]);
+  if(token!==announcementsRequestId)return;
+  if(!setting?.enabled||!latest.length){strip.hidden=true;strip.innerHTML='';return}
+  const item=latest[0];
+  strip.innerHTML='<div class="bebo-announcement-inner"><span class="bebo-announcement-tag">📢 News from Bebo</span>'+
+   '<strong>'+safe(item.title)+'</strong><p>'+safe(item.body)+'</p></div>';
+  strip.hidden=false;
+ }catch(error){
+  if(token!==announcementsRequestId)return;
+  strip.hidden=true;strip.innerHTML='';
+  console.warn('Could not load public Bebo announcement',error);
+ }
+}
+function render(){syncAdminNav();refresh().then(()=>{retro.afterRender();return refreshBeboAnnouncement()}).catch(e=>{app.innerHTML=note()+panel('Could not load this page',safe(escapeError(e))+'<p><a href="#/home">Return home</a></p>')})}
 document.querySelector('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-nav]');if(!b)return;location.hash='#/'+b.dataset.nav;render()});
 window.addEventListener('hashchange',()=>{message='';activeSkinCategory='All';render()});
 document.addEventListener('input',e=>{if(e.target?.id==='skin-search')filterSkins()});
@@ -289,6 +311,9 @@ document.addEventListener('submit',async e=>{
   const rows=await query('bebo_skins',q=>q.insert({creator_id:me.id,name:clamp(d.get('name'),70),primary_color:primary,secondary_color:secondary,banner_path:bannerPath}).select().single());
   await query('bebo_profiles',q=>q.update({skin:'custom',skin_primary:rows.primary_color,skin_secondary:rows.secondary_color,skin_banner_path:bannerPath}).eq('id',me.id));
   await loadMine();message='Your skin is saved and shared ♥';success=true;
+ }else if(type.startsWith('admin-')){
+  const result=await admin.form(type,d,me);
+  message=result?.message||'Admin settings saved.';success=true;
  }else if(type.startsWith('classic-')){
   message=await classic.form(type,d,{me,profile,userViewed});success=true;
  }else if(type==='safety-delete-account'){
