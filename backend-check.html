@@ -1,0 +1,13 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bebo backend readiness check</title></head><body><h2>Bebo backend readiness (public read-only check)</h2><pre id="results">Checking database…</pre><script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.0';
+import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from './config.js';
+const out=document.querySelector('#results');
+const db=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+let report=[];
+for(const table of ['bebo_profiles','bebo_skins','bebo_wall_posts']) {
+  try { const {error,status}=await db.from(table).select('id',{head:true,count:'exact'}).limit(1);
+  report.push(table+': '+(error?'ERROR '+(error.code||status)+' '+error.message:'OK '+status));
+  } catch(e){report.push(table+': EXCEPTION '+e.message)}
+  out.textContent=report.join('\n');
+}
+</script></body></html>
