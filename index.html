@@ -133,8 +133,161 @@ main.wrap{max-width:1010px;background:#fff;min-height:80vh;border-left:1px solid
 .profile-photo-editor strong{color:#9a2a57}
 .profile-photo-editor .muted{font-size:12px;line-height:1.55}
 .edit-profile-error{display:block;margin:10px 0}
+
+/* Classic Bebo 2007 profile layout — no member content, photos or skins are overwritten. */
+.bebo-2007-profile {
+  --bebo-paper:rgba(255,255,255,.97);
+  width:100%;max-width:100%;min-width:0;
+  padding:12px;border:1px solid var(--retro-primary,#ad2b57);
+  background:repeating-linear-gradient(90deg,#ffffff2c 0 3px,transparent 3px 22px),var(--retro-secondary,#f5dce5);
+  color:#2e2530;
+  box-shadow:0 4px 12px #572f472c;
+}
+.bebo-2007-profile .panel {
+  margin:0 0 12px;min-width:0;
+  border:1px solid #bf9bae;background:var(--bebo-paper);
+  box-shadow:0 2px 4px #2f17251b;
+}
+.bebo-2007-profile .panel h2 {
+  margin:0;padding:9px 11px;
+  font:bold 13px Verdana,Arial,sans-serif;
+  background:linear-gradient(to bottom,var(--retro-primary,#c83966),var(--retro-dark,#6b284c));
+  border-bottom:2px solid var(--retro-dark,#682043);color:#fff;
+  text-shadow:0 1px 1px #351e35;
+}
+.bebo-2007-profile .panel .body {padding:12px;background:var(--bebo-paper)}
+.bebo-2007-profile .profile-art.bebo-profile-cover {
+  display:flex;align-items:flex-end;justify-content:flex-start;
+  min-height:185px;margin:0;
+  padding:16px 24px;
+  border:3px solid #fff;
+  outline:1px solid var(--retro-dark,#6b284c);
+  background:var(--banner,linear-gradient(110deg,#ffcadc,#c03b6d,#6f2556));
+  background-position:center;background-size:cover;
+  overflow:hidden;isolation:isolate;position:relative;
+  box-shadow:inset 0 -70px 65px #250c2669;
+}
+.bebo-2007-profile .bebo-cover-copy {position:relative;z-index:1;text-align:left;overflow-wrap:anywhere}
+.bebo-2007-profile .bebo-cover-copy h1 {
+  margin:6px 0;font:700 clamp(25px,4vw,37px)/1.15 Georgia,Verdana,serif;
+  letter-spacing:.2px;color:white;text-shadow:0 2px 3px #32112b;
+}
+.bebo-cover-kicker,.bebo-cover-bottom {display:block;font:700 12px Verdana,Arial,sans-serif;letter-spacing:1px;color:#fff}
+.bebo-cover-bottom {font-style:italic;letter-spacing:.4px}
+.bebo-identity-strip {
+  display:grid;grid-template-columns:minmax(110px,1fr) minmax(0,1.8fr) auto;
+  align-items:center;gap:12px;
+  margin:9px 0 0;padding:10px 14px;
+  background:linear-gradient(#fff,#f9edf5);
+  border:1px solid #bca0af;border-left:5px solid var(--retro-primary,#c83966);
+  box-shadow:0 1px 0 #fff;
+}
+.bebo-nameplate {min-width:0}
+.bebo-nameplate strong {display:block;font:bold 22px Georgia,Verdana,serif;overflow-wrap:anywhere;color:var(--retro-dark,#64284b)}
+.bebo-nameplate>span {display:block;font:11px Verdana,Arial,sans-serif;color:#755b70;margin-top:4px}
+.bebo-status-line {min-width:0;overflow-wrap:anywhere}
+.bebo-current-mood {margin:0;color:#443845;font-size:12px;line-height:1.5}
+.bebo-current-mood span {display:block;font-size:10px;font-weight:bold;letter-spacing:.5px;color:#9e436c}
+.bebo-profile-actions {display:flex;gap:5px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+.bebo-profile-actions .bebo-profile-action,.bebo-profile-buttons .button {
+  padding:8px 10px;font:bold 11px Verdana,Arial,sans-serif;
+  background:linear-gradient(#fff,#f2e5ef);
+  border:1px solid #ba94aa;color:var(--retro-dark,#742b54);
+  text-decoration:none;white-space:normal;border-radius:2px;box-shadow:0 1px 1px #c8bbc6;
+}
+.bebo-profile-buttons {display:flex;flex-wrap:wrap;gap:5px}
+.bebo-mini-nav {
+  display:flex;gap:0;min-width:0;
+  margin:9px 0 14px;
+  border:1px solid #244764;
+  border-bottom:3px solid #254865;
+  background:linear-gradient(#6695b6,#33678e);
+  box-shadow:0 2px 0 #ffffff70;
+}
+.bebo-mini-nav a {
+  display:flex;align-items:center;justify-content:center;
+  flex:1;min-width:0;padding:10px 8px;
+  border-right:1px solid #c6d6e652;
+  color:#fff;font:700 12px Verdana,Arial,sans-serif;
+  text-decoration:none;white-space:nowrap;text-shadow:0 1px 1px #203b55;
+}
+.bebo-mini-nav a[aria-current="page"],.bebo-mini-nav a:hover,.bebo-mini-nav a:focus-visible {background:linear-gradient(#dd477c,#af2857);color:#fff}
+.bebo-profile-layout {
+  display:grid;grid-template-columns:235px minmax(0,1fr);
+  gap:13px;align-items:start;min-width:0;
+}
+.bebo-profile-sidebar,.bebo-profile-main {min-width:0}
+.bebo-profile-sidebar {display:block}
+.bebo-photo-frame {
+  display:grid;place-items:center;
+  min-height:195px;margin:2px 0 10px;padding:12px;
+  border:1px solid #c4b6bd;background:#fff;
+  box-shadow:inset 0 0 0 5px #f2ecf1;
+}
+.bebo-photo-frame>.avatar {display:grid;width:165px;height:165px;max-width:100%;margin:0;object-fit:contain;background:#fff;border:4px solid white;outline:1px solid #b6a0ac;box-shadow:0 2px 4px #aaa5}
+.bebo-photo-frame img.avatar {display:block}
+.bebo-profile-handle {margin:5px 0;color:#874160;font:700 12px Verdana,Arial,sans-serif;text-align:center}
+.bebo-profile-place {margin:7px 0;color:#665765;font-size:12px;text-align:center}
+.bebo-profile-about-module .bebo-about-text {
+  font-size:12px;line-height:1.65;
+  white-space:pre-wrap;overflow-wrap:anywhere;
+}
+.bebo-profile-about-module .bebo-about-meta {border-top:1px dotted #c9a6b7;margin-top:10px;padding-top:9px;font-size:12px}
+.bebo-profile-main>.retro-grid {margin:0;gap:12px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.bebo-profile-main .top16 {grid-template-columns:repeat(4,minmax(0,1fr))}
+.bebo-profile-main .top-slot {border:1px solid #d8b5c7;background:#fff;box-shadow:0 1px 2px #00000011}
+.bebo-profile-main .top-initial {width:35px;height:35px}
+.bebo-profile-main .big-luv {font:bold 22px Georgia,Verdana,serif;color:var(--retro-primary,#c13f73)}
+.bebo-profile-main .drawing-preview {height:auto;max-width:100%}
+.bebo-profile-main .classic-modules {gap:12px;margin-top:3px}
+.bebo-profile-main .classic-modules .panel {margin-bottom:12px}
+.bebo-profile-main .retro-grid .panel {margin-bottom:12px}
+@media(max-width:930px) and (min-width:701px) {
+ .bebo-profile-layout{grid-template-columns:200px minmax(0,1fr)}
+ .bebo-profile-main>.retro-grid{grid-template-columns:1fr}
+ .bebo-identity-strip{grid-template-columns:1fr 1.5fr}
+ .bebo-profile-actions{grid-column:1/-1;justify-content:flex-start}
+}
+@media(max-width:700px) {
+ .bebo-2007-profile{padding:6px}
+ .bebo-2007-profile .profile-art.bebo-profile-cover{min-height:142px;padding:12px 14px}
+ .bebo-2007-profile .bebo-cover-copy h1{font-size:clamp(21px,6vw,30px)}
+ .bebo-cover-kicker,.bebo-cover-bottom{font-size:10px;letter-spacing:0}
+ .bebo-identity-strip{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:10px;margin-top:8px}
+ .bebo-nameplate strong{font-size:22px}
+ .bebo-profile-actions{justify-content:flex-start}
+ .bebo-mini-nav{overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin}
+ .bebo-mini-nav a{flex:0 0 auto;padding:10px 12px;font-size:11px}
+ .bebo-profile-layout{display:flex;flex-direction:column;gap:0}
+ .bebo-profile-sidebar{display:contents}
+ .bebo-profile-photo-module{order:0;width:100%}
+ .bebo-profile-main{order:1;width:100%}
+ .bebo-profile-about-module{order:2;width:100%}
+ .bebo-profile-photo-module .panel .body{
+   display:grid;grid-template-columns:100px minmax(0,1fr);
+   grid-template-rows:auto auto auto;
+   align-items:center;column-gap:12px;padding:10px
+ }
+ .bebo-profile-photo-module .bebo-photo-frame{
+   grid-row:1 / 4;min-height:unset;margin:0;padding:6px;box-shadow:none
+ }
+ .bebo-profile-photo-module .bebo-photo-frame>.avatar{width:90px;height:90px;max-width:100%;object-fit:contain}
+ .bebo-profile-photo-module .bebo-profile-handle,
+ .bebo-profile-photo-module .bebo-profile-place{text-align:left;margin:3px 0;overflow-wrap:anywhere}
+ .bebo-profile-photo-module .panel .body>p:last-child{text-align:left;margin:5px 0}
+ .bebo-profile-main>.retro-grid{grid-template-columns:1fr}
+ .bebo-profile-main .classic-modules{grid-template-columns:1fr}
+ .bebo-profile-main .top16{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+ .bebo-profile-main .top-slot{font-size:10px}
+}
+@media(max-width:370px){
+ .bebo-profile-photo-module .panel .body{grid-template-columns:82px minmax(0,1fr);gap:8px}
+ .bebo-profile-photo-module .bebo-photo-frame>.avatar{width:74px;height:74px}
+ .bebo-profile-main .top-initial{width:30px;height:30px}
+}
+
 </style>
-<script type="module" src="./social.js?v=20261010-save-profile-photo-together"></script></head>
+<script type="module" src="./social.js?v=20261010-bebo-classic-profile-v1"></script></head>
 <body><header class="top"><div class="wrap head"><div class="brand">be<span>bo</span> ★</div><div><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p></div></div></header>
 <nav class="nav"><div class="wrap" id="nav"><button data-nav="home">Home</button><button data-nav="profile">My Profile</button><button data-nav="friends">Friends</button><button data-nav="photos">Photos</button><button data-nav="blogs">Blog</button><button data-nav="messages">Mail ✉</button><button data-nav="groups">Groups</button><button data-nav="other-half">Other Half ♥</button><button data-nav="skins">Skins</button><button data-nav="polls">Polls</button><button data-nav="quizzes">Quizzes</button><button data-nav="creators">Bands &amp; Authors</button><button data-nav="account">Account</button><button data-nav="safety">Safety &amp; Privacy</button><button data-nav="classic">Classic Demo</button></div></nav>
 <main id="app" class="wrap"><div class="panel hero"><h2>Welcome to Bebo ♥</h2><div class="body">Loading your profile…</div></div></main>
