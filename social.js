@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
+import { createRetro } from './nostalgia.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
 const configured=/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL||'')&&SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_');
@@ -27,6 +28,7 @@ const badge=p=>p?.avatar_path?'<img class="avatar" alt="Avatar" src="'+safe(sb.s
 const note=()=>message?`<div class="notice ${success?'good':'bad'}">${safe(message)}</div>`:'';
 const escapeError=e=>(e?.message||'Something went wrong. Please try again.').slice(0,240);
 async function query(table,fn){const q=fn(sb.from(table));const {data,error}=await q;if(error)throw error;return data}
+const retro=createRetro(sb,{safe,panel,btn,query});
 async function loadMine(){if(!me){profile=null;return}profile=await query('bebo_profiles',q=>q.select('*').eq('id',me.id).maybeSingle())}
 async function init(){
  if(!sb){render();return}
@@ -57,6 +59,8 @@ function editProfile(){return panel('Edit My Profile',`<form class="fields" data
  <label>About me<textarea name="bio" maxlength="2000">${safe(profile.bio)}</textarea></label>
  <label>Location<input name="location" maxlength="80" value="${safe(profile.location)}"></label>
  <label>Favourite music<input name="music" maxlength="120" value="${safe(profile.music)}"></label>
+ <label>Song file URL (HTTPS MP3, OGG, WAV, M4A or WebM)<input type="url" name="music_url" maxlength="500" value="${safe(profile.music_url||'')}" placeholder="https://example.com/music.mp3"></label>
+ <label>My Flashbox — YouTube video URL<input type="url" name="flashbox" maxlength="500" value="${profile.flashbox_video_id?'https://www.youtube.com/watch?v='+safe(profile.flashbox_video_id):''}" placeholder="https://www.youtube.com/watch?v=..."></label>
  <button class="button">Save profile</button></form>
  <hr><form class="fields" data-form="avatar"><label>Upload your profile photo (PNG/JPG/WebP, maximum 5MB)<input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" required></label><button class="button secondary">Upload photo</button></form>`)}
 async function showProfile(username){
@@ -79,6 +83,7 @@ async function showProfile(username){
   else if(rel.status==='pending'&&rel.addressee_id===me.id)friendAction=btn('Accept friend ♥','friend-accept',rel.id);
   else friendAction='<span class="muted">Friend request pending</span>';
  }
+ const extras=await retro.sharedPanel(who,me);
  const p1=panel('My Profile',`<div style="text-align:center">${badge(who)}<h3>${safe(who.display_name)}</h3><p>@${safe(who.username)}</p>${friendAction}<p class="muted">${safe(who.location)}</p></div><hr><strong>My Status:</strong><p>${safe(who.status)}</p><strong>About Me:</strong><p style="white-space:pre-wrap">${safe(who.bio)}</p><strong>Music:</strong><p>${safe(who.music)}</p>${own?btn('Edit profile','go','edit','secondary'):''}`);
  const fids=new Set(friendships.filter(f=>f.status==='accepted'&&(f.requester_id===who.id||f.addressee_id===who.id)).map(f=>f.requester_id===who.id?f.addressee_id:f.requester_id));
  const friendList=top.filter(t=>fids.has(t.id));
@@ -90,7 +95,7 @@ async function showProfile(username){
  <p style="white-space:pre-wrap">${safe(post.body)}</p>
  ${me&&(post.author_id===me.id||who.id===me.id)?btn('Delete','delete-post',post.id,'secondary'):''}
  ${me?btn('Report','report-post',post.id,'secondary'):''}</article>`).join(''):'<p class="muted">No comments yet. Be the first!</p>'}`);
- app.innerHTML=note()+`<div class="profile-art" style="--banner:${grad(who)}">${safe(who.display_name)} ★</div><div class="cols"><div>${p1}${p2}</div><div>${wall}</div></div>`;
+ app.innerHTML=note()+`<div class="profile-art" style="--banner:${safe(retro.imageStyle(who,grad(who)))}">${safe(who.display_name)} ★</div><div class="cols"><div>${p1}${p2}</div><div>${wall}</div></div>${extras}`;
 }
 async function showFriends(){
  const profiles=await query('bebo_profiles',q=>q.select('id,username,display_name,status,avatar_path').order('created_at',{ascending:false}).limit(80));
@@ -100,14 +105,14 @@ async function showFriends(){
  ${profiles.map(x=>`<div class="item"><a href="#/u/${encodeURIComponent(x.username)}"><strong>${safe(x.display_name)}</strong></a> <span class="muted">@${safe(x.username)}</span><p>${safe(x.status)}</p></div>`).join('')||'No profiles yet.'}`);
 }
 async function showSkins(){
- const saved=await query('bebo_skins',q=>q.select('id,name,primary_color,secondary_color,creator_id').order('created_at',{ascending:false}).limit(30));
+ const saved=await query('bebo_skins',q=>q.select('id,name,primary_color,secondary_color,creator_id,banner_path').order('created_at',{ascending:false}).limit(30));
  const cards=skins.map(x=>`<button class="skin" data-action="use-skin" data-id="${x[0]}"><div class="swatch" style="background:linear-gradient(120deg,${x[2]},${x[3]},${x[4]})"></div><strong>${safe(x[1])}</strong></button>`).join('');
  const userSkins=saved.map(x=>`<button class="skin" data-action="use-shared-skin" data-id="${x.id}"><div class="swatch" style="background:linear-gradient(120deg,${x.secondary_color},${x.primary_color})"></div><strong>${safe(x.name)}</strong></button>`).join('');
  app.innerHTML=note()+panel('Skin Gallery ♥',`<p>Click any skin to apply it to your public profile.</p><div class="skin-grid">${cards}</div><h3>Community skins</h3><div class="skin-grid">${userSkins||'<p class="muted">Be the first to share a skin!</p>'}</div>`)
  +(me&&profile?panel('Create & Share Your Own Skin',`<form class="fields" data-form="skin">
  <label>Skin name<input name="name" maxlength="70" required placeholder="My amazing skin"></label>
  <label>Main colour<input name="primary" type="color" value="#c52d61"></label>
- <label>Second colour<input name="secondary" type="color" value="#f5b2ce"></label>
+ <label>Second colour<input name="secondary" type="color" value="#f5b2ce"></label><label>Optional banner picture (PNG, JPG, WebP — maximum 5 MB)<input type="file" name="banner" accept="image/png,image/jpeg,image/webp"></label>
  <button class="button">Save & share skin ♥</button></form>`):'');
 }
 async function refresh(){
@@ -120,13 +125,14 @@ async function refresh(){
  switch(page){
  case 'profile':await showProfile();break;
  case 'friends':await showFriends();break;
+ case 'polls':case 'quizzes':case 'creators':app.innerHTML=note()+await retro.route(page,me);break;
  case 'skins':await showSkins();break;
  case 'edit':app.innerHTML=note()+editProfile();break;
  case 'account':app.innerHTML=note()+panel('Your Bebo Account',`<p>Signed in as ${safe(me.email)}</p>${btn('Log out','logout')}<p>To delete your account and personal data, contact the site administrator. A self-service deletion workflow is required before a wider public launch.</p>`);break;
  default:app.innerHTML=note()+welcome();
  }
 }
-function render(){refresh().catch(e=>{app.innerHTML=note()+panel('Could not load this page',safe(escapeError(e))+'<p><a href="#/home">Return home</a></p>')})}
+function render(){refresh().then(()=>retro.afterRender()).catch(e=>{app.innerHTML=note()+panel('Could not load this page',safe(escapeError(e))+'<p><a href="#/home">Return home</a></p>')})}
 document.querySelector('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-nav]');if(!b)return;location.href=b.dataset.nav==='classic'?'./classic.html':'#/'+b.dataset.nav;render()});
 window.addEventListener('hashchange',()=>{message='';render()});
 document.addEventListener('submit',async e=>{
@@ -147,7 +153,12 @@ document.addEventListener('submit',async e=>{
   await query('bebo_profiles',q=>q.insert({id:me.id,username,display_name:clamp(d.get('display_name'),60)}));
   await loadMine();message='Your Bebo profile is ready ♥';success=true;location.hash='#/profile';
  }else if(type==='edit-profile'){
-  await query('bebo_profiles',q=>q.update({display_name:clamp(d.get('display_name'),60),status:clamp(d.get('status'),180),bio:clamp(d.get('bio'),2000),location:clamp(d.get('location'),80),music:clamp(d.get('music'),120)}).eq('id',me.id));
+  const musicUrl=String(d.get('music_url')||'').trim();
+  const flashInput=String(d.get('flashbox')||'').trim();
+  if(musicUrl&&!retro.audioUrl(musicUrl))throw Error('Enter a direct HTTPS audio file URL ending in MP3, OGG, WAV, M4A or WebM.');
+  const videoId=flashInput?retro.youtubeId(flashInput):'';
+  if(flashInput&&!videoId)throw Error('Enter a valid YouTube video URL for your Flashbox.');
+  await query('bebo_profiles',q=>q.update({display_name:clamp(d.get('display_name'),60),status:clamp(d.get('status'),180),bio:clamp(d.get('bio'),2000),location:clamp(d.get('location'),80),music:clamp(d.get('music'),120),music_url:musicUrl,flashbox_video_id:videoId}).eq('id',me.id));
   await loadMine();message='Profile updated ♥';success=true;location.hash='#/profile';
  }else if(type==='wall'){
   if(!me||!userViewed)throw Error('Log in first.');const body=clamp(d.get('body'),1200);
@@ -156,8 +167,10 @@ document.addEventListener('submit',async e=>{
   message='Your comment was posted ♥';success=true;
  }else if(type==='skin'){
   const primary=String(d.get('primary')),secondary=String(d.get('secondary'));
-  const rows=await query('bebo_skins',q=>q.insert({creator_id:me.id,name:clamp(d.get('name'),70),primary_color:primary,secondary_color:secondary}).select().single());
-  await query('bebo_profiles',q=>q.update({skin:'custom',skin_primary:rows.primary_color,skin_secondary:rows.secondary_color}).eq('id',me.id));
+  const bannerFile=d.get('banner');
+  const bannerPath=await retro.uploadBanner(bannerFile,me.id);
+  const rows=await query('bebo_skins',q=>q.insert({creator_id:me.id,name:clamp(d.get('name'),70),primary_color:primary,secondary_color:secondary,banner_path:bannerPath}).select().single());
+  await query('bebo_profiles',q=>q.update({skin:'custom',skin_primary:rows.primary_color,skin_secondary:rows.secondary_color,skin_banner_path:bannerPath}).eq('id',me.id));
   await loadMine();message='Your skin is saved and shared ♥';success=true;
  }else if(type==='avatar'){
   const file=d.get('avatar');if(!(file instanceof File)||!file.size)throw Error('Choose a photo.');
@@ -166,6 +179,8 @@ document.addEventListener('submit',async e=>{
   const {error}=await sb.storage.from('bebo-avatars').upload(path,file,{contentType:file.type,upsert:false});if(error)throw error;
   await query('bebo_profiles',q=>q.update({avatar_path:path}).eq('id',me.id));await loadMine();
   message='New profile photo uploaded ♥';success=true;location.hash='#/profile';
+ }else if(type.startsWith('retro-')){
+  message=await retro.form(type,d,{me,profile,userViewed});success=true;
  }
  }catch(err){message=escapeError(err);success=false}finally{f.dataset.busy='';if(b)b.disabled=false;render()}
 });
@@ -174,15 +189,17 @@ document.addEventListener('click',async e=>{
  const a=b.dataset.action,id=b.dataset.id;
  try{
  if(a==='go'){location.hash='#/'+id;return}
- if(a==='logout'){await sb.auth.signOut();me=null;profile=null;message='You are signed out.';location.hash='#/home'}
+ if(a==='retro-clear'){retro.clear();return}
+ if(a.startsWith('retro-')){message=await retro.action(a,id,{me,profile,userViewed});success=true}
+ else if(a==='logout'){await sb.auth.signOut();me=null;profile=null;message='You are signed out.';location.hash='#/home'}
  else if(a==='reset'){const email=prompt('Enter your account email');if(!email)return;const {error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo:location.origin+location.pathname});if(error)throw error;message='Check your email for the password reset link.';success=true}
  else if(a==='friend-request'){await query('bebo_friendships',q=>q.insert({requester_id:me.id,addressee_id:id}));message='Friend request sent ♥';success=true}
  else if(a==='friend-accept'||a==='friend-decline'){await query('bebo_friendships',q=>q.update({status:a==='friend-accept'?'accepted':'declined'}).eq('id',id));message=a==='friend-accept'?'Friend added ♥':'Request declined';success=true}
  else if(a==='friend-remove'){await query('bebo_friendships',q=>q.delete().eq('id',id));message='Friend removed';success=true}
  else if(a==='delete-post'){await query('bebo_wall_posts',q=>q.delete().eq('id',id));message='Comment deleted';success=true}
  else if(a==='report-post'){const reason=prompt('Why are you reporting this comment? (minimum 10 characters)');if(!reason)return;if(reason.trim().length<10)throw Error('Please give a little more information.');await query('bebo_reports',q=>q.insert({reporter_id:me.id,reported_post_id:id,reason:clamp(reason,1000)}));message='Your report was submitted for review.';success=true}
- else if(a==='use-skin'){if(!profile)throw Error('Create a profile first.');await query('bebo_profiles',q=>q.update({skin:id}).eq('id',me.id));await loadMine();message='Skin applied ♥';success=true}
- else if(a==='use-shared-skin'){if(!profile)throw Error('Create a profile first.');const row=await query('bebo_skins',q=>q.select('*').eq('id',id).single());await query('bebo_profiles',q=>q.update({skin:'custom',skin_primary:row.primary_color,skin_secondary:row.secondary_color}).eq('id',me.id));await loadMine();message='Community skin applied ♥';success=true}
+ else if(a==='use-skin'){if(!profile)throw Error('Create a profile first.');await query('bebo_profiles',q=>q.update({skin:id,skin_banner_path:''}).eq('id',me.id));await loadMine();message='Skin applied ♥';success=true}
+ else if(a==='use-shared-skin'){if(!profile)throw Error('Create a profile first.');const row=await query('bebo_skins',q=>q.select('*').eq('id',id).single());await query('bebo_profiles',q=>q.update({skin:'custom',skin_primary:row.primary_color,skin_secondary:row.secondary_color,skin_banner_path:row.banner_path||''}).eq('id',me.id));await loadMine();message='Community skin applied ♥';success=true}
  }catch(err){message=escapeError(err);success=false}
  render();
 });
