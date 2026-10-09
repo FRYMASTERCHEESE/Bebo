@@ -51,15 +51,14 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
   }
   async function analytics(){
     const days=7,from=new Date(Date.now()-days*864e5).toISOString();
-    const [profiles,wall,blogs,photos,skins,groups,accepted]=await Promise.all([
+    const [profiles,wall,blogs,photos,skins,groups]=await Promise.all([
       count('bebo_profiles','created_at',from),
       count('bebo_wall_posts','created_at',from),
       count('bebo_blogs','created_at',from),
       count('bebo_photos','created_at',from),
       count('bebo_skins','created_at',from),
-      count('bebo_groups'),request(sb.from('bebo_friendships').select('id',{count:'exact',head:true}).eq('status','accepted'))
+      count('bebo_groups')
     ]);
-    // Supabase head requests return no rows; counts are queried separately below.
     const {count:connections,error:friendError}=await sb.from('bebo_friendships').select('id',{count:'exact',head:true}).eq('status','accepted');
     if(friendError)throw friendError;
     const items=[
