@@ -249,7 +249,7 @@ export function createRetro(sb, helpers) {
       '<div class="retro-play-empty"><span aria-hidden="true">'+(quiz?'❓ ★ ♥':'♥ ★ ♥')+'</span>'+
       '<h3>No '+(quiz?'quizzes':'polls')+' yet!</h3>'+
       '<p>Be the first to start something fun. Your question could become the next Bebo favourite.</p>'+
-      (me?'<a href="#retro-create" class="retro-play-start">✎ Create the first '+word+' ♥</a>':
+      (me?'<button type="button" class="retro-play-start" data-action="retro-play-scroll">✎ Create the first '+word+' ♥</button>':
        '<a href="#/account" class="retro-play-start">♥ Join Bebo to get started</a>')+'</div>';
     return '<div class="retro-play-page">'+header+navigation+
       '<div class="retro-play-columns"><div class="retro-play-feed">'+
