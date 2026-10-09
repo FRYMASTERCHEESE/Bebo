@@ -239,7 +239,7 @@ async function refreshBeboAnnouncement(){
   if(!setting?.enabled||!latest.length){strip.hidden=true;strip.innerHTML='';return}
   const item=latest[0];
   const fullText=String(item.body||'').trim();
-  const oneLine=fullText.replace(/\\s+/g,' ').trim();
+  const oneLine=fullText.replace(/\s+/g,' ').trim();
   const shortText=Array.from(oneLine).slice(0,175).join('');
   const hasMore=Array.from(oneLine).length>175;
   const teaser=shortText+(hasMore?'…':'');
