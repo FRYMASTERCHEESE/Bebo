@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
-import { createRetro } from './nostalgia.js';
+import { createRetro } from './nostalgia.js?v=20261010-polls-quizzes-v2';
 import { createSafety } from './safety.js';
 import { createClassic } from './classic-modules.js?v=20261010-classic-home-v2';
 import { createAdmin } from './admin.js?v=20261010-owner-me-fix';
@@ -336,7 +336,7 @@ document.addEventListener('submit',async e=>{
  }
  }catch(err){message=escapeError(err);success=false}finally{
   f.dataset.busy='';if(b)b.disabled=false;
-  if((type==='edit-profile'||type.startsWith('admin-'))&&!success){
+  if((type==='edit-profile'||type.startsWith('admin-')||type==='retro-poll-create'||type==='retro-quiz-create')&&!success){
     let notice=f.querySelector('.edit-profile-error');
     if(!notice){notice=document.createElement('p');notice.className='notice bad edit-profile-error';notice.setAttribute('role','alert');f.prepend(notice);}
     notice.textContent=message;
@@ -355,6 +355,8 @@ document.addEventListener('click',async e=>{
  }
  if(a==='skin-filter'){filterSkins(id);return}
  if(a==='skin-preview'){const preset=skins.find(s=>s[0]===id);if(preset){const target=document.querySelector('#skin-tryout');if(target)target.innerHTML=bigSkinPreview(preset)}return}
+ if(a==='retro-play-example'){retro.fillPollExample(id==='quiz');return}
+ if(a==='retro-play-scroll'){document.querySelector('#retro-create')?.scrollIntoView({behavior:'smooth',block:'start'});document.querySelector('#retro-play-question')?.focus({preventScroll:true});return}
  if(a==='retro-clear'){retro.clear();return}
  if(a.startsWith('classic-')){message=await classic.action(a,id,{me,profile,userViewed});success=true}
  if(a.startsWith('safety-')){message=await safety.action(a,id,{me,profile,userViewed});success=true}
