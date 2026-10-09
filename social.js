@@ -2,13 +2,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import { createRetro } from './nostalgia.js';
 import { createSafety } from './safety.js';
 import { createClassic } from './classic-modules.js';
+import { createAdmin } from './admin.js';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
 const configured=/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL||'')&&SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_');
 const sb=configured?createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
 const BEBO_SITE_URL='https://frymastercheese.github.io/Bebo/'; // Must also be added under Supabase Auth > URL Configuration.
-let me=null, profile=null, page='home', userViewed=null, message='', success=false;
+let me=null, profile=null, page='home', userViewed=null, message='', success=false, adminAccess=null;
 
 const safe=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const clamp=(s,n)=>String(s??'').trim().slice(0,n);
@@ -26,6 +27,7 @@ async function query(table,fn){const q=fn(sb.from(table));const {data,error}=awa
 const retro=createRetro(sb,{safe,panel,btn,query});
 const safety=createSafety(sb,{safe,panel,btn,query});
 const classic=createClassic(sb,{safe,panel,btn,query});
+const admin=createAdmin(sb,{safe,panel});
 async function loadMine(){if(!me){profile=null;return}profile=await query('bebo_profiles',q=>q.select('*').eq('id',me.id).maybeSingle())}
 async function init(){
  if(!sb){render();return}
