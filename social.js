@@ -221,8 +221,8 @@ function syncAdminNav(){
  let tab=nav.querySelector('[data-nav="admin"]');
  if(adminAccess&&!tab){
   tab=document.createElement('button');tab.type='button';tab.dataset.nav='admin';tab.textContent='★ Admin Panel';
-  const account=nav.querySelector('[data-nav="account"]');
-  if(account)nav.insertBefore(tab,account);else nav.append(tab);
+  const profileLink=nav.querySelector('[data-nav="profile"]');
+  if(profileLink)nav.insertBefore(tab,profileLink);else nav.append(tab);
  }else if(!adminAccess&&tab)tab.remove();
 }
 function render(){syncAdminNav();refresh().then(()=>retro.afterRender()).catch(e=>{app.innerHTML=note()+panel('Could not load this page',safe(escapeError(e))+'<p><a href="#/home">Return home</a></p>')})}
