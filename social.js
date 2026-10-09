@@ -2,26 +2,18 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import { createRetro } from './nostalgia.js';
 import { createSafety } from './safety.js';
 import { createClassic } from './classic-modules.js';
+import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
 const configured=/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL||'')&&SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_');
 const sb=configured?createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
 let me=null, profile=null, page='home', userViewed=null, message='', success=false;
-const skins=[
-['classic','Pretty in Pink','#f9a4c1','#d12f6a','#682655'],
-['glitter','Glitter Girl','#d7a1f4','#8a2ca1','#3a1859'],
-['emo','Emo Hearts','#2c2934','#a32644','#14121b'],
-['ocean','Summer Blue','#a2e5ed','#2396d1','#093e65'],
-['sunset','Summer Love','#ffcd72','#ee734f','#9b2c74'],
-['mint','Flower Power','#ceec9e','#68bca1','#365d66'],
-['ruby','Red Roses','#f9879b','#bc3048','#56213a'],
-['cloud','Blue Clouds','#d2e4ff','#91ace0','#456eab']
-];
+
 const safe=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const clamp=(s,n)=>String(s??'').trim().slice(0,n);
 const time=s=>new Date(s).toLocaleString('en-NZ',{dateStyle:'medium',timeStyle:'short'});
-const grad=p=>p?.skin==='custom'?`linear-gradient(120deg,${p.skin_secondary},${p.skin_primary},#522b5b)`:
-  (()=>{const x=skins.find(s=>s[0]===(p?.skin||'classic'))||skins[0];return `linear-gradient(120deg,${x[2]},${x[3]},${x[4]})`;})();
+const grad=p=>p?.skin==='custom'?`linear-gradient(125deg,${p.skin_secondary},${p.skin_primary},#522b5b)`:skinArtwork(getSkin(p?.skin));
+let activeSkinCategory='All';
 const btn=(label,action,id='',extra='')=>`<button class="button ${extra}" data-action="${action}" data-id="${safe(id)}">${label}</button>`;
 const panel=(title,html)=>`<section class="panel"><h2>${title}</h2><div class="body">${html}</div></section>`;
 const report=(txt,ok=false)=>{message=txt;success=ok;render()};
@@ -102,10 +94,10 @@ async function showProfile(username){
  <p style="white-space:pre-wrap">${safe(post.body)}</p>
  ${me&&(post.author_id===me.id||who.id===me.id)?btn('Delete','delete-post',post.id,'secondary'):''}
  ${me?btn('Report','report-post',post.id,'secondary'):''}</article>`).join(''):'<p class="muted">No comments yet. Be the first!</p>'}`);
- const skinPreset=skins.find(s=>s[0]===(who.skin||'classic'))||skins[0];
+ const skinPreset=getSkin(who.skin);
  const themePrimary=who.skin==='custom'&&/^#[0-9a-fA-F]{6}$/.test(who.skin_primary)?who.skin_primary:skinPreset[3];
  const themeSecondary=who.skin==='custom'&&/^#[0-9a-fA-F]{6}$/.test(who.skin_secondary)?who.skin_secondary:skinPreset[2];
- app.innerHTML=note()+`<div class="themed-profile" style="--retro-primary:${safe(themePrimary)};--retro-secondary:${safe(themeSecondary)}"><div class="profile-art" style="--banner:${safe(retro.imageStyle(who,grad(who)))}">${safe(who.display_name)} ★</div><div class="cols"><div>${p1}</div><div>${wall}</div></div>${classicExtras}${extras}</div>`;
+ app.innerHTML=note()+`<div class="themed-profile" style="--retro-primary:${safe(themePrimary)};--retro-secondary:${safe(themeSecondary)};--retro-dark:${safe(skinPreset[4])}"><div class="profile-art" data-decor="${safe(skinPreset[7])}" style="--banner:${safe(retro.imageStyle(who,grad(who)))}">${safe(who.display_name)} ★</div><div class="cols"><div>${p1}</div><div>${wall}</div></div>${classicExtras}${extras}</div>`;
 }
 async function showFriends(){
  const profiles=await query('bebo_profiles',q=>q.select('id,username,display_name,status,avatar_path').order('created_at',{ascending:false}).limit(80));
@@ -117,16 +109,40 @@ async function showFriends(){
  ${displayRequests.length?'<h3>Friend requests</h3>'+displayRequests.map(x=>`<div class="item">Someone sent you a friend request ${btn('Accept','friend-accept',x.id)} ${btn('Decline','friend-decline',x.id,'secondary')}</div>`).join('')+'<hr>':''}
  ${displayProfiles.map(x=>`<div class="item"><a href="#/u/${encodeURIComponent(x.username)}"><strong>${safe(x.display_name)}</strong></a> <span class="muted">@${safe(x.username)}</span><p>${safe(x.status)}</p></div>`).join('')||'No profiles yet.'}`);
 }
+function miniSkin(s){
+ return `<div class="skin-mini"><div class="skin-mini-banner" style="background:${safe(skinArtwork(s))}" data-motif="${safe(s[7])}"><span>my bebo ★</span></div><div class="skin-mini-layout"><div class="skin-mini-avatar">♥</div><div class="skin-mini-lines"><span></span><span></span></div><div class="skin-mini-blocks"><span style="background:${safe(s[3])}"></span><span style="background:${safe(s[2])}"></span></div></div></div>`;
+}
+function bigSkinPreview(x){
+ return `<div class="skin-tryout"><div class="skin-tryout-banner" data-motif="${safe(x[7])}" style="background:${safe(skinArtwork(x))}"><strong>your bebo ★</strong></div><div class="skin-tryout-flex"><div class="skin-tryout-left"><div class="skin-tryout-avatar">♥</div><span>your photo</span></div><div class="skin-tryout-main"><div class="skin-tryout-bar" style="background:${safe(x[3])}">my profile ♥</div><p>your status goes here...</p><div class="skin-tryout-bar" style="background:${safe(x[4])}">my top 16</div><p>friends • luv • whiteboard</p></div></div><p class="skin-tryout-caption"><strong>${safe(x[1])}</strong> <span>${safe(x[5])}</span></p></div>`;
+}
 async function showSkins(){
- const saved=await query('bebo_skins',q=>q.select('id,name,primary_color,secondary_color,creator_id,banner_path').order('created_at',{ascending:false}).limit(30));
- const cards=skins.map(x=>`<button class="skin" data-action="use-skin" data-id="${x[0]}"><div class="swatch" style="background:linear-gradient(120deg,${x[2]},${x[3]},${x[4]})"></div><strong>${safe(x[1])}</strong></button>`).join('');
- const userSkins=saved.map(x=>`<button class="skin" data-action="use-shared-skin" data-id="${x.id}"><div class="swatch" style="background:${safe(retro.imageStyle({skin_banner_path:x.banner_path},`linear-gradient(120deg,${x.secondary_color},${x.primary_color})`))}"></div><strong>${safe(x.name)}</strong></button>`).join('');
- app.innerHTML=note()+panel('Skin Gallery ♥',`<p>Click any skin to apply it to your public profile.</p><div class="skin-grid">${cards}</div><h3>Community skins</h3><div class="skin-grid">${userSkins||'<p class="muted">Be the first to share a skin!</p>'}</div>`)
+ const saved=await query('bebo_skins',q=>q.select('id,name,primary_color,secondary_color,creator_id,banner_path').order('created_at',{ascending:false}).limit(50));
+ const categories=skinCategories.map(c=>`<button type="button" class="skin-filter ${c===activeSkinCategory?'active':''}" data-action="skin-filter" data-id="${safe(c)}" aria-pressed="${c===activeSkinCategory}">${safe(c)}</button>`).join('');
+ const cards=skins.map(x=>`<div class="skin skin-card" data-category="${safe(x[5])}" data-name="${safe(x[1].toLowerCase())}"><button type="button" class="skin-preview-button" data-action="skin-preview" data-id="${safe(x[0])}" aria-label="Preview ${safe(x[1])}">${miniSkin(x)}<strong>${safe(x[1])}</strong><span class="skin-category-name">${safe(x[5])}</span></button><button type="button" class="button skin-use-button" data-action="use-skin" data-id="${safe(x[0])}">Use skin ♥</button></div>`).join('');
+ const userSkins=saved.map(x=>`<button type="button" class="skin" data-action="use-shared-skin" data-id="${safe(x.id)}"><div class="swatch" style="background:${safe(retro.imageStyle({skin_banner_path:x.banner_path},`linear-gradient(120deg,${x.secondary_color},${x.primary_color})`))}"></div><strong>${safe(x.name)}</strong></button>`).join('');
+ const memberPrompt=!me?'<p class="muted">You can browse and preview every skin for free. Log in to apply one to your own profile.</p>':'<p class="muted">Preview any skin below, then press Use skin to save it to your Bebo profile.</p>';
+ app.innerHTML=note()+panel('Bebo Skin Gallery ★',`<div class="skins-intro"><div><strong>★ ${skins.length} old-school inspired profile skins</strong><p>Emo hearts, glitter, scene queen, pink princess, butterflies, summer love and more. Choose your look, just like the 2000s.</p></div><span>pick your mood ♥</span></div>${memberPrompt}<div class="skin-controls"><label class="skin-search-label" for="skin-search">Find your perfect skin <input id="skin-search" type="search" placeholder="Try emo, pink, glitter or rock..." autocomplete="off"></label><span id="skin-count" class="muted">${skins.length} skins</span></div><div class="skin-filters">${categories}</div><div id="skin-tryout">${bigSkinPreview(skins[0])}</div><div id="skin-gallery" class="skin-grid">${cards}</div>`)
+ +panel('Community Skin Designs ♥',`<p>Real members can upload their own banner image and share coloured skins with the community.</p><div class="skin-grid">${userSkins||'<p class="muted">Be the first to share a skin!</p>'}</div>`)
  +(me&&profile?panel('Create & Share Your Own Skin',`<form class="fields" data-form="skin">
  <label>Skin name<input name="name" maxlength="70" required placeholder="My amazing skin"></label>
  <label>Main colour<input name="primary" type="color" value="#c52d61"></label>
  <label>Second colour<input name="secondary" type="color" value="#f5b2ce"></label><label>Optional banner picture (PNG, JPG, WebP — maximum 5 MB)<input type="file" name="banner" accept="image/png,image/jpeg,image/webp"></label>
  <button class="button">Save & share skin ♥</button></form>`):'');
+ filterSkins();
+}
+function filterSkins(category){
+ if(category&&skinCategories.includes(category))activeSkinCategory=category;
+ const text=(document.querySelector('#skin-search')?.value||'').toLowerCase().trim();
+ let showing=0;
+ document.querySelectorAll('#skin-gallery .skin-card').forEach(el=>{
+   const visible=(activeSkinCategory==='All'||el.dataset.category===activeSkinCategory)&&(!text||el.dataset.name.includes(text)||el.dataset.category.toLowerCase().includes(text));
+   el.hidden=!visible;if(visible)showing++;
+ });
+ document.querySelectorAll('.skin-filter').forEach(b=>{
+   const on=b.dataset.id===activeSkinCategory;
+   b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));
+ });
+ const count=document.querySelector('#skin-count');if(count)count.textContent=`${showing} of ${skins.length} skins`;
 }
 function safetyInfoPage(){
  return panel('Bebo Community Rules & Privacy',`<p><strong>Be respectful.</strong> No bullying, harassment, hate, threats, sexual exploitation, impersonation, scams, malware or sharing someone else's private information.</p>
@@ -143,6 +159,7 @@ async function refresh(){
  if(!configured){app.innerHTML=note()+authPage();return}
  if(page==='safety'){app.innerHTML=note()+safetyInfoPage();return}
  if(!me){
+  if(page==='skins'){await showSkins();return}
   if(['polls','quizzes','creators'].includes(page)){app.innerHTML=note()+await retro.route(page,null);return}
   if(page==='photos'||page.startsWith('photos/')||page.startsWith('album/')||
      page==='blogs'||page.startsWith('blogs/')||page.startsWith('blog/')||page==='groups'){
@@ -169,7 +186,8 @@ async function refresh(){
 }
 function render(){refresh().then(()=>retro.afterRender()).catch(e=>{app.innerHTML=note()+panel('Could not load this page',safe(escapeError(e))+'<p><a href="#/home">Return home</a></p>')})}
 document.querySelector('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-nav]');if(!b)return;location.href=b.dataset.nav==='classic'?'./classic.html':'#/'+b.dataset.nav;render()});
-window.addEventListener('hashchange',()=>{message='';render()});
+window.addEventListener('hashchange',()=>{message='';activeSkinCategory='All';render()});
+document.addEventListener('input',e=>{if(e.target?.id==='skin-search')filterSkins()});
 document.addEventListener('submit',async e=>{
  const f=e.target.closest('form[data-form]');if(!f)return;e.preventDefault();
  if(f.dataset.busy)return;f.dataset.busy='1';const b=f.querySelector('button');if(b)b.disabled=true;
@@ -231,6 +249,8 @@ document.addEventListener('click',async e=>{
  const a=b.dataset.action,id=b.dataset.id;
  try{
  if(a==='go'){location.hash='#/'+id;return}
+ if(a==='skin-filter'){filterSkins(id);return}
+ if(a==='skin-preview'){const preset=skins.find(s=>s[0]===id);if(preset){const target=document.querySelector('#skin-tryout');if(target)target.innerHTML=bigSkinPreview(preset)}return}
  if(a==='retro-clear'){retro.clear();return}
  if(a.startsWith('classic-')){message=await classic.action(a,id,{me,profile,userViewed});success=true}
  if(a.startsWith('safety-')){message=await safety.action(a,id,{me,profile,userViewed});success=true}
@@ -242,7 +262,7 @@ document.addEventListener('click',async e=>{
  else if(a==='friend-remove'){await query('bebo_friendships',q=>q.delete().eq('id',id));message='Friend removed';success=true}
  else if(a==='delete-post'){await query('bebo_wall_posts',q=>q.delete().eq('id',id));message='Comment deleted';success=true}
  else if(a==='report-post'){const reason=prompt('Why are you reporting this comment? (minimum 10 characters)');if(!reason)return;if(reason.trim().length<10)throw Error('Please give a little more information.');await query('bebo_reports',q=>q.insert({reporter_id:me.id,reported_post_id:id,reason:clamp(reason,1000)}));message='Your report was submitted for review.';success=true}
- else if(a==='use-skin'){if(!profile)throw Error('Create a profile first.');await query('bebo_profiles',q=>q.update({skin:id,skin_banner_path:''}).eq('id',me.id));await loadMine();message='Skin applied ♥';success=true}
+ else if(a==='use-skin'){if(!me||!profile)throw Error('Sign in and create a profile to use this skin.');if(!skins.some(x=>x[0]===id))throw Error('Unknown skin.');await query('bebo_profiles',q=>q.update({skin:id,skin_banner_path:''}).eq('id',me.id));await loadMine();message='Skin applied to your public Bebo profile ♥';success=true}
  else if(a==='use-shared-skin'){if(!profile)throw Error('Create a profile first.');const row=await query('bebo_skins',q=>q.select('*').eq('id',id).single());await query('bebo_profiles',q=>q.update({skin:'custom',skin_primary:row.primary_color,skin_secondary:row.secondary_color,skin_banner_path:row.banner_path||''}).eq('id',me.id));await loadMine();message='Community skin applied ♥';success=true}
  }catch(err){message=escapeError(err);success=false}
  render();
