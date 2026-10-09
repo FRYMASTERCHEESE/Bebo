@@ -28,7 +28,7 @@ const retro=createRetro(sb,{safe,panel,btn,query});
 const safety=createSafety(sb,{safe,panel,btn,query});
 const classic=createClassic(sb,{safe,panel,btn,query});
 const admin=createAdmin(sb,{safe,panel});
-async function loadMine(){if(!me){profile=null;return}profile=await query('bebo_profiles',q=>q.select('*').eq('id',me.id).maybeSingle());adminAccess=await admin.check(me)}
+async function loadMine(){if(!me){profile=null;adminAccess=null;return}profile=await query('bebo_profiles',q=>q.select('*').eq('id',me.id).maybeSingle());adminAccess=await admin.check(me)}
 async function init(){
  if(!sb){render();return}
  try{
