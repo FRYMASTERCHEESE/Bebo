@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import { createRetro } from './nostalgia.js';
+import { createSafety } from './safety.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
 const configured=/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL||'')&&SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_');
@@ -29,6 +30,7 @@ const note=()=>message?`<div class="notice ${success?'good':'bad'}">${safe(messa
 const escapeError=e=>(e?.message||'Something went wrong. Please try again.').slice(0,240);
 async function query(table,fn){const q=fn(sb.from(table));const {data,error}=await q;if(error)throw error;return data}
 const retro=createRetro(sb,{safe,panel,btn,query});
+const safety=createSafety(sb,{safe,panel,btn,query});
 async function loadMine(){if(!me){profile=null;return}profile=await query('bebo_profiles',q=>q.select('*').eq('id',me.id).maybeSingle())}
 async function init(){
  if(!sb){render();return}
@@ -44,7 +46,7 @@ function authPage(){
  return panel('Join Bebo — it’s free! ♥',`<div class="cols"><div>${panel('Create your account',`<form class="fields" data-form="signup">
  <label>Email address<input type="email" name="email" required maxlength="254" autocomplete="email"></label>
  <label>Password (12 characters minimum)<input type="password" name="password" required minlength="12" maxlength="128" autocomplete="new-password"></label>
- <button class="button">Join Bebo ♥</button></form><p class="muted">You may need to confirm your email first. Do not use your old Bebo password.</p>`)}</div>
+ <label><input type="checkbox" name="adult" required> I confirm I am 18 or older and agree to the <a href="#/safety">community rules and privacy information</a>.</label><button class="button">Join Bebo ♥</button></form><p class="muted">You may need to confirm your email first. Do not use your old Bebo password.</p>`)}</div>
  <div>${panel('Already a member?',`<form class="fields" data-form="login"><label>Email<input type="email" name="email" required autocomplete="email"></label><label>Password<input type="password" name="password" required autocomplete="current-password"></label><button class="button">Log in</button></form><p><a href="#" data-action="reset">Forgot password?</a></p>`)}</div></div>`);
 }
 function welcome(){return panel('Welcome back to Bebo ♥',`<p>Your favourite Bebo features are here: the Top 16, three Luv a day, colourful custom skins, Whiteboards, music, Flashboxes, quizzes, polls, Bands and Authors.</p>
@@ -83,10 +85,15 @@ async function showProfile(username){
   else if(rel.status==='pending'&&rel.addressee_id===me.id)friendAction=btn('Accept friend ♥','friend-accept',rel.id);
   else friendAction='<span class="muted">Friend request pending</span>';
  }
- const extras=await retro.sharedPanel(who,me);
- const p1=panel('My Profile',`<div style="text-align:center">${badge(who)}<h3>${safe(who.display_name)}</h3><p>@${safe(who.username)}</p>${friendAction}<p class="muted">${safe(who.location)}</p></div><hr><strong>My Status:</strong><p>${safe(who.status)}</p><strong>About Me:</strong><p style="white-space:pre-wrap">${safe(who.bio)}</p><strong>Music:</strong><p>${safe(who.music)}</p>${own?btn('Edit profile','go','edit','secondary'):''}`);
- const form=me?`<form data-form="wall" class="fields"><textarea name="body" maxlength="1200" required placeholder="Leave ${safe(who.display_name)} a comment ♥"></textarea><button class="button">Post comment</button></form>`:'<p><a href="#/account">Log in</a> to leave a comment.</p>';
- const wall=panel('My Wall — Leave Me a Comment ♥',`${form}<hr>${posts.length?posts.map(post=>`<article class="item">
+ const blockedIds=await safety.myBlocks(me);
+ const blocked=blockedIds.has(who.id);
+ const tools=await safety.profileTools(who,me);
+ if(blocked)friendAction='<span class="muted">Blocked member</span>';
+ const visiblePosts=posts.filter(post=>!blockedIds.has(post.author_id));
+ const extras=blocked?panel('Member blocked','<p>You have blocked this member. Use Unblock to interact again.</p>'):await retro.sharedPanel(who,me);
+ const p1=panel('My Profile',`<div style="text-align:center">${badge(who)}<h3>${safe(who.display_name)}</h3><p>@${safe(who.username)}</p>${friendAction}${tools}<p class="muted">${safe(who.location)}</p></div><hr><strong>My Status:</strong><p>${safe(who.status)}</p><strong>About Me:</strong><p style="white-space:pre-wrap">${safe(who.bio)}</p><strong>Music:</strong><p>${safe(who.music)}</p>${own?btn('Edit profile','go','edit','secondary'):''}`);
+ const form=me&&!blocked?`<form data-form="wall" class="fields"><textarea name="body" maxlength="1200" required placeholder="Leave ${safe(who.display_name)} a comment ♥"></textarea><button class="button">Post comment</button></form>`:'<p><a href="#/account">Log in</a> to leave a comment.</p>';
+ const wall=panel('My Wall — Leave Me a Comment ♥',`${form}<hr>${visiblePosts.length?visiblePosts.map(post=>`<article class="item">
  <strong><a href="#/u/${encodeURIComponent(byId.get(post.author_id)?.username||'')}">${safe(byId.get(post.author_id)?.display_name||'Member')}</a></strong>
  <span class="muted">${time(post.created_at)}</span>
  <p style="white-space:pre-wrap">${safe(post.body)}</p>
@@ -100,9 +107,12 @@ async function showProfile(username){
 async function showFriends(){
  const profiles=await query('bebo_profiles',q=>q.select('id,username,display_name,status,avatar_path').order('created_at',{ascending:false}).limit(80));
  const requests=me?await query('bebo_friendships',q=>q.select('*').eq('addressee_id',me.id).eq('status','pending')):[];
+ const blocked=await safety.myBlocks(me);
+ const displayProfiles=profiles.filter(p=>!blocked.has(p.id));
+ const displayRequests=requests.filter(x=>!blocked.has(x.requester_id));
  app.innerHTML=note()+panel('Find Bebo Friends ♥',`<p>Meet members and visit their profiles.</p>
- ${requests.length?'<h3>Friend requests</h3>'+requests.map(x=>`<div class="item">Someone sent you a friend request ${btn('Accept','friend-accept',x.id)} ${btn('Decline','friend-decline',x.id,'secondary')}</div>`).join('')+'<hr>':''}
- ${profiles.map(x=>`<div class="item"><a href="#/u/${encodeURIComponent(x.username)}"><strong>${safe(x.display_name)}</strong></a> <span class="muted">@${safe(x.username)}</span><p>${safe(x.status)}</p></div>`).join('')||'No profiles yet.'}`);
+ ${displayRequests.length?'<h3>Friend requests</h3>'+displayRequests.map(x=>`<div class="item">Someone sent you a friend request ${btn('Accept','friend-accept',x.id)} ${btn('Decline','friend-decline',x.id,'secondary')}</div>`).join('')+'<hr>':''}
+ ${displayProfiles.map(x=>`<div class="item"><a href="#/u/${encodeURIComponent(x.username)}"><strong>${safe(x.display_name)}</strong></a> <span class="muted">@${safe(x.username)}</span><p>${safe(x.status)}</p></div>`).join('')||'No profiles yet.'}`);
 }
 async function showSkins(){
  const saved=await query('bebo_skins',q=>q.select('id,name,primary_color,secondary_color,creator_id,banner_path').order('created_at',{ascending:false}).limit(30));
@@ -115,11 +125,20 @@ async function showSkins(){
  <label>Second colour<input name="secondary" type="color" value="#f5b2ce"></label><label>Optional banner picture (PNG, JPG, WebP — maximum 5 MB)<input type="file" name="banner" accept="image/png,image/jpeg,image/webp"></label>
  <button class="button">Save & share skin ♥</button></form>`):'');
 }
+function safetyInfoPage(){
+ return panel('Bebo Community Rules & Privacy',`<p><strong>Be respectful.</strong> No bullying, harassment, hate, threats, sexual exploitation, impersonation, scams, malware or sharing someone else's private information.</p>
+ <p><strong>Safety tools:</strong> Use Block on a member profile to prevent friend requests, Luv, drawings and wall posts between you. Use Report on comments or profiles to flag issues. Blocking does not make public content private.</p>
+ <p><strong>Privacy:</strong> Display names, usernames, status, profile photos, profile skins, Wall comments, public quizzes and creative posts may be visible to everyone. We use Supabase for authentication and database storage and GitHub Pages for website hosting. Do not post addresses, phone numbers or sensitive information publicly.</p>
+ <p><strong>Your data:</strong> You can edit your public profile, delete your comments, and request permanent deletion of your Bebo account through Account settings. Account deletion also removes linked social content and uploaded profile images. Some operational logs/backups may be retained temporarily by service providers.</p>
+ <p><strong>Age and launch:</strong> This is a developing community for adults 18 and older during early testing. An age-checkbox is a self-declaration, not a verified proof of age. More moderation, appeals, spam protection, legal policy and privacy processes are required before a broad public launch.</p>
+ <p><strong>Independent service:</strong> This community is not affiliated with the former Bebo company. Do not use an old Bebo password.</p>`);
+}
 async function refresh(){
  const raw=decodeURIComponent(location.hash.replace(/^#\/?/,''));
  if(raw.startsWith('u/')){page='view';await showProfile(raw.slice(2));return}
  page=raw||'home';
  if(!configured){app.innerHTML=note()+authPage();return}
+ if(page==='safety'){app.innerHTML=note()+safetyInfoPage();return}
  if(!me){if(['polls','quizzes','creators'].includes(page)){app.innerHTML=note()+await retro.route(page,null);return}app.innerHTML=note()+authPage();return}
  if(!profile){app.innerHTML=note()+createProfile();return}
  switch(page){
@@ -128,7 +147,7 @@ async function refresh(){
  case 'polls':case 'quizzes':case 'creators':app.innerHTML=note()+await retro.route(page,me);break;
  case 'skins':await showSkins();break;
  case 'edit':app.innerHTML=note()+editProfile();break;
- case 'account':app.innerHTML=note()+panel('Your Bebo Account',`<p>Signed in as ${safe(me.email)}</p>${btn('Log out','logout')}<p>To delete your account and personal data, contact the site administrator. A self-service deletion workflow is required before a wider public launch.</p>`);break;
+ case 'account':app.innerHTML=note()+panel('Your Bebo Account',`<p>Signed in as ${safe(me.email)}</p>${btn('Log out','logout')}`)+await safety.accountPanel(me);break;
  default:app.innerHTML=note()+welcome();
  }
 }
@@ -141,6 +160,7 @@ document.addEventListener('submit',async e=>{
  const d=new FormData(f),type=f.dataset.form;
  try{
  if(type==='signup'){
+  if(d.get('adult')!=='on')throw Error('Confirm you are 18 or older first.');
   const {data,error}=await sb.auth.signUp({email:String(d.get('email')).trim(),password:String(d.get('password')),options:{emailRedirectTo:location.origin+location.pathname}});
   if(error)throw error;message='Check your email to confirm your new Bebo account, then log in.';success=true;
   if(data.session){me=data.user;await loadMine();}
@@ -179,6 +199,10 @@ document.addEventListener('submit',async e=>{
   const {error}=await sb.storage.from('bebo-avatars').upload(path,file,{contentType:file.type,upsert:false});if(error)throw error;
   await query('bebo_profiles',q=>q.update({avatar_path:path}).eq('id',me.id));await loadMine();
   message='New profile photo uploaded ♥';success=true;location.hash='#/profile';
+ }else if(type==='safety-delete-account'){
+  const result=await safety.form(type,d,{me,profile,userViewed});
+  if(result.deleted){me=null;profile=null;location.hash='#/home';message='Your Bebo account was permanently deleted.';success=true;}
+  else {message='Deletion cancelled. Your account is unchanged.';success=true;}
  }else if(type.startsWith('retro-')){
   message=await retro.form(type,d,{me,profile,userViewed});success=true;
  }
@@ -190,7 +214,8 @@ document.addEventListener('click',async e=>{
  try{
  if(a==='go'){location.hash='#/'+id;return}
  if(a==='retro-clear'){retro.clear();return}
- if(a.startsWith('retro-')){message=await retro.action(a,id,{me,profile,userViewed});success=true}
+ if(a.startsWith('safety-')){message=await safety.action(a,id,{me,profile,userViewed});success=true}
+ else if(a.startsWith('retro-')){message=await retro.action(a,id,{me,profile,userViewed});success=true}
  else if(a==='logout'){await sb.auth.signOut();me=null;profile=null;message='You are signed out.';location.hash='#/home'}
  else if(a==='reset'){const email=prompt('Enter your account email');if(!email)return;const {error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo:location.origin+location.pathname});if(error)throw error;message='Check your email for the password reset link.';success=true}
  else if(a==='friend-request'){await query('bebo_friendships',q=>q.insert({requester_id:me.id,addressee_id:id}));message='Friend request sent ♥';success=true}
