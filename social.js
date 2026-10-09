@@ -47,7 +47,7 @@ function authPage(){
  <button class="button">Join Bebo ♥</button></form><p class="muted">You may need to confirm your email first. Do not use your old Bebo password.</p>`)}</div>
  <div>${panel('Already a member?',`<form class="fields" data-form="login"><label>Email<input type="email" name="email" required autocomplete="email"></label><label>Password<input type="password" name="password" required autocomplete="current-password"></label><button class="button">Log in</button></form><p><a href="#" data-action="reset">Forgot password?</a></p>`)}</div></div>`);
 }
-function welcome(){return panel('Welcome back to Bebo ♥',`<p>Bring back profile skins, the Top Friends era and leaving comments on your mates’ walls.</p>
+function welcome(){return panel('Welcome back to Bebo ♥',`<p>Your favourite Bebo features are here: the Top 16, three Luv a day, colourful custom skins, Whiteboards, music, Flashboxes, quizzes, polls, Bands and Authors.</p>
  <p>Use the navigation to discover members, design a profile skin, or visit your own profile.</p>
  <p>${btn('Create your profile','go','profile')}${btn('Browse people','go','friends','secondary')}${btn('Create a skin','go','skins','secondary')}</p>`)}
 function createProfile(){return panel('Choose your Bebo name ♥',`<p>Make your new profile. Usernames must be unique and contain 3–25 lowercase letters, numbers or underscores.</p>
@@ -117,7 +117,7 @@ async function refresh(){
  if(raw.startsWith('u/')){page='view';await showProfile(raw.slice(2));return}
  page=raw||'home';
  if(!configured){app.innerHTML=note()+authPage();return}
- if(!me){app.innerHTML=note()+authPage();return}
+ if(!me){if(['polls','quizzes','creators'].includes(page)){app.innerHTML=note()+await retro.route(page,null);return}app.innerHTML=note()+authPage();return}
  if(!profile){app.innerHTML=note()+createProfile();return}
  switch(page){
  case 'profile':await showProfile();break;
