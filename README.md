@@ -1,37 +1,37 @@
-# Bebo Classic ❤️
+# Bebo ♥ — nostalgia-style social website
 
-**Unofficial fan-made Bebo-inspired website** — a nostalgic 2006–2008-style profile experience. This is not the original Bebo service, is not affiliated with its owners, and does not recover historical Bebo accounts or content.
+**GitHub Pages:** https://frymastercheese.github.io/Bebo/
 
-## Live website
+Bebo is an **independent, unofficial** project inspired by social-profile websites of the 2000s. Not affiliated with the original Bebo business. The "Bebo" name and visual branding may have trademark implications: obtain the relevant rights before marketing it as the original service.
 
-**https://frymastercheese.github.io/Bebo/**
+## What's built
 
-This is a static demo hosted with GitHub Pages. It works on desktop and mobile.
+- **Real-user frontend**: email sign-up and login, profiles, avatar upload, searchable-by-navigation members list, friend requests/accept/decline, public profile walls, post deletion and abuse-report submissions, preset skins, colour skin maker and community skin gallery.
+- **Secure backend database schema** in `supabase/schema.sql`, including row-level security (RLS), foreign-key constraints and user-scoped image-storage permissions.
+- **Classic interactive prototype** preserved separately at `classic.html` (local browser-only version).
 
-## What's included
+## Current deployment state
 
-- 2000s-era red masthead and blue navigation, with two-column profile pages.
-- Eight interchangeable skins plus a custom skin creator with colours and image banners.
-- Editable profile, picture, status, bio, Other Half, location and music field.
-- Top 16 demo friends and a local Luv counter.
-- Wall comments, photos, blog entries, polls, quizzes and a mouse/touch whiteboard.
-- Browser-local saving so your changes remain on the *same device and browser*.
+**The frontend is deployed, but live account sign-up is disabled until a dedicated Supabase project is connected.** The homepage intentionally shows a setup notice until then. This avoids directing people to a fake account flow or putting user information in the wrong database.
 
-## Important limitations
+## One-time backend setup
 
-**This is a local interactive preview, NOT yet a working multi-user social network.** There is no real sign-up or login, user accounts, real friend requests, messaging, remote photo storage, public profile persistence or cross-device synchronization. Sample profiles/comments are fictional. Everything the visitor edits is stored in that browser's local storage and can be lost if site data is cleared. Do not treat it as a secure storage service.
+1. Create a **new, dedicated Supabase project** called `Bebo` in your chosen organization (do NOT use or alter the existing play-to-earn database).
+2. In the Bebo project SQL editor, run `supabase/schema.sql` once. The script creates Bebo-prefixed social tables, policies and an avatar storage bucket.
+3. In Supabase Authentication, leave email verification enabled, configure the SMTP provider for production email delivery, and set **Site URL** to `https://frymastercheese.github.io/Bebo/`; add that address to **Redirect URLs**.
+4. Edit `config.js` with only your new Supabase project API URL and **public publishable key** (normally `sb_publishable_...`). Never put a `service_role` key, secret key, password, or database connection string in any public GitHub file.
+5. Confirm registration → email verification → sign in → create profile → add friend → post comment → save skin → upload avatar across two separate user accounts. Review database security advisors and test unauthorized modifications before welcoming users.
 
-## Make it a real public social network
+## Safety & launch requirements
 
-1. Add hosted authentication (for example Supabase Auth) and per-user database rules.
-2. Add profiles, friend requests, comments, photos, skins, messages and content storage.
-3. Add spam protection, reports, user blocking, content moderation, privacy, data deletion/export, and age-appropriate safeguards.
-4. Choose an original brand identity or obtain any necessary rights before public commercial branding as Bebo.
+This is a **working social website codebase**, **not yet a production-ready public community**. Before announcing a public launch, implement account self-deletion, admin moderation tools for `bebo_reports`, blocking/muting, content takedown, spam/rate limits and bot protection, user privacy and safety policies, age-appropriate safeguards, image moderation, secure email delivery, and backup/restore. GitHub Pages hosts only the static frontend; Supabase handles the multi-user data.
 
-## Deployment
+The `bebo_reports` table is deliberately write-only for ordinary members. Build a secure administrator dashboard in a trusted server context before relying on reports for safety.
 
-This repository uses a standalone `index.html` containing the CSS and JavaScript. GitHub Pages serves from the `main` branch repository root, so no build pipeline is required. To publish, open **Settings → Pages → Build and deployment → Deploy from a branch → main → /(root) → Save**.
+## Files
 
-## Development
-
-Open `index.html` directly in a modern browser. All functionality is client-side and designed for static hosting.
+- `index.html` — real-account website, responsive UI
+- `social.js` — browser frontend and Supabase API operations
+- `config.js` — public backend URL and publishable key (unconfigured)
+- `supabase/schema.sql` — social database, RLS and avatar bucket
+- `classic.html` — preserved 2007-like demo
