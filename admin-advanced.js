@@ -31,15 +31,16 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
     const list=people.map(p=>{
       const restriction=byID.get(p.id);
       const status=restriction?.status||'active';
-      const tools=status==='suspended'?
+      const protectedMember=p.id===me.id;
+      const tools=protectedMember?'<span class="admin-state admin-state-active">★ Your owner account is protected</span>':status==='suspended'?
        click('Restore member','admin-member-restore',p.id):
        click('Suspend','admin-member-suspend',p.id,'danger');
       return '<article class="admin-member-card"><div><b>'+link(p)+'</b>'+
        '<p class="muted">Joined '+day(p.created_at)+'</p>'+
        '<span class="admin-state admin-state-'+status+'">'+safe(status.toUpperCase())+'</span>'+
        (restriction?.reason?'<p class="admin-member-reason">'+safe(restriction.reason)+'</p>':'')+'</div>'+
-       '<div class="admin-member-actions">'+click('Warn','admin-member-warn',p.id)+tools+
-       (status==='warned'?click('Clear warning','admin-member-restore',p.id):'')+'</div></article>';
+       '<div class="admin-member-actions">'+(protectedMember?'':click('Warn','admin-member-warn',p.id))+tools+
+       (!protectedMember&&status==='warned'?click('Clear warning','admin-member-restore',p.id):'')+'</div></article>';
     }).join('');
     return panel('👥 Manage Members',
       '<p>Search registered profiles and issue warnings or suspend posting. Your own administrator account is protected against suspension.</p>'+
