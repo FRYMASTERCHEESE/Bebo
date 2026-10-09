@@ -89,7 +89,8 @@ async function showProfile(username){
  const visiblePosts=posts.filter(post=>!blockedIds.has(post.author_id));
  const extras=blocked?panel('Member blocked','<p>You have blocked this member. Use Unblock to interact again.</p>'):await retro.sharedPanel(who,me);
  const classicExtras=await classic.publicModules(who,me);
- const p1=panel('My Profile',`<div style="text-align:center">${badge(who)}<h3>${safe(who.display_name)}</h3><p>@${safe(who.username)}</p>${friendAction}${tools}<p class="muted">${safe(who.location)}</p></div><hr><strong>My Status:</strong><p>${safe(who.status)}</p><strong>About Me:</strong><p style="white-space:pre-wrap">${safe(who.bio)}</p><strong>Music:</strong><p>${safe(who.music)}</p>${own?btn('Edit profile','go','edit','secondary'):''}`);
+ const about=panel('♥ A Little About Me',`<div class="bebo-about-text">${safe(who.bio||'No About Me message yet. ♥')}</div><div class="bebo-about-meta">${who.music?'<strong>♫ Favourite music:</strong><p>'+safe(who.music)+'</p>':''}<p class="muted">★ My Bebo, my way.</p></div>`);
+ const photo=panel('★ My Profile Picture',`<div class="bebo-photo-frame">${badge(who)}</div><p class="bebo-profile-handle">@${safe(who.username)}</p><p class="bebo-profile-place">${who.location?'📍 '+safe(who.location):'♥ Welcome to my Bebo!'}</p>${own?'<p><a href="#/edit">✎ Edit my picture</a></p>':''}`);
  const form=me&&!blocked?`<form data-form="wall" class="fields"><textarea name="body" maxlength="1200" required placeholder="Leave ${safe(who.display_name)} a comment ♥"></textarea><button class="button">Post comment</button></form>`:'<p><a href="#/account">Log in</a> to leave a comment.</p>';
  const wall=panel('My Wall — Leave Me a Comment ♥',`${form}<hr>${visiblePosts.length?visiblePosts.map(post=>`<article class="item">
  <strong><a href="#/u/${encodeURIComponent(byId.get(post.author_id)?.username||'')}">${safe(byId.get(post.author_id)?.display_name||'Member')}</a></strong>
@@ -100,7 +101,32 @@ async function showProfile(username){
  const skinPreset=getSkin(who.skin);
  const themePrimary=who.skin==='custom'&&/^#[0-9a-fA-F]{6}$/.test(who.skin_primary)?who.skin_primary:skinPreset[3];
  const themeSecondary=who.skin==='custom'&&/^#[0-9a-fA-F]{6}$/.test(who.skin_secondary)?who.skin_secondary:skinPreset[2];
- app.innerHTML=note()+`<div class="themed-profile" style="--retro-primary:${safe(themePrimary)};--retro-secondary:${safe(themeSecondary)};--retro-dark:${safe(skinPreset[4])}"><div class="profile-art" data-decor="${safe(skinPreset[7])}" style="--banner:${safe(retro.imageStyle(who,grad(who)))}">${safe(who.display_name)} ★</div><div class="cols"><div>${p1}</div><div>${wall}</div></div>${classicExtras}${extras}</div>`;
+ const name=safe(who.display_name);
+ const userURL=encodeURIComponent(who.username);
+ const cover=retro.imageStyle(who,grad(who));
+ const actions=own?'<a class="bebo-profile-action" href="#/edit">✎ Edit my profile</a><a class="bebo-profile-action" href="#/skins">🎨 Change my skin</a>':'<div class="bebo-profile-buttons">'+friendAction+tools+'</div>';
+ const mood=who.status?'<p class="bebo-current-mood"><span>My status ♥</span> '+safe(who.status)+'</p>':'<p class="bebo-current-mood">♥ Welcome to my Bebo page!</p>';
+ const nav='<nav class="bebo-mini-nav" aria-label="Profile pages">'+
+  '<a href="#/u/'+userURL+'" aria-current="page">♥ Profile</a>'+
+  '<a href="#/photos/'+userURL+'">📸 Photos</a>'+
+  '<a href="#/blogs/'+userURL+'">✎ Blog</a>'+
+  '<a href="#/friends">★ Friends</a>'+
+  (own?'<a href="#/skins">🎨 Skins</a>':me?'<a href="#/messages/'+userURL+'">✉ Mail</a>':'<a href="#/account">✉ Join Bebo</a>')+
+  '</nav>';
+ app.innerHTML=note()+`<article class="themed-profile bebo-2007-profile" style="--retro-primary:${safe(themePrimary)};--retro-secondary:${safe(themeSecondary)};--retro-dark:${safe(skinPreset[4])}">
+   <header class="profile-art bebo-profile-cover" data-decor="${safe(skinPreset[7])}" style="--banner:${safe(cover)}">
+    <div class="bebo-cover-copy"><span class="bebo-cover-kicker">♥ My Bebo • My Friends • My Skin ♥</span><h1>${name}'s Profile</h1><span class="bebo-cover-bottom">★ Welcome to my page ★</span></div>
+   </header>
+   <div class="bebo-identity-strip"><div class="bebo-nameplate"><strong>${name}</strong><span>@${safe(who.username)}</span></div><div class="bebo-status-line">${mood}</div><div class="bebo-profile-actions">${actions}</div></div>
+   ${nav}
+   <div class="bebo-profile-layout">
+    <aside class="bebo-profile-sidebar" aria-label="Profile picture and personal information">
+     <div class="bebo-profile-photo-module">${photo}</div>
+     <div class="bebo-profile-about-module">${about}</div>
+    </aside>
+    <div class="bebo-profile-main" aria-label="Friends, Luv and profile activity">${extras}${wall}${classicExtras}</div>
+   </div>
+  </article>`;
 }
 async function showFriends(){
  const profiles=await query('bebo_profiles',q=>q.select('id,username,display_name,status,avatar_path').order('created_at',{ascending:false}).limit(80));
