@@ -1,19 +1,14 @@
 -- Bebo owner administration: private reports, verified account assignment, review and moderation.
 -- Production migration already applied to dedicated project rnxiggzyqqzjtgdbpedb.
-do $$ declare n integer;
-begin
- select count(*) into n from auth.users where lower(email)='coreyedge123@gmail.com' and email_confirmed_at is not null;
- if n<>1 then raise exception 'STOP expected one verified Bebo owner login, found %',n; end if;
-end $$;
+-- Verified owner assignment was done privately in the dedicated Supabase project.
+-- Do not put the owner's personal login email or account identifiers in this public repository.
+-- Role assignment is managed in Supabase with appropriate administrator access.
 alter table public.bebo_moderators enable row level security;
 revoke all on public.bebo_moderators from public,anon,authenticated;
 grant select on public.bebo_moderators to authenticated;
 drop policy if exists "bebo read own moderator role" on public.bebo_moderators;
 create policy "bebo read own moderator role" on public.bebo_moderators for select to authenticated using(user_id=(select auth.uid()));
-insert into public.bebo_moderators(user_id,role)
-select id,'owner' from auth.users where lower(email)='coreyedge123@gmail.com' and email_confirmed_at is not null
-on conflict(user_id) do update set role='owner';
-
+-- Owner role is already assigned in the live Supabase project and not regranted from public source.
 create schema if not exists bebo_private;
 revoke all on schema bebo_private from public,anon;
 grant usage on schema bebo_private to authenticated;
