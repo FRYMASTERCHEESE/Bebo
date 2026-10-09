@@ -9,7 +9,7 @@ const app=document.querySelector('#app');
 const configured=/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL||'')&&SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_');
 const sb=configured?createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
 const BEBO_SITE_URL='https://frymastercheese.github.io/Bebo/'; // Must also be added under Supabase Auth > URL Configuration.
-let me=null, profile=null, page='home', userViewed=null, message='', success=false, adminAccess=null;
+let me=null, profile=null, page='home', userViewed=null, message='', success=false, adminAccess=null, memberRestriction=null;
 
 const safe=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const clamp=(s,n)=>String(s??'').trim().slice(0,n);
@@ -21,21 +21,21 @@ const panel=(title,html)=>`<section class="panel"><h2>${title}</h2><div class="b
 const report=(txt,ok=false)=>{message=txt;success=ok;render()};
 const badge=p=>p?.avatar_path?'<img class="avatar" alt="Avatar" src="'+safe(sb.storage.from('bebo-avatars').getPublicUrl(p.avatar_path).data.publicUrl)+'">':
   '<div class="avatar" aria-label="Profile initials">'+safe((p?.display_name||'?').slice(0,1).toUpperCase())+'</div>';
-const note=()=>message?`<div class="notice ${success?'good':'bad'}">${safe(message)}</div>`:'';
+const note=()=>{const restriction=memberRestriction&&memberRestriction.status!=='active'?'<div class="notice bad"><strong>Account notice: '+safe(memberRestriction.status)+'</strong><p>'+safe(memberRestriction.reason||'Please review the Bebo community rules.')+'</p></div>':'';return (message?`<div class="notice ${success?'good':'bad'}">${safe(message)}</div>`:'')+restriction};
 const escapeError=e=>(e?.message||'Something went wrong. Please try again.').slice(0,240);
 async function query(table,fn){const q=fn(sb.from(table));const {data,error}=await q;if(error)throw error;return data}
 const retro=createRetro(sb,{safe,panel,btn,query});
 const safety=createSafety(sb,{safe,panel,btn,query});
 const classic=createClassic(sb,{safe,panel,btn,query});
 const admin=createAdmin(sb,{safe,panel});
-async function loadMine(){if(!me){profile=null;adminAccess=null;return}profile=await query('bebo_profiles',q=>q.select('*').eq('id',me.id).maybeSingle());adminAccess=await admin.check(me)}
+async function loadMine(){if(!me){profile=null;adminAccess=null;memberRestriction=null;return}profile=await query('bebo_profiles',q=>q.select('*').eq('id',me.id).maybeSingle());const status=await query('bebo_member_controls',q=>q.select('status,reason').eq('member_id',me.id).maybeSingle());memberRestriction=status;adminAccess=await admin.check(me)}
 async function init(){
  if(!sb){render();return}
  try{
   const {data,error}=await sb.auth.getUser();if(error&&error.name!=='AuthSessionMissingError')throw error;
   me=data.user||null;await loadMine();
  }catch(e){message='Could not connect to Bebo database: '+escapeError(e)}
- sb.auth.onAuthStateChange((_event,session)=>{const id=session?.user?.id||null;if(id!==me?.id){me=session?.user||null;profile=null;adminAccess=null;setTimeout(async()=>{try{await loadMine()}catch(e){message=escapeError(e)}render()},0)}});
+ sb.auth.onAuthStateChange((_event,session)=>{const id=session?.user?.id||null;if(id!==me?.id){me=session?.user||null;profile=null;adminAccess=null;memberRestriction=null;setTimeout(async()=>{try{await loadMine()}catch(e){message=escapeError(e)}render()},0)}});
  render();
 }
 function authPage(){
@@ -348,7 +348,7 @@ document.addEventListener('click',async e=>{
  if(a.startsWith('classic-')){message=await classic.action(a,id,{me,profile,userViewed});success=true}
  if(a.startsWith('safety-')){message=await safety.action(a,id,{me,profile,userViewed});success=true}
  else if(a.startsWith('retro-')){message=await retro.action(a,id,{me,profile,userViewed});success=true}
- else if(a==='logout'){await sb.auth.signOut();me=null;profile=null;adminAccess=null;message='You are signed out.';location.hash='#/home'}
+ else if(a==='logout'){await sb.auth.signOut();me=null;profile=null;adminAccess=null;memberRestriction=null;message='You are signed out.';location.hash='#/home'}
  else if(a==='reset'){const email=prompt('Enter your account email');if(!email)return;const {error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo:BEBO_SITE_URL});if(error)throw error;message='Check your email for the password reset link.';success=true}
  else if(a==='friend-request'){await query('bebo_friendships',q=>q.insert({requester_id:me.id,addressee_id:id}));message='Friend request sent ♥';success=true}
  else if(a==='friend-accept'||a==='friend-decline'){await query('bebo_friendships',q=>q.update({status:a==='friend-accept'?'accepted':'declined'}).eq('id',id));message=a==='friend-accept'?'Friend added ♥':'Request declined';success=true}
