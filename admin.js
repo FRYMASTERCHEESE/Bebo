@@ -3,7 +3,7 @@
  * Security comes from Supabase Auth and the database RLS, NOT from this JavaScript.
  * This module contains no service-role credentials and never grants privileges.
  */
-import { createAdminAdvanced } from './admin-advanced.js?v=20261010-signup-emails-v1';
+import { createAdminAdvanced } from './admin-advanced.js?v=20261010-bebo-verified-v1';
 export function createAdmin(sb,{safe,panel}) {
   let filter='open';
   const date=v=>{
