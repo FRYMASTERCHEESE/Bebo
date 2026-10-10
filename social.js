@@ -4,7 +4,7 @@ import { createSafety } from './safety.js';
 import { createClassic } from './classic-modules.js?v=20261010-bebo-memory-v2';
 import { createAdmin } from './admin.js?v=20261010-bebo-verified-v1';
 import { createVerification } from './verified.js?v=20261010-transparency-v1';
-import { createVideos } from './videos.js?v=20261010-videos-v1';
+import { createVideos } from './videos.js?v=20261010-phone-upload-v2';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
@@ -438,6 +438,18 @@ document.addEventListener('keydown',e=>{
 });
 
 document.addEventListener('input',e=>{if(e.target?.id==='skin-search')filterSkins()});
+document.addEventListener('change',e=>{
+ const field=e.target;
+ if(!field?.matches?.('form[data-form="video-upload"] input[name="file"]'))return;
+ const status=field.closest('form')?.querySelector('.bebo-video-upload-status');
+ if(!status)return;
+ const file=field.files?.[0];
+ if(!file){status.textContent='';status.classList.remove('bebo-upload-warning');return}
+ const checked=videos.selectionHint(file);
+ status.textContent=checked.message;
+ status.classList.toggle('bebo-upload-warning',!checked.valid);
+});
+
 document.addEventListener('submit',async e=>{
  const f=e.target.closest('form[data-form]');if(!f)return;e.preventDefault();
  if(f.dataset.busy)return;f.dataset.busy='1';const b=f.querySelector('button');if(b)b.disabled=true;
