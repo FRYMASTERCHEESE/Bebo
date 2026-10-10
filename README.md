@@ -225,3 +225,7 @@ With the Bebo.nz link already announced, the homepage and member experience are 
 ## Daily monitoring and verified permission hardening — 11 October 2026 NZ
 
 The production database migration recorded in `supabase/bebo_anon_video_write_grants_hardening_20261011.sql` **has been applied** and verified: anonymous INSERT/UPDATE/DELETE table grants on `bebo_videos` are false; anonymous SELECT and authenticated upload/moderation grants remain true. No video records were changed. `Bebo Daily Site and Privacy Watch` performs scheduled read-only availability and anonymous-access checks; a failed run requires investigation, not automatic database updates. For remaining real-account, backup/restore, Auth settings, moderation and legal gaps, see `OPERATIONS.md`.
+
+## Anonymous write permissions hardened across member tables — 11 October 2026 NZ
+
+Applied `bebo_revoke_unneeded_anon_member_writes_20261011` to twenty social tables that had no anonymous write RLS policies. Post-change PostgreSQL catalog verification: **0 of 35 Bebo tables** retain anonymous INSERT/UPDATE/DELETE table grants, while signed-in member INSERT privileges are still granted on 31 tables. No content was deleted or modified. The SQL used is stored in `supabase/bebo_revoke_unneeded_anon_member_writes_20261011.sql`. The first daily HTTPS and privacy check passed **14/14**. The Supabase organization currently has a **Free** plan; usable off-site database + storage backups and owner-only Auth password protection remain outstanding. See `OPERATIONS.md`.

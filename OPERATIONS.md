@@ -8,9 +8,14 @@ This independent fan-made social community is **already publicly announced**. Ke
 - The Supabase project `rnxiggzyqqzjtgdbpedb` reports `ACTIVE_HEALTHY`; relevant public and private member tables use RLS.
 - Database inspection confirmed private mail, member reports, member controls, moderator assignments and admin actions are **not selectable by the `anon` role at table-grant level**. This is only an anonymous-role review, not a full multi-user penetration test.
 - **Applied and verified:** Removed unnecessary `anon` INSERT/UPDATE/DELETE table grants on `public.bebo_videos`; preserved anonymous public SELECT and signed-in INSERT/UPDATE. No rows or videos were altered.
+- **Further least-privilege migration applied and verified:** Removed redundant `anon` INSERT/UPDATE/DELETE table grants from twenty other social tables (including profiles, friendships, mail-adjacent social content, blogs, albums, Luv, skins, quiz/poll interactions and video comments/reactions/reports). The verification query returned **0 of 35 Bebo tables with any anonymous write grant**, while signed-in member table grants remain available. The existing RLS policies already blocked anonymous writes. No rows or content were changed.
 - Anonymous public video statistics RPC `bebo_video_stats(uuid[])` is `SECURITY DEFINER`, but its returned fields are aggregated; its selection includes only approved videos or the caller's own. It is intentionally public for video viewing stats; do **not** revoke it blindly. Review input and abuse limits before significant traffic.
 - Bebo's view-events table intentionally has RLS enabled **with no direct read policies** and no anon/authenticated SELECT grants: it is accessed through a constrained aggregate function. Do not add a public policy merely to clear an informational advisor.
 - GitHub Actions `Bebo Daily Site and Privacy Watch` checks HTTPS pages and anonymous access to private tables with no member login and no writes. The workflow provides monitoring evidence, **not** automated repairs or a guaranteed notification delivery mechanism.
+
+## Free-tier backup limitation
+
+The connected Supabase organization currently reports **Free** plan. Supabase documents that accessible scheduled daily backups are a paid-plan capability; Free users should export encrypted backups separately. **No off-site database or uploaded-file backup was created during this audit.** This is a real remaining blocker to a fully recoverable production launch.
 
 ## Owner-only security action still required
 
