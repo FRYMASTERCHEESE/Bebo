@@ -26,7 +26,7 @@ const tests=[
 {path:'admin',label:'Admin guest denial',match:/join bebo|create your account|admin only/i,guestAdmin:true}
 ];
 // Wait until GitHub Pages publishes the matching revision; Actions can run before Pages.
-const expectedCSS='Always-available Bebo navigation: reachable while scrolling every route.';
+const expectedCSS='Bebo Back and Home navigation: moved into footer to keep content unobstructed.';
 let releaseReady=false;
 for(let n=0;n<40;n++){
   try{
@@ -60,13 +60,18 @@ try{
     assert.equal(await globalBack.count(),1,'Missing global Bebo Back button');
     assert.equal(await page.locator('.bebo-quick-nav a[href="#/home"]').count(),1,'Missing global Home link');
     const backPosition=await globalBack.evaluate(button=>{
-      const rect=button.getBoundingClientRect();
-      return {width:rect.width,height:rect.height,left:rect.left,top:rect.top,bottom:rect.bottom,viewport:window.innerHeight,
-        fixed:getComputedStyle(button.closest('.bebo-quick-nav')).position};
+      const nav=button.closest('.bebo-quick-nav'),rect=button.getBoundingClientRect();
+      const main=document.querySelector('main#app'),footer=document.querySelector('footer.footer');
+      const navRect=nav.getBoundingClientRect(),mainRect=main.getBoundingClientRect();
+      return {width:rect.width,height:rect.height,position:getComputedStyle(nav).position,
+        inFooter:footer.contains(nav),belowContent:navRect.top>=mainRect.bottom-2,
+        horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth+8};
     });
-    assert.equal(backPosition.fixed,'fixed','Bebo Back button does not remain visible while scrolling');
+    assert.equal(backPosition.position,'static','Quick buttons must not float over members’ photos, posts or sign-up');
+    assert(backPosition.inFooter,'Back/Home controls should be in the page footer');
+    assert(backPosition.belowContent,'Back/Home buttons overlap page content');
     assert(backPosition.height>=42,'Bebo Back button target too small for phone tapping');
-    assert(backPosition.bottom<=backPosition.viewport+2&&backPosition.top>=0,'Bebo Back button out of the viewport');
+    assert(!backPosition.horizontalOverflow,'Footer controls introduced horizontal scrolling');
     if(check.path==='home'){
       const live=await page.locator('#app').innerText();
       assert(live.includes('Trending Bebo Videos'),'Missing organic trending videos on home');

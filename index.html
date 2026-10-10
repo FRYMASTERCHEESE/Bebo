@@ -1278,15 +1278,12 @@ html[data-bebo-era="2005"] .bebo-2007-profile .panel .body{background:var(--bebo
 }
 
 
-/* Always-available Bebo navigation: reachable while scrolling every route. */
+/* Bebo Back and Home navigation: moved into footer to keep content unobstructed. */
 .bebo-quick-nav{
- position:fixed;z-index:700;
- left:max(12px,env(safe-area-inset-left));
- bottom:max(14px,env(safe-area-inset-bottom));
- display:flex;gap:6px;align-items:center;padding:6px;
- border:1px solid #9cc6dd;border-radius:11px;
- background:rgba(255,255,255,.97);
- box-shadow:0 4px 19px #152e4560;
+ position:static;z-index:auto;
+ display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;
+ width:max-content;max-width:100%;margin:14px auto 8px;padding:0;
+ border:0;border-radius:0;background:transparent;box-shadow:none;
  font:700 13px/1.2 Verdana,Arial,sans-serif;
 }
 .bebo-quick-nav button,.bebo-quick-nav a{
@@ -1314,11 +1311,9 @@ html[data-bebo-era="2007"] .bebo-quick-nav button{
 html[data-bebo-era="2007"] .bebo-quick-nav a{
  background:#fff4fa;color:#9a275d!important;border-color:#e6a9ca
 }
-#app{padding-bottom:80px!important}
-.footer{padding-bottom:90px!important}
 @media(max-width:520px){
- .bebo-quick-nav{left:9px;bottom:max(10px,env(safe-area-inset-bottom));gap:4px;padding:5px}
- .bebo-quick-nav button,.bebo-quick-nav a{min-height:45px;padding:10px 13px;font-size:13px}
+ .bebo-quick-nav{gap:8px;margin:12px auto 10px}
+ .bebo-quick-nav button,.bebo-quick-nav a{min-height:44px;padding:9px 13px;font-size:12px}
 }
 
 /* Quality pass: clearer mobile controls, calmer card spacing and keyboard support.
@@ -1574,10 +1569,10 @@ body.bebo-page-loading .bebo-page-progress{opacity:1}
 </div></header>
 <nav class="nav" aria-label="Bebo sections"><div class="wrap" id="nav"><button data-nav="home">Home</button><button data-nav="profile">My Profile</button><button data-nav="friends">Friends</button><button data-nav="photos">Photos</button><button data-nav="videos">Videos 🎬</button><button data-nav="blogs">Blog</button><button data-nav="messages">Mail ✉</button><button data-nav="groups">Groups</button><button data-nav="other-half">Other Half ♥</button><button data-nav="skins">Skins</button><button data-nav="polls">Polls</button><button data-nav="quizzes">Quizzes</button><button data-nav="creators">Bands &amp; Authors</button><button data-nav="account">Account</button><button data-nav="suggestions">💡 Suggestions</button><button data-nav="safety">Safety &amp; Privacy</button><a class="bebo-about-link" href="./about.html">About Bebo</a></div></nav>
 <div class="bebo-page-progress" aria-hidden="true"><span></span></div>
+<aside id="bebo-announcement-bar" class="bebo-announcement-strip" aria-label="Bebo announcements" hidden></aside>
+<main id="app" class="wrap" tabindex="-1"><section class="panel hero"><h1>Bebo Is Officially Back ❤️</h1><div class="body"><p>Welcome to an independent, fan-made social community inspired by classic Bebo. Create a real account, save your profile, add friends, send messages and explore 56 original skins.</p><p>Account and profile data is stored in Supabase; this is not just a browser simulation.</p><p><a href="./about.html">Learn about this independent Bebo revival</a>.</p><p class="muted">Loading your profile…</p></div></section></main>
+<footer class="footer"><strong>Bebo Is Officially Back ❤️</strong><p>Independent, fan-made Bebo-inspired community. Not affiliated with the original Bebo company or its owners.</p><p><a href="./about.html">About this Bebo revival</a> · <a href="#/suggestions">💡 Suggest an improvement</a> · <a href="#/safety">Safety &amp; Privacy</a></p><span>&copy; 2026 Corey Mark Cleave Gage-Brown</span>
 <div class="bebo-quick-nav" role="navigation" aria-label="Quick Bebo navigation">
   <button type="button" id="bebo-back-button" aria-label="Back to Bebo Home" title="Back to Bebo Home">← Back</button>
   <a href="#/home" aria-label="Go to Bebo Home" title="Bebo Home">⌂ Home</a>
-</div>
-<aside id="bebo-announcement-bar" class="bebo-announcement-strip" aria-label="Bebo announcements" hidden></aside>
-<main id="app" class="wrap" tabindex="-1"><section class="panel hero"><h1>Bebo Is Officially Back ❤️</h1><div class="body"><p>Welcome to an independent, fan-made social community inspired by classic Bebo. Create a real account, save your profile, add friends, send messages and explore 56 original skins.</p><p>Account and profile data is stored in Supabase; this is not just a browser simulation.</p><p><a href="./about.html">Learn about this independent Bebo revival</a>.</p><p class="muted">Loading your profile…</p></div></section></main>
-<footer class="footer"><strong>Bebo Is Officially Back ❤️</strong><p>Independent, fan-made Bebo-inspired community. Not affiliated with the original Bebo company or its owners.</p><p><a href="./about.html">About this Bebo revival</a> · <a href="#/suggestions">💡 Suggest an improvement</a> · <a href="#/safety">Safety &amp; Privacy</a></p><span>&copy; 2026 Corey Mark Cleave Gage-Brown</span></footer></body></html>
+</div></footer></body></html>

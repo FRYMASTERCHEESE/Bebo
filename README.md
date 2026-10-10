@@ -203,3 +203,7 @@ The browser's Supabase confirmation and password-reset redirects now use `https:
 ## Bebo Show/Hide Password fields — 10 October 2026
 
 All password fields default to hidden with an adjacent **👁 Show password** / **🙈 Hide password** button: registration, sign-in, password recovery (both new and confirmation fields), and account-deletion confirmation. Each button toggles only its adjacent input, does not submit a form, keeps the typed value unchanged, uses a 44px minimum tap target, supports the keyboard, and exposes its active state with `aria-pressed`. Password visibility is deliberately temporary and is not saved between screens. Browser tests cover signed-out registration/login and synthetic recovery callbacks; account deletion is unchanged and never invoked by tests.
+
+## Back / Home footer relocation — 10 October 2026
+
+On user feedback from mobile screenshots, the globally fixed Back / Home box was moved **inside the page footer**, outside the content overlay. This preserves the existing safe in-site Back handling and Home shortcut without covering sign-up buttons, photos, text or profile modules. Navigation remains accessible via the normal top menu; the two footer controls remain touch-friendly and keyboard-accessible. Public mobile and desktop browser smoke checks require footer-only, non-fixed positioning and confirm no overlap or horizontal overflow. No backend or member data was modified.
