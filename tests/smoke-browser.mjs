@@ -12,6 +12,9 @@ const tests=[
 {path:'polls',label:'Polls',match:/bebo polls/i},
 {path:'quizzes',label:'Quizzes',match:/bebo quizzes|how well do you know me/i},
 {path:'photos',label:'Photos',match:/photos|albums/i},
+{path:'videos',label:'Videos',match:/bebo videos|no videos published/i},
+{path:'videos/u/bebo',label:'Profile videos',match:/bebo.s bebo videos|no videos published|Bebo videos/i},
+{path:'videos-review',label:'Guest denied video review',match:/Only an approved Bebo moderator/i},
 {path:'blogs',label:'Blogs',match:/blog/i},
 {path:'groups',label:'Groups',match:/groups/i},
 {path:'creators',label:'Bands and Authors',match:/bands|authors|creators/i},
@@ -173,6 +176,14 @@ try{
       assert.equal(await page.locator('#bebo-memory-search').count(),0,'Retired form reappeared');
       assert.equal(await page.locator('#nav [data-nav="old-bebo"]').count(),0,'Retired menu reappeared');
       item.retiredFeatureRedirect='PASS';
+    }
+    if(check.path==='videos'){
+      assert.equal(await page.locator('#nav [data-nav="videos"]').count(),1,'Missing Videos navigation');
+      assert.equal(await page.locator('form[data-form="video-upload"]').count(),0,'Guests must not see video upload');
+      item.videoGuestControls='PASS';
+    }
+    if(check.path==='videos-review'){
+      assert.equal(await page.locator('[data-action="video-approve"]').count(),0,'Guest must never see video approval');
     }
     if(check.guestAdmin){
       assert.equal(await page.locator('.bebo-admin-page').count(),0,'Private admin dashboard rendered for guest');
