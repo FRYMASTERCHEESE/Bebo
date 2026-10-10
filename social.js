@@ -3,6 +3,7 @@ import { createRetro } from './nostalgia.js?v=20261010-polls-quizzes-v2';
 import { createSafety } from './safety.js';
 import { createClassic } from './classic-modules.js?v=20261010-friendly-handles-v1';
 import { createAdmin } from './admin.js?v=20261010-signup-emails-v1';
+import { createVerification } from './verified.js';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
@@ -28,6 +29,7 @@ async function query(table,fn){const q=fn(sb.from(table));const {data,error}=awa
 const retro=createRetro(sb,{safe,panel,btn,query});
 const safety=createSafety(sb,{safe,panel,btn,query});
 const classic=createClassic(sb,{safe,panel,btn,query});
+const verified=createVerification(sb,{safe,panel,query});
 const admin=createAdmin(sb,{safe,panel});
 async function loadMine(){if(!me){profile=null;adminAccess=null;memberRestriction=null;return}profile=await query('bebo_profiles',q=>q.select('*').eq('id',me.id).maybeSingle());const status=await query('bebo_member_controls',q=>q.select('status,reason').eq('member_id',me.id).maybeSingle());memberRestriction=status;adminAccess=await admin.check(me)}
 async function init(){
@@ -80,6 +82,7 @@ async function showProfile(username){
  const authors=[...new Set(posts.map(x=>x.author_id))];const names=authors.length?await query('bebo_profiles',q=>q.select('id,username,display_name').in('id',authors)):[];
  const byId=new Map(names.map(x=>[x.id,x]));
  const own=who.id===me?.id;
+ const approvedUserIDs=await verified.approved([who.id]);
  const rel=friendships.find(f=>(f.requester_id===who.id||f.addressee_id===who.id));
  let friendAction='';
  if(!own&&me){
@@ -108,6 +111,7 @@ async function showProfile(username){
  const themePrimary=who.skin==='custom'&&/^#[0-9a-fA-F]{6}$/.test(who.skin_primary)?who.skin_primary:skinPreset[3];
  const themeSecondary=who.skin==='custom'&&/^#[0-9a-fA-F]{6}$/.test(who.skin_secondary)?who.skin_secondary:skinPreset[2];
  const name=safe(who.display_name);
+ const verifiedBadge=verified.badge(who,approvedUserIDs);
  const userURL=encodeURIComponent(who.username);
  const cover=retro.imageStyle(who,grad(who));
  const actions=own?'<a class="bebo-profile-action" href="#/edit">✎ Edit my profile</a><a class="bebo-profile-action" href="#/skins">🎨 Change my skin</a>':'<div class="bebo-profile-buttons">'+friendAction+tools+'</div>';
@@ -123,7 +127,7 @@ async function showProfile(username){
    <header class="profile-art bebo-profile-cover" data-decor="${safe(skinPreset[7])}" style="--banner:${safe(cover)}">
     <div class="bebo-cover-copy"><span class="bebo-cover-kicker">♥ My Bebo • My Friends • My Skin ♥</span><h1>${name}'s Profile</h1><span class="bebo-cover-bottom">★ Welcome to my page ★</span></div>
    </header>
-   <div class="bebo-identity-strip"><div class="bebo-nameplate"><strong>${name}</strong><span>@${safe(who.username)}</span></div><div class="bebo-status-line">${mood}</div><div class="bebo-profile-actions">${actions}</div></div>
+   <div class="bebo-identity-strip"><div class="bebo-nameplate"><strong>${name} ${verifiedBadge}</strong><span>@${safe(who.username)}</span></div><div class="bebo-status-line">${mood}</div><div class="bebo-profile-actions">${actions}</div></div>
    ${nav}
    <div class="bebo-profile-layout">
     <aside class="bebo-profile-sidebar" aria-label="Profile picture and personal information">
@@ -138,11 +142,12 @@ async function showFriends(){
  const profiles=await query('bebo_profiles',q=>q.select('id,username,display_name,status,avatar_path').order('created_at',{ascending:false}).limit(80));
  const requests=me?await query('bebo_friendships',q=>q.select('*').eq('addressee_id',me.id).eq('status','pending')):[];
  const blocked=await safety.myBlocks(me);
- const displayProfiles=profiles.filter(p=>!blocked.has(p.id));
+ const approvedMemberIDs=await verified.approved(profiles.map(p=>p.id));
+ const displayProfiles=verified.prioritizePeople(profiles.filter(p=>!blocked.has(p.id)),approvedMemberIDs);
  const displayRequests=requests.filter(x=>!blocked.has(x.requester_id));
  app.innerHTML=note()+panel('Find Bebo Friends ♥',`<p>Meet members and visit their profiles.</p>
  ${displayRequests.length?'<h3>Friend requests</h3>'+displayRequests.map(x=>`<div class="item">Someone sent you a friend request ${btn('Accept','friend-accept',x.id)} ${btn('Decline','friend-decline',x.id,'secondary')}</div>`).join('')+'<hr>':''}
- ${displayProfiles.map(x=>`<div class="item"><a href="#/u/${encodeURIComponent(x.username)}"><strong>${safe(x.display_name)}</strong></a> <span class="muted">@${safe(x.username)}</span><p>${safe(x.status)}</p></div>`).join('')||'No profiles yet.'}`);
+ ${displayProfiles.map(x=>`<div class="item"><a href="#/u/${encodeURIComponent(x.username)}"><strong>${safe(x.display_name)} ${verified.badge(x,approvedMemberIDs)}</strong></a> <span class="muted">@${safe(x.username)}</span><p>${safe(x.status)}</p></div>`).join('')||'No profiles yet.'}`);
 }
 function miniSkin(s){
  return `<div class="skin-mini"><div class="skin-mini-banner" style="background:${safe(skinArtwork(s))}" data-motif="${safe(s[7])}"><span>my bebo ★</span></div><div class="skin-mini-layout"><div class="skin-mini-avatar">♥</div><div class="skin-mini-lines"><span></span><span></span></div><div class="skin-mini-blocks"><span style="background:${safe(s[3])}"></span><span style="background:${safe(s[2])}"></span></div></div></div>`;
@@ -218,7 +223,7 @@ async function refresh(){
  case 'skins':await showSkins();break;
  case 'edit':app.innerHTML=note()+editProfile();break;
  case 'admin':app.innerHTML=note()+(adminAccess?await admin.dashboard(me):panel('Admin only','This panel is only available to approved Bebo administrators.'));break;
- case 'account':app.innerHTML=note()+panel('Your Bebo Account',`<p>Signed in as ${safe(me.email)}</p>${btn('Log out','logout')}${adminAccess?'<p><a href="#/admin">★ Open your Admin Panel</a></p>':''}`)+await safety.accountPanel(me);break;
+ case 'account':app.innerHTML=note()+panel('Your Bebo Account',`<p>Signed in as ${safe(me.email)}</p>${btn('Log out','logout')}${adminAccess?'<p><a href="#/admin">★ Open your Admin Panel</a></p>':''}`)+await verified.requestPanel(me)+await safety.accountPanel(me);break;
  }
 }
 function syncAdminNav(){
@@ -335,6 +340,8 @@ document.addEventListener('submit',async e=>{
   const rows=await query('bebo_skins',q=>q.insert({creator_id:me.id,name:clamp(d.get('name'),70),primary_color:primary,secondary_color:secondary,banner_path:bannerPath}).select().single());
   await query('bebo_profiles',q=>q.update({skin:'custom',skin_primary:rows.primary_color,skin_secondary:rows.secondary_color,skin_banner_path:bannerPath}).eq('id',me.id));
   await loadMine();message='Your skin is saved and shared ♥';success=true;
+ }else if(type==='verification-request'){
+  message=await verified.submit(me,d);success=true;
  }else if(type.startsWith('admin-')){
   const result=await admin.form(type,d,me);
   message=result?.message||'Admin settings saved.';success=true;
@@ -349,7 +356,7 @@ document.addEventListener('submit',async e=>{
  }
  }catch(err){message=escapeError(err);success=false}finally{
   f.dataset.busy='';if(b)b.disabled=false;
-  if((type==='edit-profile'||type.startsWith('admin-')||type==='retro-poll-create'||type==='retro-quiz-create')&&!success){
+  if((type==='edit-profile'||type.startsWith('admin-')||type==='retro-poll-create'||type==='retro-quiz-create'||type==='verification-request')&&!success){
     let notice=f.querySelector('.edit-profile-error');
     if(!notice){notice=document.createElement('p');notice.className='notice bad edit-profile-error';notice.setAttribute('role','alert');f.prepend(notice);}
     notice.textContent=message;
