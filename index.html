@@ -796,8 +796,44 @@ main.wrap{max-width:1010px;background:#fff;min-height:80vh;border-left:1px solid
  .admin-verify-card .admin-inline-actions .button{width:100%}
 }
 
+
+/* Bebo Verified on personal profiles: open the private application beside Edit Profile and Skins. */
+.bebo-profile-actions .bebo-profile-verify-cta{
+ cursor:pointer;
+ background:linear-gradient(180deg,#f1faff,#d4edff 55%,#b8dcf9);
+ border:1px solid #73a9d5;
+ color:#185d94;
+ box-shadow:0 1px 2px #346da431;
+}
+.bebo-profile-actions .bebo-profile-verify-cta:hover,
+.bebo-profile-actions .bebo-profile-verify-cta:focus-visible{
+ background:linear-gradient(#e6f5ff,#b6dfff);
+ outline-color:#2c6f9d;
+}
+.bebo-profile-actions .bebo-profile-verify-complete{
+ display:inline-flex;align-items:center;
+ border:1px solid #68a2d5;
+ color:#155f9a;
+ background:#e2f4ff;
+ cursor:default;
+}
+.bebo-profile-verification[hidden]{display:none!important}
+.bebo-profile-verification{
+ margin:0 0 12px;padding:12px;
+ border:2px solid #96c2e9;
+ background:linear-gradient(#f3faff,#fff9fc);
+ box-shadow:0 2px 5px #163f6424;
+}
+.bebo-profile-verification>.panel{margin:0}
+.bebo-profile-verification>.panel>h2{background:linear-gradient(#57a4df,#1b67a9)!important;color:#fff!important;border-bottom-color:#154a85!important}
+.bebo-profile-verification .fields textarea{min-height:105px;width:100%;box-sizing:border-box}
+@media(max-width:700px){
+ .bebo-profile-verification{padding:8px}
+ .bebo-profile-actions .bebo-profile-verify-cta{min-height:39px}
+}
+
 </style>
-<script type="module" src="./social.js?v=20261010-bebo-verified-v1"></script></head>
+<script type="module" src="./social.js?v=20261010-profile-verified-request-v2"></script></head>
 <body><header class="top"><div class="wrap head"><div class="brand">be<span>bo</span> ★</div><div><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p></div></div></header>
 <nav class="nav"><div class="wrap" id="nav"><button data-nav="home">Home</button><button data-nav="profile">My Profile</button><button data-nav="friends">Friends</button><button data-nav="photos">Photos</button><button data-nav="blogs">Blog</button><button data-nav="messages">Mail ✉</button><button data-nav="groups">Groups</button><button data-nav="other-half">Other Half ♥</button><button data-nav="skins">Skins</button><button data-nav="polls">Polls</button><button data-nav="quizzes">Quizzes</button><button data-nav="creators">Bands &amp; Authors</button><button data-nav="account">Account</button><button data-nav="safety">Safety &amp; Privacy</button></div></nav>
 <aside id="bebo-announcement-bar" class="bebo-announcement-strip" aria-label="Bebo announcements" hidden></aside>
