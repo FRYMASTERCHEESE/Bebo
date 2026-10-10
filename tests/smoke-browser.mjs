@@ -29,6 +29,9 @@ try{
     await page.goto(host+'?launch-audit=20261010&route='+encodeURIComponent(device.name+'-'+check.path)+'#/'+check.path,{waitUntil:'domcontentloaded',timeout:45000});
     await page.waitForFunction(()=>Boolean(document.querySelector('#app')?.innerText?.trim())&&!/Loading your profile|Loading Bebo/i.test(document.querySelector('#app')?.innerText||''),null,{timeout:35000});
     await page.waitForFunction(({source,flags})=>new RegExp(source,flags).test(document.querySelector('#app')?.innerText||''),{source:check.match.source,flags:check.match.flags},{timeout:30000});
+    if(device.name==='mobile'){
+      await page.waitForFunction(()=>[...document.querySelectorAll('style')].some(x=>x.textContent.includes('Touchscreen fix: Chrome/Android')),null,{timeout:20000});
+    }
     const inner=await page.locator('#app').innerText();
     assert(!/Could not load this page|me is not defined|ReferenceError|TypeError/i.test(inner),'Fatal error shown: '+inner.slice(0,450));
     assert(check.match.test(inner),'Missing expected '+check.label+': '+inner.slice(0,300));
