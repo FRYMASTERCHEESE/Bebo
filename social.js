@@ -4,7 +4,6 @@ import { createSafety } from './safety.js';
 import { createClassic } from './classic-modules.js?v=20261010-bebo-memory-v2';
 import { createAdmin } from './admin.js?v=20261010-bebo-verified-v1';
 import { createVerification } from './verified.js?v=20261010-transparency-v1';
-import { createBeboMemories } from './old-bebo-memories.js?v=20261010-bebo-back-v1';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
@@ -33,7 +32,6 @@ const retro=createRetro(sb,{safe,panel,btn,query});
 const safety=createSafety(sb,{safe,panel,btn,query});
 const classic=createClassic(sb,{safe,panel,btn,query});
 const verified=createVerification(sb,{safe,panel,query});
-const memories=createBeboMemories({safe,panel});
 const admin=createAdmin(sb,{safe,panel});
 async function loadMine(){if(!me){profile=null;adminAccess=null;memberRestriction=null;return}profile=await query('bebo_profiles',q=>q.select('*').eq('id',me.id).maybeSingle());const status=await query('bebo_member_controls',q=>q.select('status,reason').eq('member_id',me.id).maybeSingle());memberRestriction=status;adminAccess=await admin.check(me)}
 async function init(){
@@ -210,7 +208,7 @@ async function refresh(){
  page=raw||'home';
  if(!configured){app.innerHTML=note()+authPage();return}
  if(page==='safety'){app.innerHTML=note()+safetyInfoPage();return}
- if(page==='old-bebo'){app.innerHTML=note()+memories.page({me,profile});return}
+ if(page==='old-bebo'){location.replace(location.pathname+location.search+'#/home');return}
  if(page==='verification-policy'){app.innerHTML=note()+verified.policyPage();return}
  if(page.startsWith('transparency/')){app.innerHTML=note()+await verified.transparencyPage(page.slice('transparency/'.length));return}
  if(!me){
@@ -452,20 +450,6 @@ document.addEventListener('submit',async e=>{
   await loadMine();
   message='Your profile details and photo are saved together ♥';
   success=true;location.hash='#/profile';
- }else if(type==='old-bebo-restore'){
-  if(!me?.id||!profile?.id)throw Error('Log in and create your new Bebo profile first.');
-  if(d.get('own_content')!=='on')throw Error('Confirm this is your own content or you have permission to use it.');
-  const changes={};
-  for(const [key,max] of [['bio',2000],['status',180],['music',120]]){
-   const value=clamp(d.get(key),max);
-   if(value)changes[key]=value;
-  }
-  if(!Object.keys(changes).length)throw Error('Paste at least one old memory before saving.');
-  await query('bebo_profiles',q=>q.update(changes).eq('id',me.id));
-  await loadMine();
-  message='Your old Bebo memories were saved to your new profile ♥';
-  success=true;
-  location.hash='#/profile';
  }else if(type==='wall'){
   if(!me||!userViewed)throw Error('Log in first.');const body=clamp(d.get('body'),1200);
   if(!body)throw Error('Write a message first.');
@@ -494,7 +478,7 @@ document.addEventListener('submit',async e=>{
  }
  }catch(err){message=escapeError(err);success=false}finally{
   f.dataset.busy='';if(b)b.disabled=false;
-  if((type==='edit-profile'||type==='old-bebo-restore'||type.startsWith('admin-')||type==='retro-poll-create'||type==='retro-quiz-create'||type==='verification-request')&&!success){
+  if((type==='edit-profile'||type.startsWith('admin-')||type==='retro-poll-create'||type==='retro-quiz-create'||type==='verification-request')&&!success){
     let notice=f.querySelector('.edit-profile-error');
     if(!notice){notice=document.createElement('p');notice.className='notice bad edit-profile-error';notice.setAttribute('role','alert');f.prepend(notice);}
     notice.textContent=message;
