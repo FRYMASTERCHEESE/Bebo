@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import { createRetro } from './nostalgia.js?v=20261010-polls-quizzes-v2';
 import { createSafety } from './safety.js';
-import { createClassic } from './classic-modules.js?v=20261010-bebo-verified-v1';
+import { createClassic } from './classic-modules.js?v=20261010-bebo-2005-v1';
 import { createAdmin } from './admin.js?v=20261010-bebo-verified-v1';
 import { createVerification } from './verified.js?v=20261010-transparency-v1';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
@@ -10,6 +10,8 @@ const app=document.querySelector('#app');
 const configured=/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL||'')&&SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_');
 const sb=configured?createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
 const BEBO_SITE_URL='https://frymastercheese.github.io/Bebo/'; // Must also be added under Supabase Auth > URL Configuration.
+const BEBO_ERA_KEY='bebo-classic-look-v1';
+const classicEra=()=>document.documentElement.dataset.beboEra==='2007'?'2007':'2005';
 let me=null, profile=null, page='home', userViewed=null, message='', success=false, adminAccess=null, memberRestriction=null;
 
 const safe=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
@@ -209,7 +211,7 @@ async function refresh(){
  if(page==='verification-policy'){app.innerHTML=note()+verified.policyPage();return}
  if(page.startsWith('transparency/')){app.innerHTML=note()+await verified.transparencyPage(page.slice('transparency/'.length));return}
  if(!me){
-  if(page==='home'){app.innerHTML=note()+await classic.home(null);return}
+  if(page==='home'){app.innerHTML=note()+await classic.home(null,classicEra());return}
   if(page==='skins'){await showSkins();return}
   if(['polls','quizzes','creators'].includes(page)){app.innerHTML=note()+await retro.route(page,null);return}
   if(page==='photos'||page.startsWith('photos/')||page.startsWith('album/')||
@@ -228,7 +230,7 @@ async function refresh(){
  default:
    if(page.startsWith('photos/')||page.startsWith('album/')||page.startsWith('blogs/')||
       page.startsWith('blog/')||page.startsWith('messages/'))app.innerHTML=note()+await classic.route(page,me);
-   else app.innerHTML=note()+await classic.home(me);
+   else app.innerHTML=note()+await classic.home(me,classicEra());
    break;
  case 'skins':await showSkins();break;
  case 'edit':app.innerHTML=note()+editProfile();break;
@@ -279,6 +281,38 @@ async function refreshBeboAnnouncement(){
  }
 }
 function render(){syncAdminNav();refresh().then(()=>{retro.afterRender();return refreshBeboAnnouncement()}).catch(e=>{app.innerHTML=note()+panel('Could not load this page',safe(escapeError(e))+'<p><a href="#/home">Return home</a></p>')})}
+// Bebo 2005 is the default for everyone. Changing the era only affects this browser's
+// presentation; all member data, custom skins and verified badges stay intact.
+function updateEraSwitcher(){
+ const era=classicEra();
+ document.querySelectorAll('[data-era]').forEach(button=>{
+   const selected=button.dataset.era===era;
+   button.classList.toggle('is-active',selected);
+   button.setAttribute('aria-pressed',String(selected));
+ });
+ const display=document.querySelector('#bebo-era-caption');
+ if(display)display.textContent=era==='2005'?'Original 2005 look':'Colourful 2007 look';
+}
+function chooseEra(nextEra){
+ if(nextEra!=='2005'&&nextEra!=='2007')return;
+ document.documentElement.dataset.beboEra=nextEra;
+ try{localStorage.setItem(BEBO_ERA_KEY,nextEra)}catch(err){console.warn('Bebo look preference not saved',err)}
+ updateEraSwitcher();
+ if(page==='home')render();
+}
+document.querySelector('.bebo-era-controls')?.addEventListener('click',event=>{
+ const button=event.target.closest('[data-era]');
+ if(button)chooseEra(button.dataset.era);
+});
+window.addEventListener('storage',event=>{
+ if(event.key===BEBO_ERA_KEY){
+   document.documentElement.dataset.beboEra=event.newValue==='2007'?'2007':'2005';
+   updateEraSwitcher();
+   if(page==='home')render();
+ }
+});
+updateEraSwitcher();
+
 document.querySelector('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-nav]');if(!b)return;location.hash='#/'+b.dataset.nav;render()});
 window.addEventListener('hashchange',()=>{verified.closeDialog();message='';activeSkinCategory='All';render()});
 
