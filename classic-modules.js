@@ -282,7 +282,7 @@ export function createClassic(sb,{safe,panel,btn,query}) {
     throw Error('Unknown classic action.');
   }
   /** 2007-style front page: real friends, real member avatars and real activity. */
-  async function home(me) {
+  async function home(me,era='2005') {
     const isMember=Boolean(me?.id);
     const [own,people,blogs,albums,friends]=await Promise.all([
       isMember?db('bebo_profiles',q=>q.select('id,username,display_name,status,avatar_path').eq('id',me.id).maybeSingle()):Promise.resolve(null),
@@ -370,6 +370,68 @@ export function createClassic(sb,{safe,panel,btn,query}) {
       '<a href="#/quizzes">❓ Quizzes <span>How well do you know me?</span></a>'+
       '<a href="#/groups">★ Groups <span>Find your people</span></a>'+
       '</div>';
+    // The 2005 front page is deliberately different from the 2007 skin-heavy layout:
+    // small blue navigation, early sign-up steps, a white background, pastel panels,
+    // and featured members based on actual Bebo profiles (no invented people).
+    if(era==='2005'){
+      const featured=verified.prioritizePeople(people,approvedIDs).slice(0,12);
+      const memberTiles=featured.length?'<div class="bebo05-featured-grid">'+featured.map(p=>
+        '<a class="bebo05-member" href="#/u/'+encodeURIComponent(p.username)+'">'+avatar(p)+
+        '<span>'+safe(p.display_name)+' '+verified.badge(p,approvedIDs)+'</span></a>').join('')+'</div>':
+        '<p class="muted">New members will appear here when they join Bebo.</p>';
+      const heading=isMember?'Welcome back to Bebo, '+safe(own?.display_name||'friend')+'!':'Sign up. Build your profile. Find friends.';
+      const steps='<div class="bebo05-steps" aria-label="Three steps to Bebo">'+
+        '<a href="#/'+(isMember?'profile':'account')+'"><b>1</b><strong>'+(isMember?'My Profile':'Sign up')+'</strong></a>'+
+        '<a href="#/'+(isMember?'edit':'account')+'"><b>2</b><strong>Build Profile</strong></a>'+
+        '<a href="#/'+(isMember?'friends':'account')+'"><b>3</b><strong>Get Friends</strong></a>'+
+        '</div>';
+      const greeting='<section class="bebo05-banner" aria-label="Bebo 2005 welcome">'+
+        '<div class="bebo05-banner-photo">'+
+        (featured.slice(0,3).map(p=>'<span class="bebo05-photo-tile">'+avatar(p)+'</span>').join('')||
+        '<span class="bebo05-big-initial" aria-hidden="true">bebo</span>')+
+        '</div>'+
+        '<div class="bebo05-banner-copy">'+
+        '<p class="bebo05-kicker">Your own space on Bebo</p><h1>'+heading+'</h1>'+
+        '<p>Make a profile, find your friends and keep in touch — just like the early days.</p>'+
+        '<a class="bebo05-signup" href="#/'+(isMember?'profile':'account')+'">'+
+          (isMember?'Go to my profile »':'Join Bebo — it’s free »')+'</a>'+
+        '</div></section>';
+      const features='<ul class="bebo05-bullets">'+
+        '<li><a href="#/profile">Share photos privately or publicly</a></li>'+
+        '<li><a href="#/edit">Create a profile about yourself</a></li>'+
+        '<li><a href="#/friends">Find friends and send messages</a></li>'+
+        '<li><a href="#/groups">Join groups and make connections</a></li>'+
+        '<li><a href="#/blogs">Start your own blog</a></li>'+
+        '<li><a href="#/skins">Customise with classic profile skins</a></li>'+
+        '<li><a href="#/quizzes">Enjoy polls and quizzes</a></li>'+
+        '</ul>';
+      const activity=rankedFeed.length?'<div class="bebo05-activity">'+rankedFeed.slice(0,5).map(entry=>
+        '<div class="bebo05-activity-item">'+entry.html+'</div>').join('')+'</div>':
+        '<p>There’s no recent activity yet. <a href="#/'+(isMember?'blogs':'account')+'">Be the first to share »</a></p>';
+      const friendsShort=isMember?panel('My Friends ('+myFriendIDs.length+')',friendGrid):'';
+      return '<div class="classic-home classic-home-2005">'+
+        '<div class="bebo05-ribbon"><span>★</span> Make your own corner of the internet <span>★</span></div>'+
+        greeting+steps+
+        '<div class="bebo05-columns"><div class="bebo05-main">'+
+          panel('Find your Friends on Bebo','<p>Find your mates, share photos and catch up.</p>'+
+            '<div class="bebo05-find-action"><a href="#/'+(isMember?'friends':'account')+'">'+
+            (isMember?'Find Bebo friends »':'Join to find your friends »')+'</a></div>')+
+          panel('Friends, Profiles and Bebo',features)+
+          friendsShort+
+          panel('What’s happening on Bebo?',activity)+
+          panel('Stay Safe on Bebo','<p>Keep your private information safe, and tell us if something isn’t right. '+
+            '<a href="#/safety">Community rules and privacy »</a></p>')+
+        '</div><aside class="bebo05-sidebar">'+
+          panel('Featured Profiles',memberTiles)+
+          panel('My Bebo',isMember?
+            '<p><a href="#/profile">My Profile »</a></p><p><a href="#/edit">Edit My Profile »</a></p>'+
+            '<p><a href="#/photos">My Photos »</a></p><p><a href="#/messages">My Mail »</a></p>':
+            '<p>Create your own free profile and join your friends.</p><p><a href="#/account">Sign Up »</a></p>')+
+          panel('Classic Bebo Skins','<p>Remember choosing a different skin every week?</p>'+
+            '<p><a href="#/skins">Browse all profile skins »</a></p>')+
+        '</aside></div>'+
+      '</div>';
+    }
     return '<div class="classic-home classic-home-2007">'+
       '<div class="classic-home-left">'+
         panel('♥ Welcome to My Bebo',cover)+
