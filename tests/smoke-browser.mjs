@@ -103,7 +103,11 @@ try{
       await globalBack.click();
       await page.waitForURL('**#/home',{timeout:10000});
       assert.equal(await page.evaluate(()=>location.hostname),'frymastercheese.github.io','Back left the Bebo site');
-      assert.equal(await globalBack.isDisabled(),true,'Back at initial Home should not act on an external history entry');
+      assert.equal(await page.evaluate(()=>history.state?.beboPreviousRoute),'#/old-bebo',
+        'Home should retain its legitimate previous Bebo page');
+      await globalBack.click();
+      await page.waitForURL('**#/old-bebo',{timeout:10000});
+      assert.equal(await page.locator('#bebo-memory-search').count(),1,'Back from Home did not return to Bebo Memories');
       item.backNavigation='PASS';
       item.memorySearch='PASS';
     }
