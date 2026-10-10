@@ -4,6 +4,7 @@ import { createSafety } from './safety.js';
 import { createClassic } from './classic-modules.js?v=20261010-bebo-memory-v2';
 import { createAdmin } from './admin.js?v=20261010-bebo-verified-v1';
 import { createVerification } from './verified.js?v=20261010-transparency-v1';
+import { createVideos } from './videos.js?v=20261010-videos-v1';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
@@ -32,6 +33,7 @@ const retro=createRetro(sb,{safe,panel,btn,query});
 const safety=createSafety(sb,{safe,panel,btn,query});
 const classic=createClassic(sb,{safe,panel,btn,query});
 const verified=createVerification(sb,{safe,panel,query});
+const videos=createVideos(sb,{safe,panel,query});
 const admin=createAdmin(sb,{safe,panel});
 async function loadMine(){if(!me){profile=null;adminAccess=null;memberRestriction=null;return}profile=await query('bebo_profiles',q=>q.select('*').eq('id',me.id).maybeSingle());const status=await query('bebo_member_controls',q=>q.select('status,reason').eq('member_id',me.id).maybeSingle());memberRestriction=status;adminAccess=await admin.check(me)}
 async function init(){
@@ -100,6 +102,7 @@ async function showProfile(username){
  const visiblePosts=posts.filter(post=>!blockedIds.has(post.author_id));
  const extras=blocked?panel('Member blocked','<p>You have blocked this member. Use Unblock to interact again.</p>'):await retro.sharedPanel(who,me);
  const classicExtras=await classic.publicModules(who,me);
+ const videoExtras=await videos.profilePanel(who,{me,profile,adminAccess});
  const about=panel('♥ A Little About Me',`<div class="bebo-about-text">${safe(who.bio||'No About Me message yet. ♥')}</div><div class="bebo-about-meta">${who.music?'<strong>♫ Favourite music:</strong><p>'+safe(who.music)+'</p>':''}<p class="muted">★ My Bebo, my way.</p></div>`);
  const photo=panel('★ My Profile Picture',`<div class="bebo-photo-frame">${badge(who)}</div><p class="bebo-profile-handle">@${safe(who.username)}</p><p class="bebo-profile-place">${who.location?'📍 '+safe(who.location):'♥ Welcome to my Bebo!'}</p>${own?'<p><a href="#/edit">✎ Edit my picture</a></p>':''}`);
  const form=me&&!blocked?`<form data-form="wall" class="fields"><textarea name="body" maxlength="1200" required placeholder="Leave ${safe(who.display_name)} a comment ♥"></textarea><button class="button">Post comment</button></form>`:'<p><a href="#/account">Log in</a> to leave a comment.</p>';
@@ -127,7 +130,8 @@ async function showProfile(username){
  const mood=who.status?'<p class="bebo-current-mood"><span>My status ♥</span> '+safe(who.status)+'</p>':'<p class="bebo-current-mood">♥ Welcome to my Bebo page!</p>';
  const nav='<nav class="bebo-mini-nav" aria-label="Profile pages">'+
   '<a href="#/u/'+userURL+'" aria-current="page">♥ Profile</a>'+
-  '<a href="#/photos/'+userURL+'">📸 Photos</a>'+
+  '<a href="#/photos/'+userURL+'">📸 Photos</a>'+ 
+  '<a href="#/videos/u/'+userURL+'">🎬 Videos</a>'+
   '<a href="#/blogs/'+userURL+'">✎ Blog</a>'+
   '<a href="#/friends">★ Friends</a>'+
   (own?'<a href="#/skins">🎨 Skins</a>':me?'<a href="#/messages/'+userURL+'">✉ Mail</a>':'<a href="#/account">✉ Join Bebo</a>')+
@@ -144,7 +148,7 @@ async function showProfile(username){
      <div class="bebo-profile-photo-module">${photo}</div>
      <div class="bebo-profile-about-module">${about}</div>
     </aside>
-    <div class="bebo-profile-main" aria-label="Friends, Luv and profile activity">${extras}${wall}${classicExtras}</div>
+    <div class="bebo-profile-main" aria-label="Friends, Luv and profile activity">${extras}${videoExtras}${wall}${classicExtras}</div>
    </div>
   </article>`;
 }
@@ -208,6 +212,9 @@ async function refresh(){
  page=raw||'home';
  if(!configured){app.innerHTML=note()+authPage();return}
  if(page==='safety'){app.innerHTML=note()+safetyInfoPage();return}
+ if(page==='videos'||page==='videos-review'||page.startsWith('videos/u/')){
+  app.innerHTML=note()+await videos.route(page,{me,profile,adminAccess});return;
+ }
  if(page==='old-bebo'){location.replace(location.pathname+location.search+'#/home');return}
  if(page==='verification-policy'){app.innerHTML=note()+verified.policyPage();return}
  if(page.startsWith('transparency/')){app.innerHTML=note()+await verified.transparencyPage(page.slice('transparency/'.length));return}
@@ -499,6 +506,8 @@ document.addEventListener('submit',async e=>{
   const rows=await query('bebo_skins',q=>q.insert({creator_id:me.id,name:clamp(d.get('name'),70),primary_color:primary,secondary_color:secondary,banner_path:bannerPath}).select().single());
   await query('bebo_profiles',q=>q.update({skin:'custom',skin_primary:rows.primary_color,skin_secondary:rows.secondary_color,skin_banner_path:bannerPath}).eq('id',me.id));
   await loadMine();message='Your skin is saved and shared ♥';success=true;
+ }else if(type==='video-upload'||type==='video-comment'){
+  message=await videos.form(type,d,{me,profile,adminAccess},f);success=true;
  }else if(type==='verification-request'){
   message=await verified.submit(me,d);success=true;
  }else if(type.startsWith('admin-')){
@@ -515,7 +524,7 @@ document.addEventListener('submit',async e=>{
  }
  }catch(err){message=escapeError(err);success=false}finally{
   f.dataset.busy='';if(b)b.disabled=false;
-  if((type==='edit-profile'||type.startsWith('admin-')||type==='retro-poll-create'||type==='retro-quiz-create'||type==='verification-request')&&!success){
+  if((type==='edit-profile'||type==='video-upload'||type==='video-comment'||type.startsWith('admin-')||type==='retro-poll-create'||type==='retro-quiz-create'||type==='verification-request')&&!success){
     let notice=f.querySelector('.edit-profile-error');
     if(!notice){notice=document.createElement('p');notice.className='notice bad edit-profile-error';notice.setAttribute('role','alert');f.prepend(notice);}
     notice.textContent=message;
@@ -537,6 +546,9 @@ document.addEventListener('click',async e=>{
   b.setAttribute('aria-expanded',String(nextOpen));
   if(nextOpen)drawer.scrollIntoView({behavior:'smooth',block:'nearest'});
   return;
+ }
+ if(a.startsWith('video-')){
+  message=await videos.action(a,id,{me,profile,adminAccess});success=true;render();return;
  }
  if(a.startsWith('admin-')){
   const result=await admin.action(a,id,me);
