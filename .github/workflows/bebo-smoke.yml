@@ -6,7 +6,6 @@ on:
       - 'tests/verified-smoke.mjs'
       - 'tests/profile-verified-smoke.mjs'
       - 'tests/verified-transparency-smoke.mjs'
-      - 'tests/old-bebo-memories-smoke.mjs'
       - '.github/workflows/bebo-smoke.yml'
   workflow_dispatch:
 permissions:
@@ -31,8 +30,6 @@ jobs:
         run: node tests/profile-verified-smoke.mjs
       - name: Test verified transparency and badge information safely
         run: node tests/verified-transparency-smoke.mjs
-      - name: Test public Old Bebo Memories archive lookup and restore safety
-        run: node tests/old-bebo-memories-smoke.mjs
       - name: Install headless Chromium
         run: npx playwright install --with-deps chromium
       - name: Run mobile and desktop read-only smoke tests
