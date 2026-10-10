@@ -16,11 +16,12 @@ const tests=[
 {path:'groups',label:'Groups',match:/groups/i},
 {path:'creators',label:'Bands and Authors',match:/bands|authors|creators/i},
 {path:'safety',label:'Privacy',match:/community rules.*privacy/i},
+{path:'old-bebo',label:'Old Bebo Memories',match:/Find My Old Bebo Memories|Remember your first Bebo/i,memorySearch:true},
 {path:'account',label:'Signup',match:/join bebo|create your account/i,signup:true},
 {path:'admin',label:'Admin guest denial',match:/join bebo|create your account|admin only/i,guestAdmin:true}
 ];
 // Wait until GitHub Pages publishes the matching revision; Actions can run before Pages.
-const expectedCSS='Mobile copy restoration: users can long-press and highlight Bebo posts, profiles,';
+const expectedCSS='Old Bebo Memories: accessible early-Bebo styled public archive search.';
 let releaseReady=false;
 for(let n=0;n<40;n++){
   try{
@@ -29,7 +30,7 @@ for(let n=0;n<40;n++){
   }catch(error){console.warn('Waiting for Bebo Pages:',String(error));}
   await new Promise(resolve=>setTimeout(resolve,3000));
 }
-assert(releaseReady,'GitHub Pages has not published the Bebo mobile copying fix yet.');
+assert(releaseReady,'GitHub Pages has not published the old Bebo Memories feature yet.');
 const results=[],errors=[];const browser=await chromium.launch({headless:true});
 try{
  await fs.mkdir('test-results',{recursive:true});
@@ -43,11 +44,45 @@ try{
     await page.waitForFunction(()=>Boolean(document.querySelector('#app')?.innerText?.trim())&&!/Loading your profile|Loading Bebo/i.test(document.querySelector('#app')?.innerText||''),null,{timeout:35000});
     await page.waitForFunction(({source,flags})=>new RegExp(source,flags).test(document.querySelector('#app')?.innerText||''),{source:check.match.source,flags:check.match.flags},{timeout:30000});
     if(device.name==='mobile'){
-      await page.waitForFunction(()=>[...document.querySelectorAll('style')].some(x=>x.textContent.includes('Touchscreen fix: prevent regular Bebo words being selected on smaller screens.')),null,{timeout:20000});
+      await page.waitForFunction(()=>[...document.querySelectorAll('style')].some(x=>x.textContent.includes('Mobile copy restoration: users can long-press and highlight Bebo posts, profiles,')),null,{timeout:20000});
     }
     const inner=await page.locator('#app').innerText();
     assert(!/Could not load this page|me is not defined|ReferenceError|TypeError/i.test(inner),'Fatal error shown: '+inner.slice(0,450));
     assert(check.match.test(inner),'Missing expected '+check.label+': '+inner.slice(0,300));
+    if(check.memorySearch){
+      const form=page.locator('#bebo-memory-search'),field=page.locator('#bebo-old-lookup');
+      assert.equal(await form.count(),1,'Old Bebo search form missing');
+      assert.equal(await page.locator('form[data-form="old-bebo-restore"]').count(),0,'Guest must not see profile-restoration form');
+      let returnSnapshot=true;
+      await page.route('https://archive.org/wayback/available**',async route=>{
+        const archived=returnSnapshot?{
+          closest:{available:true,url:'http://web.archive.org/web/20071018010101/http://www.bebo.com/Profile.jsp?MemberId=1584189657',timestamp:'20071018010101',status:'200'}
+        }:{};
+        await route.fulfill({status:200,contentType:'application/json',
+          headers:{'access-control-allow-origin':'*'},
+          body:JSON.stringify({archived_snapshots:archived})});
+      });
+      await field.fill('1584189657');
+      await form.locator('button[type="submit"]').click();
+      const found=page.locator('.bebo-memory-hit');
+      await found.first().waitFor({state:'visible',timeout:20000});
+      assert.equal(await found.count(),1,'Identical archived snapshots should be deduplicated');
+      const archiveLink=found.first().locator('a');
+      assert((await archiveLink.getAttribute('href')).startsWith('https://web.archive.org/web/'),'Archive snapshot should use HTTPS');
+      assert.equal(await archiveLink.getAttribute('rel'),'noopener noreferrer','External archive links need safe target relationship');
+      assert((await page.locator('#bebo-memory-results').innerText()).includes('Archived Bebo snapshot found'));
+      returnSnapshot=false;
+      await field.fill('MyOldName');
+      await form.locator('button[type="submit"]').click();
+      await page.getByText('No confirmed snapshot from this quick check.').waitFor({state:'visible',timeout:20000});
+      assert.equal(await page.locator('#bebo-memory-results a[href^="https://web.archive.org/web/*/"]').count(),3,
+        'Fallback archive calendar links not shown when no snapshot found');
+      await field.fill('https://invalid.example/you');
+      await form.locator('button[type="submit"]').click();
+      await page.locator('#bebo-memory-results[aria-live] .bebo-memory-error').waitFor({state:'visible',timeout:15000});
+      assert(/Only original bebo.com profile URLs/.test(await page.locator('.bebo-memory-error').innerText()));
+      item.memorySearch='PASS';
+    }
     if(check.eraTest){
       await page.locator('.classic-home-2005').waitFor({state:'visible',timeout:15000});
       const fresh=await page.evaluate(()=>({
