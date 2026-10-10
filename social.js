@@ -112,9 +112,16 @@ async function showProfile(username){
  const themeSecondary=who.skin==='custom'&&/^#[0-9a-fA-F]{6}$/.test(who.skin_secondary)?who.skin_secondary:skinPreset[2];
  const name=safe(who.display_name);
  const verifiedBadge=verified.badge(who,approvedUserIDs);
+ const ownVerificationRequest=own&&!approvedUserIDs.has(who.id)?await query('bebo_verification_requests',q=>q.select('status').eq('user_id',who.id).maybeSingle()):null;
+ const verificationPanel=own?await verified.requestPanel(me):'';
  const userURL=encodeURIComponent(who.username);
  const cover=retro.imageStyle(who,grad(who));
- const actions=own?'<a class="bebo-profile-action" href="#/edit">✎ Edit my profile</a><a class="bebo-profile-action" href="#/skins">🎨 Change my skin</a>':'<div class="bebo-profile-buttons">'+friendAction+tools+'</div>';
+ const verifyAction=own?(approvedUserIDs.has(who.id)?
+  '<span class="bebo-profile-action bebo-profile-verify-complete">✓ Bebo Verified</span>':
+  '<button type="button" class="bebo-profile-action bebo-profile-verify-cta" data-action="verified-profile-toggle" aria-controls="bebo-profile-verification" aria-expanded="false">'+
+  (ownVerificationRequest?.status==='pending'?'✓ Verification Pending':ownVerificationRequest?.status==='declined'?'✓ Check Verification Status':'✓ Request Bebo Verified')+'</button>'):'';
+ const actions=own?'<a class="bebo-profile-action" href="#/edit">✎ Edit my profile</a><a class="bebo-profile-action" href="#/skins">🎨 Change my skin</a>'+verifyAction:
+  '<div class="bebo-profile-buttons">'+friendAction+tools+'</div>';
  const mood=who.status?'<p class="bebo-current-mood"><span>My status ♥</span> '+safe(who.status)+'</p>':'<p class="bebo-current-mood">♥ Welcome to my Bebo page!</p>';
  const nav='<nav class="bebo-mini-nav" aria-label="Profile pages">'+
   '<a href="#/u/'+userURL+'" aria-current="page">♥ Profile</a>'+
@@ -128,6 +135,7 @@ async function showProfile(username){
     <div class="bebo-cover-copy"><span class="bebo-cover-kicker">♥ My Bebo • My Friends • My Skin ♥</span><h1>${name}'s Profile</h1><span class="bebo-cover-bottom">★ Welcome to my page ★</span></div>
    </header>
    <div class="bebo-identity-strip"><div class="bebo-nameplate"><strong>${name} ${verifiedBadge}</strong><span>@${safe(who.username)}</span></div><div class="bebo-status-line">${mood}</div><div class="bebo-profile-actions">${actions}</div></div>
+   ${own?`<div id="bebo-profile-verification" class="bebo-profile-verification" hidden>${verificationPanel}</div>`:""}
    ${nav}
    <div class="bebo-profile-layout">
     <aside class="bebo-profile-sidebar" aria-label="Profile picture and personal information">
@@ -368,6 +376,15 @@ document.addEventListener('click',async e=>{
  const a=b.dataset.action,id=b.dataset.id;
  try{
  if(a==='go'){location.hash='#/'+id;return}
+ if(a==='verified-profile-toggle'){
+  const drawer=document.querySelector('#bebo-profile-verification');
+  if(!drawer)return;
+  const nextOpen=drawer.hidden;
+  drawer.hidden=!nextOpen;
+  b.setAttribute('aria-expanded',String(nextOpen));
+  if(nextOpen)drawer.scrollIntoView({behavior:'smooth',block:'nearest'});
+  return;
+ }
  if(a.startsWith('admin-')){
   const result=await admin.action(a,id,me);
   if(!result?.cancelled){message=result?.message||'Admin action completed';success=true;render()}
