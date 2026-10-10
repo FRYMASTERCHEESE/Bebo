@@ -142,6 +142,24 @@ try{
       assert(inner.includes('strong, unique password'),'Safe new-account password guidance is missing');
       assert(!inner.includes('Independent service:')&&!inner.includes('Do not use an old Bebo password.'),'Old discouraging wording is still on the Safety page');
     }
+    if(device.name==='mobile'&&check.path==='safety'){
+      const selection=await page.evaluate(()=>{
+        const text=document.querySelector('#app .panel .body p');
+        if(!text)return {error:'No Safety page paragraph'};
+        const range=document.createRange();
+        range.selectNodeContents(text);
+        const selection=window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        const selected=selection.toString();
+        const style=getComputedStyle(text);
+        selection.removeAllRanges();
+        return {selected,style:style.userSelect};
+      });
+      assert.equal(selection.style,'text','Safety content cannot be selected');
+      assert(/respectful|harassment|impersonation/i.test(selection.selected),'Mobile Safety page content cannot be selected for copying');
+      item.copySelection='PASS';
+    }
     if(check.path==='safety'){
       // A direct deep-link visit must not call native history.back() into another site.
       await globalBack.click();
@@ -177,24 +195,6 @@ try{
       assert.equal(layout.regularText,'text','Mobile page text cannot be highlighted and copied');
       assert.equal(layout.announcement,'text','Bebo announcement cannot be highlighted and copied: '+JSON.stringify(layout));
       if(check.signup)assert.equal(layout.editable,'text','Signup field must remain selectable and editable');
-    }
-    if(device.name==='mobile'&&check.path==='safety'){
-      const selection=await page.evaluate(()=>{
-        const text=document.querySelector('#app .panel .body p');
-        if(!text)return {error:'No Safety page paragraph'};
-        const range=document.createRange();
-        range.selectNodeContents(text);
-        const selection=window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
-        const selected=selection.toString();
-        const style=getComputedStyle(text);
-        selection.removeAllRanges();
-        return {selected,style:style.userSelect};
-      });
-      assert.equal(selection.style,'text','Safety content cannot be selected');
-      assert(/respectful|harassment|impersonation/i.test(selection.selected),'Mobile Safety page content cannot be selected for copying');
-      item.copySelection='PASS';
     }
     if(check.path==='home')await page.screenshot({path:'test-results/'+device.name+'-home.png',fullPage:true});
     item.status='PASS';
