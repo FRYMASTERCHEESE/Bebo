@@ -25,11 +25,12 @@ let releaseReady=false;
 for(let n=0;n<40;n++){
   try{
     const html=await (await fetch(host+'?wait-for-css='+Date.now(),{cache:'no-store'})).text();
-    if(html.includes(expectedCSS)){releaseReady=true;break;}
+    const aboutIsPublished=html.includes('<a class="bebo-about-link" href="./about.html">About Bebo</a>');
+    if(html.includes(expectedCSS)&&aboutIsPublished){releaseReady=true;break;}
   }catch(error){console.warn('Waiting for Bebo Pages:',String(error));}
   await new Promise(resolve=>setTimeout(resolve,3000));
 }
-assert(releaseReady,'GitHub Pages has not published the global Back and Home controls yet.');
+assert(releaseReady,'GitHub Pages has not published the global navigation and About Bebo link yet.');
 const results=[],errors=[];const browser=await chromium.launch({headless:true});
 try{
  await fs.mkdir('test-results',{recursive:true});
