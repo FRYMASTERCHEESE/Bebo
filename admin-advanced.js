@@ -2,6 +2,7 @@
 export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
   const sections=[
     ['members','👥 Manage Members'],
+    ['verification','✓ Verified Members'],
     ['signups','📧 Sign-up Emails'],
     ['analytics','📊 Website Analytics'],
     ['announcements','📢 Announcements'],
@@ -29,18 +30,21 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
     const controlIDs=people.map(x=>x.id);
     const records=controlIDs.length?await request(sb.from('bebo_member_controls').select('member_id,status,reason,updated_at').in('member_id',controlIDs)):[];
     const byID=new Map(records.map(x=>[x.member_id,x]));
+    const badgeRows=controlIDs.length?await request(sb.from('bebo_verified_profiles').select('user_id').in('user_id',controlIDs)):[];
+    const verifiedIDs=new Set(badgeRows.map(x=>x.user_id));
     const list=people.map(p=>{
       const restriction=byID.get(p.id);
       const status=restriction?.status||'active';
       const protectedMember=p.id===me.id;
+      const isVerified=verifiedIDs.has(p.id);
       const tools=protectedMember?'<span class="admin-state admin-state-active">★ Your owner account is protected</span>':status==='suspended'?
        click('Restore member','admin-member-restore',p.id):
        click('Suspend','admin-member-suspend',p.id,'danger');
       return '<article class="admin-member-card"><div><b>'+link(p)+'</b>'+
        '<p class="muted">Joined '+day(p.created_at)+'</p>'+
-       '<span class="admin-state admin-state-'+status+'">'+safe(status.toUpperCase())+'</span>'+
+       '<span class="admin-state admin-state-'+status+'">'+safe(status.toUpperCase())+'</span>'+ (isVerified?'<span class="admin-state admin-state-active">✓ BEBO VERIFIED</span>':'')+
        (restriction?.reason?'<p class="admin-member-reason">'+safe(restriction.reason)+'</p>':'')+'</div>'+
-       '<div class="admin-member-actions">'+(protectedMember?'':click('Warn','admin-member-warn',p.id))+tools+
+       '<div class="admin-member-actions">'+click(isVerified?'Remove Verified ✓':'Verify ✓',isVerified?'admin-verified-revoke':'admin-verified-grant',p.id,isVerified?'danger':'secondary')+(protectedMember?'':click('Warn','admin-member-warn',p.id))+tools+
        (!protectedMember&&status==='warned'?click('Clear warning','admin-member-restore',p.id):'')+'</div></article>';
     }).join('');
     return panel('👥 Manage Members',
@@ -50,6 +54,43 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
       '<button class="button" type="submit">Find members</button></form>'+
       (list||'<p class="admin-empty">No matching Bebo members found.</p>')+
       '<p class="muted">Suspension blocks new posts, comments, uploads and other social writes. Members can still sign in, read public content and submit a safety report.</p>');
+  }
+  async function verification(){
+    const [requests,badges]=await Promise.all([
+      request(sb.from('bebo_verification_requests').select('user_id,reason,status,requested_at,reviewed_at').order('requested_at',{ascending:false}).limit(60)),
+      request(sb.from('bebo_verified_profiles').select('user_id,verified_at').order('verified_at',{ascending:false}).limit(100))
+    ]);
+    const ids=[...new Set([...requests.map(x=>x.user_id),...badges.map(x=>x.user_id)])];
+    const profiles=ids.length?await request(sb.from('bebo_profiles').select('id,username,display_name').in('id',ids)):[];
+    const byID=new Map(profiles.map(x=>[x.id,x]));
+    const checked=new Set(badges.map(x=>x.user_id));
+    const pending=requests.filter(x=>x.status==='pending'&&!checked.has(x.user_id));
+    const history=requests.filter(x=>x.status!=='pending'||checked.has(x.user_id));
+    function applicant(x){
+      const p=byID.get(x.user_id);
+      return '<article class="admin-verify-card"><div><b>'+(p?link(p):'Deleted member')+'</b>'+
+        '<p class="muted">Applied '+day(x.requested_at)+' · '+safe(x.status)+'</p>'+
+        '<p class="admin-verify-reason">'+safe(x.reason)+'</p></div>'+
+        '<div class="admin-inline-actions">'+
+        (checked.has(x.user_id)?'<span class="admin-state admin-state-active">✓ Verified</span>':
+          x.status==='pending'?click('✓ Approve','admin-verified-grant',x.user_id)+click('Decline','admin-verified-decline',x.user_id,'danger'):'')+
+        '</div></article>';
+    }
+    const active=badges.map(x=>{
+      const person=byID.get(x.user_id);
+      return '<div class="admin-verify-member">✓ '+(person?link(person):'Deleted member')+
+        ' <span class="muted">since '+day(x.verified_at)+'</span> '+
+        click('Remove badge','admin-verified-revoke',x.user_id,'danger')+'</div>';
+    }).join('');
+    return panel('✓ Bebo Verified — Owner Approvals',
+      '<p>Approve Bebo profiles after reviewing their public account and request. Approved members receive a blue Bebo Verified badge and a <strong>discovery boost</strong> in members lists and the homepage activity ranking.</p>'+
+      '<p class="muted">Bebo Verified is independent of Meta and does not mean a government identity document was checked. Never ask members to upload ID documents or passwords for this feature.</p>'+
+      '<h3>Pending applications ('+pending.length+')</h3>'+
+      (pending.map(applicant).join('')||'<p class="admin-empty">No new verification requests. ♥</p>')+
+      '<h3>Currently Verified ('+badges.length+')</h3>'+
+      (active||'<p class="muted">No approved Bebo Verified profiles yet. Use Manage Members to approve a profile manually.</p>')+
+      '<h3>Past applications</h3>'+
+      (history.map(applicant).join('')||'<p class="muted">No completed applications yet.</p>'));
   }
   async function signups(){
     // Supabase Auth is private: never expose its service-role credentials in
@@ -173,7 +214,7 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
     if(role!=='owner')return panel('Owner tools','Only the Bebo owner can control members, announcements and site settings.');
     await requireOwner(me);
     const buttons=sections.map(([key,label])=>click(label,'admin-section',key,key===section?'':'secondary')).join('');
-    const views={members,signups,analytics,announcements,skins,moderation,settings};
+    const views={members,verification,signups,analytics,announcements,skins,moderation,settings};
     return panel('👑 Owner Control Centre',
       '<p>Choose an admin tool below. Only your verified Bebo owner account can make changes.</p>'+
       '<div class="admin-section-tabs">'+buttons+'</div>')+
@@ -185,6 +226,36 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
     if(name==='admin-section'){
       if(!sections.some(([key])=>key===id))throw Error('Unknown section.');
       section=id;return {message:'Opened '+sections.find(([key])=>key===id)[1]};
+    }
+    if(['admin-verified-grant','admin-verified-revoke','admin-verified-decline'].includes(name)){
+      if(!uuid(id))throw Error('Invalid Bebo member ID');
+      if(name==='admin-verified-grant'){
+        if(!confirm('Approve this profile for the Bebo Verified badge and discovery boost? This is a Bebo community approval, not a real-world identity certification.'))return {cancelled:true};
+        const {data,error}=await sb.from('bebo_verified_profiles').insert({user_id:id}).select('user_id').maybeSingle();
+        if(error)throw error;
+        if(!data)throw Error('Verification was not saved.');
+        const existing=await request(sb.from('bebo_verification_requests').select('user_id').eq('user_id',id));
+        if(existing.length) {
+          const {error:reviewError}=await sb.from('bebo_verification_requests').update({status:'approved',reviewed_at:new Date().toISOString()}).eq('user_id',id);
+          if(reviewError)throw reviewError;
+        }
+        return {message:'Member approved for Bebo Verified ✓ Their discovery boost is now active.'};
+      }
+      if(name==='admin-verified-revoke'){
+        if(!confirm('Remove this member’s Bebo Verified badge and discovery boost?'))return {cancelled:true};
+        const {data,error}=await sb.from('bebo_verified_profiles').delete().eq('user_id',id).select('user_id').maybeSingle();
+        if(error)throw error;
+        if(!data)throw Error('The badge was already removed.');
+        return {message:'Bebo Verified badge and discovery boost removed.'};
+      }
+      if(name==='admin-verified-decline'){
+        if(!confirm('Decline this member’s Bebo Verified request?'))return {cancelled:true};
+        const {data,error}=await sb.from('bebo_verification_requests').update({status:'declined',reviewed_at:new Date().toISOString()})
+          .eq('user_id',id).eq('status','pending').select('user_id').maybeSingle();
+        if(error)throw error;
+        if(!data)throw Error('Request was already reviewed.');
+        return {message:'Verification request declined.'};
+      }
     }
     if(name==='admin-setting-toggle'){
       if(!['wall_posts','custom_skins','group_creation','announcements'].includes(id))throw Error('Unknown setting');
