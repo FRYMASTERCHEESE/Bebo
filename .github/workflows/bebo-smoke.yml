@@ -2,6 +2,16 @@ name: Bebo Safe Pre-Launch Browser Test
 on:
   push:
     paths:
+      - 'index.html'
+      - 'social.js'
+      - 'verified.js'
+      - 'safety.js'
+      - 'admin.js'
+      - 'admin-advanced.js'
+      - 'classic-modules.js'
+      - 'nostalgia.js'
+      - 'skin-library.js'
+      - 'config.js'
       - 'tests/smoke-browser.mjs'
       - 'tests/verified-smoke.mjs'
       - 'tests/profile-verified-smoke.mjs'
