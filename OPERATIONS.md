@@ -19,9 +19,9 @@ The connected Supabase organization currently reports **Free** plan. Supabase do
 
 ## Owner-only security action still required
 
-Supabase Security Advisor reported **Leaked Password Protection Disabled**. The current connected Supabase management actions do not expose Auth password-security settings.
+Supabase Security Advisor reported **Leaked Password Protection Disabled**. The current connected Supabase management actions do not expose Auth password-security settings. Supabase's own documentation states **leaked-password screening is a Pro-plan-and-above feature**; the project is currently on **Free**, so this setting is not available without a paid plan upgrade.
 
-Visit [Bebo Supabase Auth password security](https://supabase.com/dashboard/project/rnxiggzyqqzjtgdbpedb/auth/providers?provider=Email) and enable leaked-password screening if offered on your plan. Verify password minimum length is >=8 and keep email confirmation enabled. Do not enter or share a real password in chat. After changing, rerun Supabase Security Advisor and review the result.
+On Free, retain strong password guidance and a >=8 character minimum. If you independently decide to upgrade in future, visit [Bebo Supabase Auth password security](https://supabase.com/dashboard/project/rnxiggzyqqzjtgdbpedb/auth/providers?provider=Email) and enable leaked-password screening. Verify password minimum length is >=8 and keep email confirmation enabled. Do not enter or share a real password in chat. After changing, rerun Supabase Security Advisor and review the result.
 
 ## Data backups and recovery: *not yet verified*
 
