@@ -323,9 +323,10 @@ export function createClassic(sb,{safe,panel,btn,query}) {
       '<div class="classic-home-heart-note"><span>♥</span> Friends · Luv · Skins · Whiteboards · Music</div></section>';
     const shortcuts=(isMember?[
       ['★ My Profile','profile'],['✎ Edit Profile','edit'],['📸 My Photos','photos'],
-      ['✉ My Mail','messages'],['♥ My Other Half','other-half'],['✿ My Blog','blogs']
+      ['✉ My Mail','messages'],['♥ My Other Half','other-half'],['✿ My Blog','blogs'],['♥ Old Memories','old-bebo']
     ]:[
       ['♥ Join Bebo','account'],['🎨 Profile Skins','skins'],
+      ['♥ Old Bebo Memories','old-bebo'],
       ['📸 Browse Photos','photos'],['✎ Read Blogs','blogs'],
       ['★ Groups','groups'],['❓ Quizzes','quizzes']
     ]).map(([label,dest])=>'<a href="#/'+dest+'">'+safe(label)+'</a>').join('');
@@ -403,6 +404,7 @@ export function createClassic(sb,{safe,panel,btn,query}) {
         '<li><a href="#/groups">Join groups and make connections</a></li>'+
         '<li><a href="#/blogs">Start your own blog</a></li>'+
         '<li><a href="#/skins">Customise with classic profile skins</a></li>'+
+        '<li><a href="#/old-bebo">♥ Find My Old Bebo Memories</a></li>'+
         '<li><a href="#/quizzes">Enjoy polls and quizzes</a></li>'+
         '</ul>';
       const activity=rankedFeed.length?'<div class="bebo05-activity">'+rankedFeed.slice(0,5).map(entry=>
