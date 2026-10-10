@@ -126,7 +126,7 @@ export function createBeboMemories({safe,panel}){
     (result.failed?'<p class="bebo-memory-warning">The Archive did not answer '+result.failed+' of '+result.checks.length+' checks; results are incomplete.</p>':'')+
     found+'<p><strong>Explore the full archive calendar:</strong></p><ul>'+
     result.checks.map(x=>'<li><a href="'+safe(x.calendar)+'" target="_blank" rel="noopener noreferrer">'+safe(x.target)+' ↗</a></li>').join('')+
-    '</ul><p class="muted">These are external public archive links. Nothing is recovered automatically or stored by this search.</p></section>';
+    '</ul><p class="muted">Archive pages open in a new tab. Close that tab or switch back to Bebo to return; the ← Back button works within Bebo. Nothing is recovered automatically or stored by this search.</p></section>';
   }catch(error){
    output.innerHTML='<p class="bebo-memory-error" role="alert">'+safe(error?.message||'Could not search the archive.')+'</p>';
   }finally{if(button)button.disabled=false}
