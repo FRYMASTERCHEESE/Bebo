@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 const host='https://frymastercheese.github.io/Bebo/';
 const tests=[
-{path:'home', label:'Homepage',match:/welcome to bebo|people on bebo/i},
+{path:'home', label:'Homepage',match:/sign up\. build your profile\. find friends\.|welcome back to bebo/i,eraTest:true},
 {path:'u/bebo',label:'Profile',match:/bebo.s profile|my profile picture|about me/i,verifiedBadge:true},
 {path:'transparency/bebo',label:'Verified profile transparency',match:/Bebo Verified since|Profile transparency/i},
 {path:'verification-policy',label:'Bebo Verified rules',match:/not Meta Verified|What the badge means/i},
@@ -20,7 +20,7 @@ const tests=[
 {path:'admin',label:'Admin guest denial',match:/join bebo|create your account|admin only/i,guestAdmin:true}
 ];
 // Wait until GitHub Pages publishes the matching revision; Actions can run before Pages.
-const expectedCSS='Bebo Verified transparency dialog: a mobile bottom sheet with genuine public profile facts.';
+const expectedCSS='THE BEBO LOOK SWITCH: 2005 is the default. 2007 preserves the previous site look.';
 let releaseReady=false;
 for(let n=0;n<40;n++){
   try{
@@ -48,6 +48,31 @@ try{
     const inner=await page.locator('#app').innerText();
     assert(!/Could not load this page|me is not defined|ReferenceError|TypeError/i.test(inner),'Fatal error shown: '+inner.slice(0,450));
     assert(check.match.test(inner),'Missing expected '+check.label+': '+inner.slice(0,300));
+    if(check.eraTest){
+      await page.locator('.classic-home-2005').waitFor({state:'visible',timeout:15000});
+      const fresh=await page.evaluate(()=>({
+        era:document.documentElement.dataset.beboEra,
+        preference:localStorage.getItem('bebo-classic-look-v1'),
+        selected:document.querySelector('[data-era="2005"]')?.getAttribute('aria-pressed'),
+        top:getComputedStyle(document.querySelector('.top')).backgroundColor
+      }));
+      assert.equal(fresh.era,'2005','New visitors must default to Bebo 2005');
+      assert.equal(fresh.preference,null,'A new visitor should not inherit a saved choice');
+      assert.equal(fresh.selected,'true','2005 option must be active');
+      assert.equal(fresh.top,'rgb(255, 255, 255)','2005 masthead should be white');
+      const links=await page.locator('.bebo05-steps a').count();
+      assert.equal(links,3,'2005 signup/build/friends steps missing');
+      await page.locator('[data-era="2007"]').click();
+      await page.locator('.classic-home-2007').waitFor({state:'visible',timeout:15000});
+      assert.equal(await page.evaluate(()=>localStorage.getItem('bebo-classic-look-v1')),'2007','Classic selection not saved');
+      await page.reload({waitUntil:'domcontentloaded'});
+      await page.locator('.classic-home-2007').waitFor({state:'visible',timeout:15000});
+      assert.equal(await page.locator('[data-era="2007"]').getAttribute('aria-pressed'),'true','Saved 2007 preference not restored');
+      await page.locator('[data-era="2005"]').click();
+      await page.locator('.classic-home-2005').waitFor({state:'visible',timeout:15000});
+      assert.equal(await page.locator('[data-era="2005"]').getAttribute('aria-pressed'),'true','2005 button did not restore early Bebo');
+      item.switchCheck='PASS';
+    }
     if(check.verifiedBadge){
       const badge=page.locator('#app .bebo-nameplate [data-action="verified-info"]');
       await badge.waitFor({state:'visible',timeout:10000});
