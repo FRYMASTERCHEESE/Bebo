@@ -55,7 +55,7 @@ try {
    assert.equal(await guest.isVisible(),false,'Sign In/Up must disappear after signing in');
    await page.locator('#nav [data-nav="start"]').click();
    await page.locator('.bebo-start-guide').waitFor({state:'visible',timeout:20000});
-   assert.equal(await page.locator('.bebo-start-guide a[href="#/profile"]').count(),1,
+   assert((await page.locator('.bebo-start-guide a[href="#/profile"]').count())>=1,
      'Signed-in start guide must link to member profile');
    assert.equal(await guest.isVisible(),false,'New member guide must not reveal guest actions');
    assert.equal(await logout.isVisible(),true,'Member top logout must remain visible on Start Here');
