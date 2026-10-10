@@ -399,11 +399,17 @@ function updateActiveNav(){
   else button.removeAttribute('aria-current');
  });
 }
-// Keep guest links hidden while auth is loading and after sign-in or recovery.
+// Keep account actions hidden until Supabase auth resolves, and switch for each session.
 let authReady=false;
 function syncHeaderAuth(){
  const bar=document.querySelector('#bebo-auth-bar');
- if(bar)bar.hidden=!(configured&&authReady&&!me&&!recoveryWaiting&&!recoveryMode);
+ const guest=document.querySelector('#bebo-guest-actions');
+ const logout=document.querySelector('#bebo-header-logout');
+ const ready=Boolean(configured&&authReady&&!recoveryWaiting);
+ const signedIn=Boolean(ready&&me);
+ if(bar)bar.hidden=!ready;
+ if(guest)guest.hidden=!ready||signedIn;
+ if(logout)logout.hidden=!signedIn;
 }
 let renderRevision=0;
 function render(){
@@ -823,7 +829,15 @@ document.addEventListener('click',async e=>{
  if(a.startsWith('classic-')){message=await classic.action(a,id,{me,profile,userViewed});success=true}
  if(a.startsWith('safety-')){message=await safety.action(a,id,{me,profile,userViewed});success=true}
  else if(a.startsWith('retro-')){message=await retro.action(a,id,{me,profile,userViewed});success=true}
- else if(a==='logout'){recoveryMode=false;recoveryWaiting=false;await sb.auth.signOut();me=null;profile=null;adminAccess=null;memberRestriction=null;message='You are signed out.';location.hash='#/home'}
+ else if(a==='logout'){
+  if(!me)return;
+  const {error}=await sb.auth.signOut();
+  if(error)throw error;
+  recoveryMode=false;recoveryWaiting=false;
+  me=null;profile=null;adminAccess=null;memberRestriction=null;
+  message='You are signed out.';success=true;
+  location.hash='#/home';
+ }
  else if(a==='reset'){const email=prompt('Enter your account email');if(!email)return;const {error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo:BEBO_SITE_URL});if(error)throw error;message='Check your email for the password reset link.';success=true}
  else if(a==='friend-request'){await query('bebo_friendships',q=>q.insert({requester_id:me.id,addressee_id:id}));message='Friend request sent ♥';success=true}
  else if(a==='friend-accept'||a==='friend-decline'){await query('bebo_friendships',q=>q.update({status:a==='friend-accept'?'accepted':'declined'}).eq('id',id));message=a==='friend-accept'?'Friend added ♥':'Request declined';success=true}

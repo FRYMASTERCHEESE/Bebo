@@ -34,7 +34,7 @@ for(let n=0;n<40;n++){
   try{
     const html=await (await fetch(host+'?wait-for-css='+Date.now(),{cache:'no-store'})).text();
     const aboutIsPublished=html.includes('<a class="bebo-about-link" href="./about.html">About Bebo</a>');
-    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261011-header-auth-v1');
+    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261011-header-logout-v1');
     if(html.includes(expectedCSS)&&aboutIsPublished&&videoIsPublished){releaseReady=true;break;}
   }catch(error){console.warn('Waiting for Bebo Pages:',String(error));}
   await new Promise(resolve=>setTimeout(resolve,3000));
@@ -63,6 +63,8 @@ try{
     assert.equal(await authBar.getAttribute('hidden'),null,'Guest Sign In / Sign Up strip should be visible');
     assert.equal(await authBar.locator('a[href="#/signin"]').count(),1,'Guest Sign In button missing');
     assert.equal(await authBar.locator('a[href="#/signup"]').count(),1,'Guest Sign Up button missing');
+    assert.equal(await page.locator('#bebo-guest-actions').isVisible(),true,'Guest account buttons should be visible');
+    assert.equal(await page.locator('#bebo-header-logout').isVisible(),false,'Log Out must be hidden for signed-out visitors');
     const barLayout=await authBar.evaluate(bar=>{
       const rect=bar.getBoundingClientRect(),nav=document.querySelector('nav.nav').getBoundingClientRect();
       return {position:getComputedStyle(bar).position,height:rect.height,bottom:rect.bottom,navTop:nav.top,

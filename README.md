@@ -211,3 +211,7 @@ On user feedback from mobile screenshots, the globally fixed Back / Home box was
 ## Guest top Sign In / Sign Up — 11 October 2026
 
 For signed-out visitors, a compact nonfloating Sign In / Sign Up bar appears under the masthead, above the main menu, in both 2005 and 2007 skins. Each button opens its own login (`#/signin`) or registration (`#/signup`) form. The original combined `#/account` page is preserved. The bar remains hidden until Supabase auth resolves and hides when signed in or validating a recovery link. Mobile/desktop checks cover top positioning, correct forms, no horizontal overflow and authenticated recovery visibility. No backend changes.
+
+## Top Log Out control — 11 October 2026
+
+The account strip directly beneath the masthead now switches after Supabase resolves authentication: guest visitors see Sign In and Sign Up, while authenticated visitors (including the owner/admin) instead see a clearly labelled **↪ Log Out** button above the main navigation on both mobile and desktop. Logging out invokes existing Supabase `auth.signOut()`, checks for errors, clears member and admin state, returns to Home and restores Sign In / Sign Up. Neither control is shown while session detection or recovery verification is in progress. No accounts or content are modified. CI checks visibility and logout using an intercepted synthetic session rather than a real member account.

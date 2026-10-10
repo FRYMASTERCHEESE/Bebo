@@ -20,6 +20,7 @@ on:
       - 'config.js'
       - 'tests/smoke-browser.mjs'
       - 'tests/auth-domain-flow.mjs'
+      - 'tests/header-logout-smoke.mjs'
       - 'tests/recovery-callback-smoke.mjs'
       - 'tests/verified-smoke.mjs'
       - 'tests/profile-verified-smoke.mjs'
@@ -60,6 +61,8 @@ jobs:
         run: node tests/auth-domain-flow.mjs
       - name: Test email recovery URL callback with intercepted Supabase session
         run: node tests/recovery-callback-smoke.mjs
+      - name: Test top Log Out with a synthetic signed-in user
+        run: node tests/header-logout-smoke.mjs
       - name: Run mobile and desktop read-only smoke tests
         run: node tests/smoke-browser.mjs
       - name: Keep audit results and screenshots
