@@ -119,7 +119,36 @@ export function createVideos(sb,{safe,panel,query}) {
     '<button class="button" type="submit">Upload for review ♥</button>'+
     '</form>';
  }
+ async function insightsPage(ctx){
+  if(!ctx?.me?.id||!ctx.profile)return panel('Video Insights','<p><a href="#/account">Sign in</a> and create a profile to view your video statistics.</p>');
+  const mine=await rows('bebo_videos',q=>q.select('id,title,status,created_at').eq('owner_id',ctx.me.id).order('created_at',{ascending:false}).limit(20));
+  const stats=await metrics(mine);
+  const total=key=>mine.reduce((n,v)=>n+countMetric(stats.get(v.id),key),0);
+  const views=total('views'),hearts=total('hearts'),comments=total('comments');
+  const insightCards=mine.map(video=>{
+   const m=stats.get(video.id);
+   return '<article class="bebo-video-insight-card"><h3>'+safe(video.title)+'</h3>'+
+    '<p class="muted">'+(video.status==='approved'?'Public':video.status==='pending'?'Awaiting approval':'Not approved')+' · '+date(video.created_at)+'</p>'+
+    statsLine(m,video.id)+
+    '<p>Last 7 days: <strong>'+countMetric(m,'views_7d')+' member views</strong></p>'+
+    '<p><a href="#/videos/u/'+encodeURIComponent(ctx.profile.username)+'">See your video »</a></p></article>';
+  }).join('')||'<p>No video uploads yet. <a href="#/videos">Upload your first video »</a></p>';
+  return panel('📊 My Bebo Video Insights',
+   '<p>Real activity since tracking was introduced on 10 October 2026. Only signed-in members who meaningfully watch approved videos contribute counted views.</p>'+
+   '<div class="bebo-video-insight-summary">'+
+   '<div><strong>'+mine.length+'</strong><span>Videos</span></div>'+
+   '<div><strong>'+views+'</strong><span>Member views</span></div>'+
+   '<div><strong>'+total('views_7d')+'</strong><span>Views in 7 days</span></div>'+
+   '<div><strong>'+hearts+'</strong><span>Hearts</span></div>'+
+   '<div><strong>'+comments+'</strong><span>Comments</span></div>'+
+   '</div>'+
+   '<p>Average interactions per counted view: <strong>'+(views?(100*(hearts+comments)/views).toFixed(1)+'%':'—')+'</strong>. More than one interaction can happen per view.</p>'+
+   insightCards+
+   '<p class="muted">Bebo counts a maximum of one qualified view per signed-in member per clip per UTC day. Guest plays, simple page visits and historical plays are not included. Counts are not watch-hours or ad revenue.</p>'+
+   '<p><a href="#/videos">← Back to Videos</a></p>');
+ }
  async function route(path,ctx){
+  if(path==='videos-insights')return insightsPage(ctx);
   if(path==='videos-review'){
    if(!moderated(ctx))return panel('Private video moderation','Only an approved Bebo moderator can review member videos.');
    const [pending,reports]=await Promise.all([
@@ -155,6 +184,7 @@ export function createVideos(sb,{safe,panel,query}) {
   return panel(title,
     '<p>Real member videos stored in Bebo’s private video bucket. Clips become public only after owner approval.</p>'+
     (who?'<p><a href="#/u/'+encodeURIComponent(who.username)+'">← Back to profile</a> · <a href="#/videos">All Bebo videos</a></p>':'')+
+    (ctx?.me?'<p><a class="button" href="#/videos-insights">📊 My Video Insights</a></p>':'')+
     (moderated(ctx)?'<p><a class="button" href="#/videos-review">★ Review uploads &amp; reports</a></p>':'')+
     (own?uploadForm()+'<h3>My pending / rejected videos</h3>'+await videoCards(mine,ctx,{pending:true}):'')+
     '<h3>Public videos</h3>'+await videoCards(videoList,ctx));
@@ -296,5 +326,5 @@ export function createVideos(sb,{safe,panel,query}) {
   }
   throw Error('Unknown video action.');
  }
- return {route,homePanel,profilePanel,form,action,selectionHint:validateBeboVideoFile};
+ return {route,homePanel,profilePanel,form,action,insightsPage,selectionHint:validateBeboVideoFile};
 }
