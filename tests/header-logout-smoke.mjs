@@ -17,7 +17,7 @@ let latest=false;
 for(let retry=0;retry<40;retry++){
  try{
   const html=await (await fetch(SITE+'?header-guide-gate='+Date.now(),{cache:'no-store'})).text();
-  if(html.includes('20261011-first-visit-v1')&&html.includes('data-nav="start"')){latest=true;break}
+  if(html.includes('20261011-adsense-readiness-v1')&&html.includes('data-nav="start"')){latest=true;break}
  }catch{}
  await new Promise(resolve=>setTimeout(resolve,3000));
 }
