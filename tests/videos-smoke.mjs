@@ -84,6 +84,14 @@ const memberHTML=await videosApi.route('videos',{me:{id:uid},profile:profiles[0]
 assert(memberHTML.includes('Private upload'),'Uploader should see their pending video');
 assert(memberHTML.includes('Awaiting approval'),'Pending video status must be clear');
 assert(memberHTML.includes('data-form="video-upload"'),'Signed-in profile must be able to upload');
+const ownerInsights=await videosApi.route('videos-insights',
+ {me:{id:uid},profile:profiles[0],adminAccess:null});
+assert(ownerInsights.includes('My Bebo Video Insights'),'Member insights page missing');
+assert(ownerInsights.includes('Member views'),'View metrics missing from creator dashboard');
+assert(ownerInsights.includes('Views in 7 days'),'Recent view statistics missing from dashboard');
+assert(ownerInsights.includes('3</strong>'),'Creator must receive true database view total');
+const guestInsights=await videosApi.route('videos-insights',{me:null,profile:null});
+assert(!guestInsights.includes('bebo-video-insight-card'),'Guest must not see private creator analytics');
 const guestReview=await videosApi.route('videos-review',{me:null,adminAccess:null});
 assert(guestReview.includes('Only an approved Bebo moderator'),'Guest moderation must be denied');
 const modReview=await videosApi.route('videos-review',{me:{id:uid},adminAccess:'owner'});
@@ -91,4 +99,4 @@ assert(modReview.includes('Private upload')&&modReview.includes('video-approve')
 const profileHTML=await videosApi.profilePanel(profiles[0],{me:null});
 assert(profileHTML.includes('videos/u/safe_member'),'Member profile needs video gallery link');
 assert(signed>0,'Video signing was not attempted');
-console.log('PASS: Video analytics, counted member views, transparent ranked home, safe playback, mobile upload limits and moderation UI');
+console.log('PASS: Authentic Bebo stats and creator insights, transparent homepage rankings, playback, upload and moderation');
