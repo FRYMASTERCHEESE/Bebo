@@ -12,6 +12,16 @@ const jwt='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.'+
 const headers={'content-type':'application/json','access-control-allow-origin':'*'};
 const user={id:uid,aud:'authenticated',role:'authenticated',email,
  app_metadata:{provider:'email'},user_metadata:{},created_at:'2026-10-10T01:00:00Z',identities:[]};
+// The browser job can begin before GitHub Pages publishes the same commit.
+let latest=false;
+for(let retry=0;retry<40;retry++){
+ try{
+  const html=await (await fetch(SITE+'?header-guide-gate='+Date.now(),{cache:'no-store'})).text();
+  if(html.includes('20261011-first-visit-v1')&&html.includes('data-nav="start"')){latest=true;break}
+ }catch{}
+ await new Promise(resolve=>setTimeout(resolve,3000));
+}
+assert(latest,'GitHub Pages has not yet published the first-visit guide');
 const browser=await chromium.launch({headless:true});
 try {
  for(const viewport of [{width:412,height:915},{width:1365,height:900}]){
@@ -43,7 +53,7 @@ try {
    await login.locator('button:not([data-toggle-password])').click();
    await logout.waitFor({state:'visible',timeout:30000});
    assert.equal(await guest.isVisible(),false,'Sign In/Up must disappear after signing in');
-   await page.goto(SITE+'?start-member-ci=20261011#/start',{waitUntil:'domcontentloaded'});
+   await page.locator('#nav [data-nav="start"]').click();
    await page.locator('.bebo-start-guide').waitFor({state:'visible',timeout:20000});
    assert.equal(await page.locator('.bebo-start-guide a[href="#/profile"]').count(),1,
      'Signed-in start guide must link to member profile');
