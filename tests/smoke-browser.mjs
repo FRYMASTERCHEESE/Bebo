@@ -15,6 +15,7 @@ const tests=[
 {path:'videos',label:'Videos',match:/bebo videos|no videos published/i},
 {path:'videos/u/bebo',label:'Profile videos',match:/bebo.s bebo videos|no videos published|Bebo videos/i},
 {path:'videos-review',label:'Guest denied video review',match:/Only an approved Bebo moderator/i},
+{path:'videos-insights',label:'Private video insights sign-in',match:/Sign in.*video statistics|Sign in.*create a profile/i},
 {path:'blogs',label:'Blogs',match:/blog/i},
 {path:'groups',label:'Groups',match:/groups/i},
 {path:'creators',label:'Bands and Authors',match:/bands|authors|creators/i},
@@ -29,7 +30,7 @@ for(let n=0;n<40;n++){
   try{
     const html=await (await fetch(host+'?wait-for-css='+Date.now(),{cache:'no-store'})).text();
     const aboutIsPublished=html.includes('<a class="bebo-about-link" href="./about.html">About Bebo</a>');
-    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261010-analytics-v3');
+    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261010-analytics-v4');
     if(html.includes(expectedCSS)&&aboutIsPublished&&videoIsPublished){releaseReady=true;break;}
   }catch(error){console.warn('Waiting for Bebo Pages:',String(error));}
   await new Promise(resolve=>setTimeout(resolve,3000));
@@ -64,6 +65,12 @@ try{
     assert.equal(backPosition.fixed,'fixed','Bebo Back button does not remain visible while scrolling');
     assert(backPosition.height>=42,'Bebo Back button target too small for phone tapping');
     assert(backPosition.bottom<=backPosition.viewport+2&&backPosition.top>=0,'Bebo Back button out of the viewport');
+    if(check.path==='home'){
+      const live=await page.locator('#app').innerText();
+      assert(live.includes('Trending Bebo Videos'),'Missing organic trending videos on home');
+      assert(live.includes('Trending Posts, Blogs & Polls'),'Missing post and poll discovery on home');
+      assert.equal(await page.locator('video[data-bebo-video-id]').count()>0,true,'Featured Bebo video missing from home');
+    }
     if(check.eraTest){
       await page.locator('.classic-home-2005').waitFor({state:'visible',timeout:15000});
       const fresh=await page.evaluate(()=>({
@@ -185,6 +192,9 @@ try{
     }
     if(check.path==='videos-review'){
       assert.equal(await page.locator('[data-action="video-approve"]').count(),0,'Guest must never see video approval');
+    }
+    if(check.path==='videos-insights'){
+      assert.equal(await page.locator('.bebo-video-insight-card').count(),0,'Guest must never see owner insight details');
     }
     if(check.guestAdmin){
       assert.equal(await page.locator('.bebo-admin-page').count(),0,'Private admin dashboard rendered for guest');
