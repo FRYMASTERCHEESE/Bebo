@@ -183,3 +183,11 @@ Design JSON never contains storage file paths, image bytes, private account IDs,
 Database: `bebo_skin_studio_profiles_drafts_and_gallery_v1` and `bebo_skin_studio_background_pattern_correction_v1` were applied to the dedicated Bebo Supabase project. Drafts are visible only to their author or the site owner. Member edits and deletes are scoped by RLS; a trigger blocks non-admin members from reversing moderator hidden status or transferring skin authorship.
 
 Read-only CI tests confirm design JSON/HTML security and the guest gallery; actual signed-in save, image upload, profile appearance and delete workflows still require testing with two genuine disposable accounts before production-level completion can be claimed.
+
+## Member Suggestions → Private Owner Admin Inbox — 10 October 2026
+
+The main menu and footer now link to `#/suggestions`. A signed-in Bebo member with a profile can submit a category (new feature, bug, design, accessibility, other), title and detailed suggestion. It is saved to `public.bebo_suggestions` for the owner-only `👑 Owner Control Centre → 💡 Suggestions` tab. That tab shows the **new suggestion count**, member profile, status and priority, with a private response field and status filters. Members can check their own suggestions and responses on the same page. Guests see the information page and a sign-in prompt but cannot submit feedback.
+
+Backend: migration `bebo_private_member_suggestions_admin_inbox_v1` applied to the dedicated Bebo Supabase project. Table has owner-only UPDATE, authenticated-author-only INSERT, owner-or-author SELECT, no anonymous grants, noneditable submitted content, 5 submissions per 24h and 60-second spacing enforced in a DB trigger. No third-party email inbox, service role key or notification service needed. Account deletion cascades suggestions to protect deleted members. Owner-review response is available only to the submitter and the owner.
+
+Automated browser testing exercises guest form privacy and navigation; synthetic mock account tests check member submissions, escaping and owner review. A genuine two-account end-to-end submission and owner status update should still be performed before declaring live production acceptance.

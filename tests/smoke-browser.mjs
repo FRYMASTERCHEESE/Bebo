@@ -20,6 +20,7 @@ const tests=[
 {path:'groups',label:'Groups',match:/groups/i},
 {path:'creators',label:'Bands and Authors',match:/bands|authors|creators/i},
 {path:'safety',label:'Privacy',match:/community rules.*privacy/i},
+ {path:'suggestions',label:'Public suggestion page',match:/suggest an improvement/i,suggestions:true},
 {path:'account',label:'Signup',match:/join bebo|create your account/i,signup:true},
 {path:'admin',label:'Admin guest denial',match:/join bebo|create your account|admin only/i,guestAdmin:true}
 ];
@@ -30,7 +31,7 @@ for(let n=0;n<40;n++){
   try{
     const html=await (await fetch(host+'?wait-for-css='+Date.now(),{cache:'no-store'})).text();
     const aboutIsPublished=html.includes('<a class="bebo-about-link" href="./about.html">About Bebo</a>');
-    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261010-skin-studio-v1');
+    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261010-suggestions-v1');
     if(html.includes(expectedCSS)&&aboutIsPublished&&videoIsPublished){releaseReady=true;break;}
   }catch(error){console.warn('Waiting for Bebo Pages:',String(error));}
   await new Promise(resolve=>setTimeout(resolve,3000));
@@ -195,6 +196,12 @@ try{
     }
     if(check.path==='videos-insights'){
       assert.equal(await page.locator('.bebo-video-insight-card').count(),0,'Guest must never see owner insight details');
+    }
+    if(check.suggestions){
+      assert.equal(await page.locator('#nav [data-nav="suggestions"]').count(),1,'Suggestion navigation missing');
+      assert.equal(await page.locator('form[data-form="suggestion"]').count(),0,'Guest must not have feedback submit form');
+      assert(inner.includes('sign in or join Bebo'),'Guest suggestion page must require signing in');
+      assert.equal(await page.locator('a[href="#/account"]').count()>0,true,'Suggestion page needs account link');
     }
     if(check.guestAdmin){
       assert.equal(await page.locator('.bebo-admin-page').count(),0,'Private admin dashboard rendered for guest');

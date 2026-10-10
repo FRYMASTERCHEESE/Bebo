@@ -1,10 +1,13 @@
 /* Bebo owner tools: database-enforced administration; no privileged API keys in browsers. */
+import { createSuggestions } from './suggestions.js?v=20261010-suggestions-v1';
 export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
+  const suggestions=createSuggestions(sb,{safe,panel});
   const sections=[
     ['members','👥 Manage Members'],
     ['verification','✓ Verified Members'],
     ['signups','📧 Sign-up Emails'],
     ['analytics','📊 Website Analytics'],
+    ['suggestions','💡 Suggestions'],
     ['announcements','📢 Announcements'],
     ['skins','🎨 Review Skins'],
     ['moderation','🛡️ Moderation Tools'],
@@ -213,8 +216,12 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
   async function panels(me,role) {
     if(role!=='owner')return panel('Owner tools','Only the Bebo owner can control members, announcements and site settings.');
     await requireOwner(me);
-    const buttons=sections.map(([key,label])=>click(label,'admin-section',key,key===section?'':'secondary')).join('');
-    const views={members,verification,signups,analytics,announcements,skins,moderation,settings};
+    const {count:newSuggestions,error:suggestionCountError}=await sb.from('bebo_suggestions')
+      .select('id',{count:'exact',head:true}).eq('status','new');
+    if(suggestionCountError)throw suggestionCountError;
+    const buttons=sections.map(([key,label])=>
+      click(key==='suggestions'?label+' ('+Number(newSuggestions||0)+' new)':label,'admin-section',key,key===section?'':'secondary')).join('');
+    const views={members,verification,signups,analytics,announcements,skins,moderation,settings,suggestions:suggestions.ownerPage};
     return panel('👑 Owner Control Centre',
       '<p>Choose an admin tool below. Only your verified Bebo owner account can make changes.</p>'+
       '<div class="admin-section-tabs">'+buttons+'</div>')+
@@ -223,6 +230,7 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
   async function action(name,id,me) {
     const role=await requireOwner(me);
     if(role!=='owner')throw Error('Owner permissions required.');
+    if(name==='admin-suggestion-filter')return suggestions.setFilter(id);
     if(name==='admin-section'){
       if(!sections.some(([key])=>key===id))throw Error('Unknown section.');
       section=id;return {message:'Opened '+sections.find(([key])=>key===id)[1]};
@@ -324,6 +332,7 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
   async function form(type,form,me){
     const role=await requireOwner(me);
     if(role!=='owner')throw Error('Owner permissions required.');
+    if(type==='admin-suggestion-review')return suggestions.ownerReview(form);
     if(type==='admin-search'){
       const value=clean(form.get('username'),25).toLowerCase();
       if(value && !/^[a-z0-9_]{1,25}$/.test(value))throw Error('Use only username letters, numbers and underscores.');

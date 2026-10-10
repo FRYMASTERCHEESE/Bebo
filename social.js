@@ -2,7 +2,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import { createRetro } from './nostalgia.js?v=20261010-polls-quizzes-v2';
 import { createSafety } from './safety.js';
 import { createClassic } from './classic-modules.js?v=20261010-trending-v1';
-import { createAdmin } from './admin.js?v=20261010-bebo-verified-v1';
+import { createAdmin } from './admin.js?v=20261010-suggestions-v1';
+import { createSuggestions } from './suggestions.js?v=20261010-suggestions-v1';
 import { createVerification } from './verified.js?v=20261010-transparency-v1';
 import { createVideos } from './videos.js?v=20261010-analytics-v5';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
@@ -37,6 +38,7 @@ const classic=createClassic(sb,{safe,panel,btn,query});
 const verified=createVerification(sb,{safe,panel,query});
 const videos=createVideos(sb,{safe,panel,query});
 const admin=createAdmin(sb,{safe,panel});
+const suggestions=createSuggestions(sb,{safe,panel});
 async function loadMine(){if(!me){profile=null;adminAccess=null;memberRestriction=null;return}profile=await query('bebo_profiles',q=>q.select('*').eq('id',me.id).maybeSingle());const status=await query('bebo_member_controls',q=>q.select('status,reason').eq('member_id',me.id).maybeSingle());memberRestriction=status;adminAccess=await admin.check(me)}
 async function init(){
  if(!sb){render();return}
@@ -217,6 +219,7 @@ async function refresh(){
  page=raw||'home';
  if(!configured){app.innerHTML=note()+authPage();return}
  if(page==='safety'){app.innerHTML=note()+safetyInfoPage();return}
+ if(page==='suggestions'){app.innerHTML=note()+await suggestions.page(me,profile);return}
  if(page==='videos'||page==='videos-review'||page==='videos-insights'||page.startsWith('videos/u/')){
   app.innerHTML=note()+await videos.route(page,{me,profile,adminAccess});return;
  }
@@ -626,6 +629,8 @@ document.addEventListener('submit',async e=>{
   message=await videos.form(type,d,{me,profile,adminAccess},f);success=true;
  }else if(type==='verification-request'){
   message=await verified.submit(me,d);success=true;
+ }else if(type==='suggestion'){
+  message=await suggestions.submit(d,me,profile);success=true;
  }else if(type.startsWith('admin-')){
   const result=await admin.form(type,d,me);
   message=result?.message||'Admin settings saved.';success=true;
@@ -640,7 +645,7 @@ document.addEventListener('submit',async e=>{
  }
  }catch(err){message=escapeError(err);success=false}finally{
   f.dataset.busy='';if(b)b.disabled=false;
-  if((type==='skin'||type==='edit-profile'||type==='video-upload'||type==='video-comment'||type.startsWith('admin-')||type==='retro-poll-create'||type==='retro-quiz-create'||type==='verification-request')&&!success){
+  if((type==='suggestion'||type==='skin'||type==='edit-profile'||type==='video-upload'||type==='video-comment'||type.startsWith('admin-')||type==='retro-poll-create'||type==='retro-quiz-create'||type==='verification-request')&&!success){
     let notice=f.querySelector('.edit-profile-error');
     if(!notice){notice=document.createElement('p');notice.className='notice bad edit-profile-error';notice.setAttribute('role','alert');f.prepend(notice);}
     notice.textContent=message;

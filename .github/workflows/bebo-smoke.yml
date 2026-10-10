@@ -14,6 +14,8 @@ on:
       - 'nostalgia.js'
       - 'skin-library.js'
       - 'skin-studio.js'
+      - 'suggestions.js'
+      - 'tests/suggestions-smoke.mjs'
       - 'tests/skin-studio-smoke.mjs'
       - 'config.js'
       - 'tests/smoke-browser.mjs'
@@ -40,6 +42,8 @@ jobs:
         run: npm install --no-save --no-package-lock playwright@1.56.1
       - name: Test Bebo Videos permissions and rendering using mock members
         run: node tests/videos-smoke.mjs
+      - name: Test private Bebo suggestions, admin review and escaping
+        run: node tests/suggestions-smoke.mjs
       - name: Test Skin Studio design safety and private drafts
         run: node tests/skin-studio-smoke.mjs
       - name: Test Bebo Verified badges and ranking without using real accounts
