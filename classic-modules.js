@@ -1,8 +1,10 @@
 // Original-era Bebo modules built as a secure, browser-based social experience.
 // HTML is generated only from escaped member content; no arbitrary member scripts execute.
 import { skins, skinArtwork } from './skin-library.js';
+import { createVerification } from './verified.js';
 export function createClassic(sb,{safe,panel,btn,query}) {
   const db=(t,fn)=>query(t,fn);
+  const verified=createVerification(sb,{safe,panel,query});
   const clean=(v,n)=>String(v??'').trim().slice(0,n);
   const when=v=>new Date(v).toLocaleDateString('en-NZ',{day:'numeric',month:'short',year:'numeric'});
   const nickname=p=>safe(p?.display_name||'Bebo member');
@@ -284,11 +286,12 @@ export function createClassic(sb,{safe,panel,btn,query}) {
     const isMember=Boolean(me?.id);
     const [own,people,blogs,albums,friends]=await Promise.all([
       isMember?db('bebo_profiles',q=>q.select('id,username,display_name,status,avatar_path').eq('id',me.id).maybeSingle()):Promise.resolve(null),
-      db('bebo_profiles',q=>q.select('id,username,display_name,status,avatar_path,created_at').order('created_at',{ascending:false}).limit(12)),
-      db('bebo_blogs',q=>q.select('id,title,body,created_at,owner_id').order('created_at',{ascending:false}).limit(7)),
-      db('bebo_albums',q=>q.select('id,title,owner_id,created_at').order('created_at',{ascending:false}).limit(7)),
+      db('bebo_profiles',q=>q.select('id,username,display_name,status,avatar_path,created_at').order('created_at',{ascending:false}).limit(60)),
+      db('bebo_blogs',q=>q.select('id,title,body,created_at,owner_id').order('created_at',{ascending:false}).limit(20)),
+      db('bebo_albums',q=>q.select('id,title,owner_id,created_at').order('created_at',{ascending:false}).limit(20)),
       isMember?db('bebo_friendships',q=>q.select('requester_id,addressee_id').eq('status','accepted').or('requester_id.eq.'+me.id+',addressee_id.eq.'+me.id)):Promise.resolve([])
     ]);
+    const approvedIDs=await verified.approved([...people.map(p=>p.id),...blogs.map(b=>b.owner_id),...albums.map(a=>a.owner_id)]);
     const avatar=p=>{
       if(p?.avatar_path){
         const photoURL=sb.storage.from('bebo-avatars').getPublicUrl(p.avatar_path).data.publicUrl;
@@ -297,7 +300,7 @@ export function createClassic(sb,{safe,panel,btn,query}) {
       return '<span class="classic-home-avatar classic-home-initial" aria-hidden="true">'+safe((p?.display_name||'?').slice(0,1).toUpperCase())+'</span>';
     };
     const view=p=>'<a class="classic-home-member" href="#/u/'+encodeURIComponent(p.username)+'">'+avatar(p)+
-      '<strong>'+safe(p.display_name)+'</strong><small>@'+safe(p.username)+'</small></a>';
+      '<strong>'+safe(p.display_name)+' '+verified.badge(p,approvedIDs)+'</strong><small>@'+safe(p.username)+'</small></a>';
     const myFriendIDs=isMember?[...new Set(friends.map(f=>f.requester_id===me.id?f.addressee_id:f.requester_id).filter(id=>id!==me.id))]:[];
     const friendProfiles=myFriendIDs.length?await db('bebo_profiles',q=>q.select('id,username,display_name,avatar_path').in('id',myFriendIDs.slice(0,16))):[];
     const friendGrid=friendProfiles.length?
@@ -328,29 +331,30 @@ export function createClassic(sb,{safe,panel,btn,query}) {
     ]).map(([label,dest])=>'<a href="#/'+dest+'">'+safe(label)+'</a>').join('');
     const actions=panel(isMember?'♥ My Bebo Shortcuts':'★ Get Started on Bebo',
       '<div class="classic-home-shortcuts">'+shortcuts+'</div>');
-    const recentMembers=people.length?'<div class="classic-home-people">'+people.slice(0,9).map(view).join('')+'</div>':
+    const recentMembers=people.length?'<div class="classic-home-people">'+verified.prioritizePeople(people,approvedIDs).slice(0,9).map(view).join('')+'</div>':
       '<p class="classic-home-empty">The first members will appear here soon. ♥</p>';
-    const memberPanel=panel('★ People on Bebo',recentMembers+
+    const memberPanel=panel('★ People on Bebo · ✓ Verified first',recentMembers+
       '<p class="classic-home-linkline"><a href="#/friends">Find more Bebo friends »</a></p>');
     const ids=[...new Set([...blogs.map(x=>x.owner_id),...albums.map(x=>x.owner_id)])];
     const authors=ids.length?await db('bebo_profiles',q=>q.select('id,display_name,username,avatar_path').in('id',ids)):[];
     const authorsById=new Map(authors.map(p=>[p.id,p]));
     const byline=id=>{
       const user=authorsById.get(id);
-      return user?'<a href="#/u/'+encodeURIComponent(user.username)+'">'+safe(user.display_name)+'</a>':'A Bebo member';
+      return user?'<a href="#/u/'+encodeURIComponent(user.username)+'">'+safe(user.display_name)+' '+verified.badge(user,approvedIDs)+'</a>':'A Bebo member';
     };
     const feed=[
       ...blogs.map(b=>({
-        date:b.created_at,type:'blog',html:'<span class="classic-home-activity-icon">✎</span><div><strong>'+byline(b.owner_id)+
+        date:b.created_at,owner_id:b.owner_id,type:'blog',html:'<span class="classic-home-activity-icon">✎</span><div><strong>'+byline(b.owner_id)+
           ' wrote a blog</strong><p><a href="#/blog/'+encodeURIComponent(b.id)+'">'+safe(b.title)+'</a></p>'+
           '<small>'+teaser(b.body,90)+'</small></div>'
       })),
       ...albums.map(a=>({
-        date:a.created_at,type:'album',html:'<span class="classic-home-activity-icon">📸</span><div><strong>'+byline(a.owner_id)+
+        date:a.created_at,owner_id:a.owner_id,type:'album',html:'<span class="classic-home-activity-icon">📸</span><div><strong>'+byline(a.owner_id)+
           ' shared photos</strong><p><a href="#/album/'+encodeURIComponent(a.id)+'">'+safe(a.title)+'</a></p></div>'
       }))
-    ].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8);
-    const recent=feed.length?'<div class="classic-home-feed">'+feed.map(e=>'<div class="classic-home-feed-item">'+e.html+'</div>').join('')+'</div>':
+    ];
+    const rankedFeed=verified.prioritizeActivity(feed,approvedIDs).slice(0,8);
+    const recent=rankedFeed.length?'<div class="classic-home-feed">'+rankedFeed.map(e=>'<div class="classic-home-feed-item">'+e.html+'</div>').join('')+'</div>':
       '<div class="classic-home-empty"><span aria-hidden="true">✎ 📸 ♥</span>'+
       '<p>Be the first to share a photo album or write a blog!</p>'+
       '<a href="#/'+(isMember?'blogs':'account')+'">'+(isMember?'Write your first blog »':'Join and start sharing »')+'</a></div>';
@@ -373,7 +377,7 @@ export function createClassic(sb,{safe,panel,btn,query}) {
         memberPanel+
       '</div>'+
       '<div class="classic-home-right">'+
-        panel('★ What’s Happening on Bebo?',recent)+
+        panel('★ What’s Happening on Bebo? · ✓ Verified boost',recent)+
         panel('🎨 Dress Up Your Bebo — Popular Skins',previews+
           '<p class="classic-home-linkline"><a href="#/skins"><strong>Browse all 56 profile skins »</strong></a></p>')+
         panel('♥ Remember the Good Old Days?',fun)+
