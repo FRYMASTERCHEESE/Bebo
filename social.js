@@ -4,7 +4,7 @@ import { createSafety } from './safety.js';
 import { createClassic } from './classic-modules.js?v=20261010-bebo-memory-v2';
 import { createAdmin } from './admin.js?v=20261010-bebo-verified-v1';
 import { createVerification } from './verified.js?v=20261010-transparency-v1';
-import { createBeboMemories } from './old-bebo-memories.js?v=20261010-bebo-memory-v2';
+import { createBeboMemories } from './old-bebo-memories.js?v=20261010-bebo-back-v1';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
