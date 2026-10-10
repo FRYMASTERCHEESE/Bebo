@@ -6,12 +6,14 @@ export function parseOldBeboInput(input){
  let raw=String(input??'').trim();
  if(!raw||raw.length>500)throw Error('Enter your old username or Bebo profile link (maximum 500 characters).');
  if(raw.startsWith('@'))raw=raw.slice(1);
+ if(MEMBER.test(raw))return {type:'memberid',value:raw};
+ if(/^(?:www\.|archive\.|m\.)?bebo\.com\//i.test(raw))raw='https://'+raw;
  if(HANDLE.test(raw))return {type:'username',value:raw};
  if(!/^https?:\/\//i.test(raw))throw Error('Enter an old username or a bebo.com profile URL.');
  let url;
  try{url=new URL(raw)}catch{throw Error('Please enter a valid Bebo profile URL.')}
  if(url.hostname.toLowerCase()==='web.archive.org'){
-  const archived=raw.match(/\/web\/(?:\d{1,14}|\*)[a-z_]*\/(https?:\/\/.*)$/i);
+  const archived=raw.match(/\/web\/(?:\d{1,14}\*?|\*)[a-z_]*\/(https?:\/\/.*)$/i);
   if(!archived)throw Error('Paste the full Bebo address shown inside the archive link.');
   try{url=new URL(archived[1])}catch{throw Error('The archived Bebo URL is incomplete.')}
  }
