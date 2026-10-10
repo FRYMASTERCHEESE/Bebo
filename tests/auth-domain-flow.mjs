@@ -43,7 +43,7 @@ try {
  await signup.locator('input[name="email"]').fill(email);
  await signup.locator('input[name="password"]').fill(password);
  await signup.locator('input[name="adult"]').check();
- await signup.locator('button').click();
+ await signup.locator('button:not([data-toggle-password])').click();
  await page.waitForFunction(()=>document.querySelector('#app')?.innerText?.includes('Check your email to confirm'),null,{timeout:20000});
  const signupRequest=traffic.find(t=>t.kind==='signup');
  assert(signupRequest,'Signup did not send its (intercepted) Supabase Auth request');
@@ -55,7 +55,7 @@ try {
  const login=page.locator('form[data-form="login"]');
  await login.locator('input[name="email"]').fill(email);
  await login.locator('input[name="password"]').fill(password);
- await login.locator('button').click();
+ await login.locator('button:not([data-toggle-password])').click();
  await page.waitForFunction(()=>document.querySelector('#app')?.innerText?.includes('Invalid login credentials'),null,{timeout:20000});
  assert(traffic.some(t=>t.kind==='login'&&t.email===email),'Login did not reach its intercepted Supabase Auth endpoint');
  console.log('PASS: Login submission and invalid-credentials handling (intercepted, no real login)');
