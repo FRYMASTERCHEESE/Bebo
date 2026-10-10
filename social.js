@@ -390,6 +390,12 @@ function backWithinBebo(){
   updateBeboBack();
  }
 }
+document.querySelector('.bebo-skip-link')?.addEventListener('click',()=>{
+ const main=document.querySelector('#app');
+ if(!main)return;
+ main.focus({preventScroll:true});
+ main.scrollIntoView({behavior:'auto',block:'start'});
+});
 document.querySelector('#bebo-back-button')?.addEventListener('click',backWithinBebo);
 document.querySelector('#nav').addEventListener('click',e=>{
  const b=e.target.closest('[data-nav]');
