@@ -12,7 +12,8 @@ import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
 const configured=/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL||'')&&SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_');
 const sb=configured?createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
-const BEBO_SITE_URL='https://frymastercheese.github.io/Bebo/'; // Must also be added under Supabase Auth > URL Configuration.
+const BEBO_SITE_URL='https://bebo.nz/'; // Supabase Auth > URL Configuration: Site URL and allowed redirect.
+let recoveryMode=false; // Only true after Supabase confirms a PASSWORD_RECOVERY auth event.
 const BEBO_ERA_KEY='bebo-classic-look-v1';
 const classicEra=()=>document.documentElement.dataset.beboEra==='2007'?'2007':'2005';
 let me=null, profile=null, page='home', userViewed=null, message='', success=false, adminAccess=null, memberRestriction=null;
@@ -42,11 +43,31 @@ const suggestions=createSuggestions(sb,{safe,panel});
 async function loadMine(){if(!me){profile=null;adminAccess=null;memberRestriction=null;return}profile=await query('bebo_profiles',q=>q.select('*').eq('id',me.id).maybeSingle());const status=await query('bebo_member_controls',q=>q.select('status,reason').eq('member_id',me.id).maybeSingle());memberRestriction=status;adminAccess=await admin.check(me)}
 async function init(){
  if(!sb){render();return}
+ // Subscribe before session recovery so the initial PASSWORD_RECOVERY event cannot be missed.
+ sb.auth.onAuthStateChange((event,session)=>{
+  if(event==='PASSWORD_RECOVERY'){
+   recoveryMode=true;
+   // Delay rendering until Supabase has completed callback session initialization.
+   setTimeout(async()=>{
+    try{
+     const {data,error}=await sb.auth.getUser();
+     if(error||!data?.user)throw Error('Password reset link is invalid or expired.');
+     me=data.user;
+     location.hash='#/reset-password';
+     render();
+    }catch(error){recoveryMode=false;message=escapeError(error);success=false;location.hash='#/account';render();}
+   },0);
+   return;
+  }
+  const id=session?.user?.id||null;
+  if(id!==me?.id){me=session?.user||null;profile=null;adminAccess=null;memberRestriction=null;
+   setTimeout(async()=>{try{await loadMine()}catch(e){message=escapeError(e)}render()},0);}
+ });
  try{
-  const {data,error}=await sb.auth.getUser();if(error&&error.name!=='AuthSessionMissingError')throw error;
+  const {data,error}=await sb.auth.getUser();
+  if(error&&error.name!=='AuthSessionMissingError')throw error;
   me=data.user||null;await loadMine();
  }catch(e){message='Could not connect to Bebo database: '+escapeError(e)}
- sb.auth.onAuthStateChange((_event,session)=>{const id=session?.user?.id||null;if(id!==me?.id){me=session?.user||null;profile=null;adminAccess=null;memberRestriction=null;setTimeout(async()=>{try{await loadMine()}catch(e){message=escapeError(e)}render()},0)}});
  render();
 }
 function authPage(){
@@ -54,8 +75,19 @@ function authPage(){
  return panel('Join Bebo — it’s free! ♥',`<div class="cols"><div>${panel('Create your account',`<form class="fields" data-form="signup">
  <label>Email address<input type="email" name="email" required maxlength="254" autocomplete="email"></label>
  <label>Password (8 characters minimum)<input type="password" name="password" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="At least 8 characters"></label>
- <label><input type="checkbox" name="adult" required> I confirm I am 18 or older and agree to the <a href="#/safety">community rules and privacy information</a>.</label><button class="button">Join Bebo ♥</button></form><p class="muted">Confirm the email we send you, then return to <strong>this Bebo website</strong> and log in. If your email link opens localhost or gives an error after confirmation, open Bebo here and log in with your new details instead. Do not use your old Bebo password.</p>`)}</div>
+ <label><input type="checkbox" name="adult" required> I confirm I am 18 or older and agree to the <a href="#/safety">community rules and privacy information</a>.</label><button class="button">Join Bebo ♥</button></form><p class="muted">Confirm the email we send you, then return to <strong>this Bebo website</strong> and log in. If your confirmation link was issued before the move to bebo.nz, open https://bebo.nz and log in after confirming your email. Do not use your old Bebo password.</p>`)}</div>
  <div>${panel('Already a member?',`<form class="fields" data-form="login"><label>Email<input type="email" name="email" required autocomplete="email"></label><label>Password<input type="password" name="password" required autocomplete="current-password"></label><button class="button">Log in</button></form><p><a href="#" data-action="reset">Forgot password?</a></p>`)}</div></div>`);
+}
+function passwordRecoveryPage(){
+ if(!recoveryMode||!me){
+  return panel('Password reset ♥','<p>To change your password, start with the <a href="#/account">Forgot password?</a> link on the sign-in page. Open the email link on this device.</p>');
+ }
+ return panel('Choose a new Bebo password ♥',
+  '<p>Your reset link was accepted. Choose a new password for this Bebo account.</p>'+
+  '<form class="fields" data-form="recover-password">'+
+  '<label>New password<input type="password" name="password" autocomplete="new-password" required minlength="8" maxlength="128"></label>'+
+  '<label>Repeat new password<input type="password" name="confirm_password" autocomplete="new-password" required minlength="8" maxlength="128"></label>'+
+  '<button class="button" type="submit">Save new password ♥</button></form>');
 }
 function welcome(){return panel('Welcome back to Bebo ♥',`<p>Your favourite Bebo features are here: the Top 16, three Luv a day, colourful custom skins, Whiteboards, music, Flashboxes, quizzes, polls, Bands and Authors.</p>
  <p>Use the navigation to discover members, design a profile skin, or visit your own profile.</p>
@@ -219,6 +251,7 @@ async function refresh(){
  page=raw||'home';
  if(!configured){app.innerHTML=note()+authPage();return}
  if(page==='safety'){app.innerHTML=note()+safetyInfoPage();return}
+ if(page==='reset-password'){app.innerHTML=note()+passwordRecoveryPage();return}
  if(page==='suggestions'){app.innerHTML=note()+await suggestions.page(me,profile);return}
  if(page==='videos'||page==='videos-review'||page==='videos-insights'||page.startsWith('videos/u/')){
   app.innerHTML=note()+await videos.route(page,{me,profile,adminAccess});return;
@@ -536,6 +569,18 @@ document.addEventListener('submit',async e=>{
   const {data,error}=await sb.auth.signUp({email:String(d.get('email')).trim(),password:String(d.get('password')),options:{emailRedirectTo:BEBO_SITE_URL}});
   if(error)throw error;message='Check your email to confirm your new Bebo account, then log in.';success=true;
   if(data.session){me=data.user;await loadMine();}
+ }else if(type==='recover-password'){
+  if(!recoveryMode||!me)throw Error('Use a valid password reset link from your email first.');
+  const password=String(d.get('password')||'');
+  if(password.length<8||password.length>128)throw Error('Choose a password between 8 and 128 characters.');
+  if(password!==String(d.get('confirm_password')||''))throw Error('Both passwords must match.');
+  const {error}=await sb.auth.updateUser({password});
+  if(error)throw error;
+  recoveryMode=false;
+  await sb.auth.signOut();
+  me=null;profile=null;adminAccess=null;memberRestriction=null;
+  message='Password updated successfully. Please sign in with your new password ♥';success=true;
+  location.hash='#/account';
  }else if(type==='login'){
   const {data,error}=await sb.auth.signInWithPassword({email:String(d.get('email')).trim(),password:String(d.get('password'))});
   if(error)throw error;me=data.user;await loadMine();message='Welcome back to Bebo ♥';success=true;location.hash='#/profile';
@@ -645,7 +690,7 @@ document.addEventListener('submit',async e=>{
  }
  }catch(err){message=escapeError(err);success=false}finally{
   f.dataset.busy='';if(b)b.disabled=false;
-  if((type==='suggestion'||type==='skin'||type==='edit-profile'||type==='video-upload'||type==='video-comment'||type.startsWith('admin-')||type==='retro-poll-create'||type==='retro-quiz-create'||type==='verification-request')&&!success){
+  if((type==='recover-password'||type==='suggestion'||type==='skin'||type==='edit-profile'||type==='video-upload'||type==='video-comment'||type.startsWith('admin-')||type==='retro-poll-create'||type==='retro-quiz-create'||type==='verification-request')&&!success){
     let notice=f.querySelector('.edit-profile-error');
     if(!notice){notice=document.createElement('p');notice.className='notice bad edit-profile-error';notice.setAttribute('role','alert');f.prepend(notice);}
     notice.textContent=message;

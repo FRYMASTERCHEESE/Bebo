@@ -1,6 +1,6 @@
 # Bebo ♥ — nostalgia-style social website
 
-**GitHub Pages:** https://frymastercheese.github.io/Bebo/
+**Production custom domain:** https://bebo.nz/ (hosted on GitHub Pages; previous address https://frymastercheese.github.io/Bebo/).
 
 Bebo is an **independent, unofficial** project inspired by social-profile websites of the 2000s. Not affiliated with the original Bebo business. The "Bebo" name and visual branding may have trademark implications: obtain the relevant rights before marketing it as the original service.
 
@@ -18,7 +18,7 @@ Bebo is an **independent, unofficial** project inspired by social-profile websit
 
 1. Use the existing **dedicated Bebo Supabase project** referenced by `config.js`. Do NOT use or alter the play-to-earn database.
 2. The public Bebo profile, skin and wall tables already respond to read-only requests; verify the remaining schema, RLS policies and storage bucket against `supabase/schema.sql` before attempting migrations. Never rerun unreviewed schema SQL in an existing project.
-3. In Supabase Authentication, leave email verification enabled, configure the SMTP provider for production email delivery, and set **Site URL** to `https://frymastercheese.github.io/Bebo/`; add that address to **Redirect URLs**.
+3. In Supabase Authentication, leave email verification enabled, configure the SMTP provider for production email delivery, and set **Site URL** to `https://bebo.nz/`; allow both `https://bebo.nz/` and the previous `https://frymastercheese.github.io/Bebo/` under **Redirect URLs** during the transition.
 4. `config.js` now contains the Bebo project API URL and **public publishable key**. Never put a `service_role` key, secret key, password, or database connection string in public GitHub files.
 5. Confirm registration → email verification → sign in → create profile → add friend → post comment → save skin → upload avatar across two separate user accounts. Review database security advisors and test unauthorized modifications before welcoming users.
 
@@ -116,8 +116,8 @@ If registration delivers a confirmation email but its link opens `http://localho
 
 For the dedicated Bebo project, in [Supabase Authentication → URL Configuration](https://supabase.com/dashboard/project/rnxiggzyqqzjtgdbpedb/auth/url-configuration):
 
-- Set **Site URL** to exactly `https://frymastercheese.github.io/Bebo/`.
-- Under **Redirect URLs**, add `https://frymastercheese.github.io/Bebo/` (exact URL, no wildcard). An optional `https://frymastercheese.github.io/Bebo/**` entry can cover paths if ever needed; prefer the exact URL for production.
+- Set **Site URL** to exactly `https://bebo.nz/`.
+- Under **Redirect URLs**, add `https://bebo.nz/` (exact URL). Temporarily keep `https://frymastercheese.github.io/Bebo/` so old email links are not unnecessarily rejected. No wildcards are required.
 - Save. Remove `http://localhost:3000` entries if this project is not used for local development, to avoid accidentally accepting dev redirects.
 
 `social.js` explicitly sets `emailRedirectTo` and password-reset `redirectTo` to the production URL. **However, the Supabase Auth dashboard's Site URL and allowed redirect list must ALSO be configured**; the available Supabase connector currently cannot change those settings.
@@ -191,3 +191,11 @@ The main menu and footer now link to `#/suggestions`. A signed-in Bebo member wi
 Backend: migration `bebo_private_member_suggestions_admin_inbox_v1` applied to the dedicated Bebo Supabase project. Table has owner-only UPDATE, authenticated-author-only INSERT, owner-or-author SELECT, no anonymous grants, noneditable submitted content, 5 submissions per 24h and 60-second spacing enforced in a DB trigger. No third-party email inbox, service role key or notification service needed. Account deletion cascades suggestions to protect deleted members. Owner-review response is available only to the submitter and the owner.
 
 Automated browser testing exercises guest form privacy and navigation; synthetic mock account tests check member submissions, escaping and owner review. A genuine two-account end-to-end submission and owner status update should still be performed before declaring live production acceptance.
+
+## Bebo custom-domain auth migration — 10 October 2026
+
+Production URL is now **https://bebo.nz/**. Porkbun apex A records target the four official GitHub Pages IPv4 addresses, and the `www` CNAME targets `frymastercheese.github.io`. GitHub Pages custom domain is `bebo.nz` (see CNAME). Never add a second hosting plan to move the site; Supabase remains the data backend.
+
+The browser's Supabase confirmation and password-reset redirects now use `https://bebo.nz/`; the guest and authenticated reset-password page only allows setting a new password after Supabase raises a genuine `PASSWORD_RECOVERY` event. On success the user is signed out and asked to log in with the new password. No password or recovery token is sent to the server beyond Supabase Auth.
+
+**Owner action in Supabase Auth > URL Configuration:** Verify Site URL is saved as `https://bebo.nz/`; Redirect URLs includes `https://bebo.nz/` and (temporarily) `https://frymastercheese.github.io/Bebo/`. Existing member identities, admin roles, skins and content remain stored in the same Supabase project. Browser sessions stored on the old hostname are not automatically transferred to the new hostname: members can sign in again. End-to-end verification with a genuine disposable account is still required before claiming live signup and recovery have been tested.

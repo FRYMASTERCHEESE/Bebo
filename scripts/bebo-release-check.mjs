@@ -35,6 +35,10 @@ for (const file of jsFiles) {
 
 check(/<meta name="viewport"/.test(html), 'Mobile viewport present');
 check(html.includes('id="app"'), 'Bebo main content present');
+check(html.includes('https://bebo.nz/'), 'Production metadata points to custom domain');
+check(main.includes("const BEBO_SITE_URL='https://bebo.nz/'"), 'Authentication redirects use bebo.nz');
+check(main.includes("event==='PASSWORD_RECOVERY'")&&main.includes("sb.auth.updateUser({password})"), 'Password recovery form requires verified Supabase recovery event');
+check(read('CNAME').trim()==='bebo.nz','GitHub Pages custom domain preserved');
 check(html.includes('id="nav"'), 'Navigation present');
 check(html.includes('id="bebo-back-button"'), 'Global Back button present');
 check(html.includes('class="bebo-page-progress"'), 'Progress feedback present');
@@ -66,8 +70,8 @@ check(html.includes('rel="canonical"'), 'Homepage canonical URL');
 check(about.includes('rel="canonical"'), 'About canonical URL');
 check(html.includes('property="og:title"'), 'Homepage social sharing metadata');
 check(about.includes('property="og:title"'), 'About social sharing metadata');
-check(sitemap.includes('https://frymastercheese.github.io/Bebo/about.html'), 'Sitemap includes About page');
-check(sitemap.includes('https://frymastercheese.github.io/Bebo/'), 'Sitemap includes homepage');
+check(sitemap.includes('https://bebo.nz/about.html'), 'Sitemap includes About page');
+check(sitemap.includes('https://bebo.nz/'), 'Sitemap includes homepage');
 for (const [name, source] of [['homepage',html],['about',about]]) {
   const match = source.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
   check(Boolean(match), name + ' has structured data');

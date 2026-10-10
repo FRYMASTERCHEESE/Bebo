@@ -2,7 +2,7 @@
 import { chromium, devices } from 'playwright';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-const host='https://frymastercheese.github.io/Bebo/';
+const host='https://bebo.nz/';
 const tests=[
 {path:'home', label:'Homepage',match:/sign up\. build your profile\. find friends\.|welcome back to bebo/i,eraTest:true},
 {path:'u/bebo',label:'Profile',match:/bebo.s profile|my profile picture|about me/i,verifiedBadge:true},
@@ -22,6 +22,7 @@ const tests=[
 {path:'safety',label:'Privacy',match:/community rules.*privacy/i},
  {path:'suggestions',label:'Public suggestion page',match:/suggest an improvement/i,suggestions:true},
 {path:'account',label:'Signup',match:/join bebo|create your account/i,signup:true},
+{path:'reset-password',label:'Secure password reset entry',match:/Password reset/i,passwordGuest:true},
 {path:'admin',label:'Admin guest denial',match:/join bebo|create your account|admin only/i,guestAdmin:true}
 ];
 // Wait until GitHub Pages publishes the matching revision; Actions can run before Pages.
@@ -31,7 +32,7 @@ for(let n=0;n<40;n++){
   try{
     const html=await (await fetch(host+'?wait-for-css='+Date.now(),{cache:'no-store'})).text();
     const aboutIsPublished=html.includes('<a class="bebo-about-link" href="./about.html">About Bebo</a>');
-    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261010-suggestions-v1');
+    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261010-domain-v1');
     if(html.includes(expectedCSS)&&aboutIsPublished&&videoIsPublished){releaseReady=true;break;}
   }catch(error){console.warn('Waiting for Bebo Pages:',String(error));}
   await new Promise(resolve=>setTimeout(resolve,3000));
@@ -203,6 +204,10 @@ try{
       assert(inner.includes('sign in or join Bebo'),'Guest suggestion page must require signing in');
       assert.equal(await page.locator('a[href="#/account"]').count()>0,true,'Suggestion page needs account link');
     }
+    if(check.passwordGuest){
+      assert.equal(await page.locator('form[data-form="recover-password"]').count(),0,'Only a valid recovery link should show password update');
+      assert(inner.includes('Forgot password?'),'Reset page must explain how to obtain a link');
+    }
     if(check.guestAdmin){
       assert.equal(await page.locator('.bebo-admin-page').count(),0,'Private admin dashboard rendered for guest');
       assert(!/Member Reports|Owner Control Centre/.test(inner),'Admin data visible to guest');
@@ -239,7 +244,7 @@ try{
   try{
     await page.goto(host+'?about-audit='+device.name+'#/home',{waitUntil:'domcontentloaded',timeout:45000});
     await page.locator('#nav a.bebo-about-link').click();
-    await page.waitForURL('**/Bebo/about.html',{timeout:15000});
+    await page.waitForURL('https://bebo.nz/about.html',{timeout:15000});
     const heading=await page.locator('main h1').innerText();
     const description=await page.locator('main').innerText();
     assert(/Bebo Is Officially Back/.test(heading),'Original slogan missing from About page');
@@ -252,7 +257,7 @@ try{
     const siteWidth=await page.evaluate(()=>({page:document.documentElement.scrollWidth,screen:innerWidth}));
     assert(siteWidth.page<=siteWidth.screen+8,'About page horizontally overflows the viewport');
     await page.locator('nav a').first().click();
-    await page.waitForURL('**/Bebo/#/home',{timeout:15000});
+    await page.waitForURL('https://bebo.nz/#/home',{timeout:15000});
     aboutCheck.status='PASS';
   }catch(error){
     aboutCheck.status='FAIL';
