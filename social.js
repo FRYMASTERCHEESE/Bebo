@@ -316,8 +316,59 @@ window.addEventListener('storage',event=>{
 });
 updateEraSwitcher();
 
-document.querySelector('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-nav]');if(!b)return;location.hash='#/'+b.dataset.nav;render()});
-window.addEventListener('hashchange',()=>{verified.closeDialog();message='';activeSkinCategory='All';render()});
+/* Every internal Bebo hash page has a safe back path. Never send users to a previous
+   external website by accident. history.state belongs to the browser entry, so
+   Android/desktop Back and Forward also keep the correct Bebo predecessor. */
+const beboRoute=()=>location.hash||'#/home';
+let lastBeboRoute=beboRoute();
+const isBeboRoute=route=>typeof route==='string'&&route.startsWith('#/')&&route.length<1000;
+function recordBeboRoute(from){
+ const current=beboRoute();
+ const state=history.state;
+ if(state?.beboPageRoute!==current){
+  const previous=isBeboRoute(from)&&from!==current?from:null;
+  history.replaceState({...(state&&typeof state==='object'?state:{}),
+   beboPageRoute:current,beboPreviousRoute:previous},'');
+ }
+ lastBeboRoute=current;
+ updateBeboBack();
+}
+function updateBeboBack(){
+ const button=document.querySelector('#bebo-back-button');
+ if(!button)return;
+ const previous=history.state?.beboPreviousRoute;
+ const current=beboRoute();
+ button.disabled=!isBeboRoute(previous)&&current==='#/home';
+ button.title=isBeboRoute(previous)?'Back to the previous Bebo page':'Back to Bebo Home';
+ button.setAttribute('aria-label',button.title);
+}
+function backWithinBebo(){
+ // A previous Bebo route is recorded only after a genuine same-site navigation.
+ // Never call history.back() when we arrived directly from an external archive.
+ const previous=history.state?.beboPreviousRoute;
+ const current=beboRoute();
+ if(isBeboRoute(previous)&&previous!==current){
+  history.back();
+ }else if(current!=='#/home'){
+  location.hash='#/home';
+ }else{
+  updateBeboBack();
+ }
+}
+document.querySelector('#bebo-back-button')?.addEventListener('click',backWithinBebo);
+document.querySelector('#nav').addEventListener('click',e=>{
+ const b=e.target.closest('[data-nav]');
+ if(!b)return;
+ location.hash='#/'+b.dataset.nav;
+ if(beboRoute()===lastBeboRoute)render();
+});
+window.addEventListener('hashchange',event=>{
+ const oldHash=(()=>{try{return new URL(event.oldURL).hash||'#/home'}catch{return lastBeboRoute}})();
+ recordBeboRoute(oldHash);
+ verified.closeDialog();message='';activeSkinCategory='All';render();
+});
+recordBeboRoute(null);
+
 
 /* Accessible blue badge: Enter/Space opens details; Escape and Tab work in the sheet. */
 document.addEventListener('keydown',e=>{
