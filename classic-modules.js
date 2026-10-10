@@ -8,6 +8,7 @@ export function createClassic(sb,{safe,panel,btn,query}) {
   const nickname=p=>safe(p?.display_name||'Bebo member');
   const link=p=>'<a href="#/u/'+encodeURIComponent(p.username)+'">'+nickname(p)+'</a>';
   const needMe=me=>{if(!me)throw Error('Log in to Bebo first.');};
+  const handlePattern=value=>String(value||'').replace(/[\\%_]/g,'\\$&');
   const allowedFile=f=>f instanceof File && f.size>0 && f.size<=5*1024*1024 && ['image/jpeg','image/png','image/webp'].includes(f.type);
   const fileExt=f=>({'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[f.type]);
   const imgUrl=path=>sb.storage.from('bebo-photos').getPublicUrl(path).data.publicUrl;
@@ -34,7 +35,7 @@ export function createClassic(sb,{safe,panel,btn,query}) {
     return '<div class="classic-modules"><div>'+top+photos+'</div><div>'+blog+mail+'</div></div>';
   }
   async function albumsPage(me,username){
-    const owner=username?await db('bebo_profiles',q=>q.select('id,username,display_name').eq('username',username).maybeSingle()):me?await db('bebo_profiles',q=>q.select('id,username,display_name').eq('id',me.id).maybeSingle()):null;
+    const owner=username?await db('bebo_profiles',q=>q.select('id,username,display_name').ilike('username',handlePattern(username)).maybeSingle()):me?await db('bebo_profiles',q=>q.select('id,username,display_name').eq('id',me.id).maybeSingle()):null;
     if(!owner){
       const albums=await db('bebo_albums',q=>q.select('*').order('created_at',{ascending:false}).limit(30));
       return panel('📸 Bebo Photo Albums','<p>Remember looking through your mates’ albums? Explore what members are sharing.</p>'+
@@ -74,7 +75,7 @@ export function createClassic(sb,{safe,panel,btn,query}) {
       '<p class="muted">'+photos.length+' of 96 photos.</p>');
   }
   async function blogsPage(me,username){
-    const who=username?await db('bebo_profiles',q=>q.select('id,username,display_name').eq('username',username).maybeSingle()):me?await db('bebo_profiles',q=>q.select('id,username,display_name').eq('id',me.id).maybeSingle()):null;
+    const who=username?await db('bebo_profiles',q=>q.select('id,username,display_name').ilike('username',handlePattern(username)).maybeSingle()):me?await db('bebo_profiles',q=>q.select('id,username,display_name').eq('id',me.id).maybeSingle()):null;
     if(!who){
       const entries=await db('bebo_blogs',q=>q.select('*').order('created_at',{ascending:false}).limit(30));
       return panel('✎ Bebo Blogs','<p>Blog Early, Blog Often — just like 2007.</p>'+
@@ -214,8 +215,8 @@ export function createClassic(sb,{safe,panel,btn,query}) {
       return 'Other Half request sent ♥';
     }
     if(type==='classic-mail'){
-      const recipient=clean(d.get('recipient'),25).toLowerCase();
-      const p=await db('bebo_profiles',q=>q.select('id').eq('username',recipient).maybeSingle());
+      const recipient=clean(d.get('recipient'),25).replace(/^@/,'');
+      const p=await db('bebo_profiles',q=>q.select('id').ilike('username',handlePattern(recipient)).maybeSingle());
       if(!p)throw Error('That Bebo username does not exist.');
       await db('bebo_mail',q=>q.insert({sender_id:me.id,recipient_id:p.id,subject:clean(d.get('subject'),120),body:clean(d.get('body'),4000)}));
       return 'Private message sent ✉';
