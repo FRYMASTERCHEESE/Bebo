@@ -18,6 +18,8 @@ const read = path => readFileSync(path, 'utf8');
 const html = read('index.html');
 const main = read('social.js');
 const verified = read('verified.js');
+const about = read('about.html');
+const sitemap = read('sitemap.xml');
 const jsFiles = readdirSync('.').filter(file => file.endsWith('.js'));
 
 for (const file of jsFiles) {
@@ -51,6 +53,31 @@ check(main.includes('aria-current'), 'Accessible active navigation');
 check(!/sb_secret_|service_role\s*[:=]/.test(read('config.js')), 'No secret-role key in public config');
 check(existsSync('supabase/bebo_foreign_key_performance_indexes_v1.sql'),
   'Indexed foreign keys migration recorded');
+
+
+check(html.includes('Bebo Is Officially Back'), 'Original Bebo slogan kept');
+check(about.includes('Bebo Is Officially Back'), 'About page retains slogan');
+check(about.includes('Independent project notice:'), 'About explains independent status');
+check(about.includes('not the original Bebo service'), 'No claim to old Bebo accounts');
+check(about.includes('Supabase'), 'About explains real account backend');
+check(about.includes('56 original skins'), 'About describes original skins');
+check(html.includes('href="./about.html"'), 'Homepage links to indexable About page');
+check(html.includes('rel="canonical"'), 'Homepage canonical URL');
+check(about.includes('rel="canonical"'), 'About canonical URL');
+check(html.includes('property="og:title"'), 'Homepage social sharing metadata');
+check(about.includes('property="og:title"'), 'About social sharing metadata');
+check(sitemap.includes('https://frymastercheese.github.io/Bebo/about.html'), 'Sitemap includes About page');
+check(sitemap.includes('https://frymastercheese.github.io/Bebo/'), 'Sitemap includes homepage');
+for (const [name, source] of [['homepage',html],['about',about]]) {
+  const match = source.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+  check(Boolean(match), name + ' has structured data');
+  if (match) {
+    try {
+      const obj = JSON.parse(match[1]);
+      check(obj['@context'] === 'https://schema.org', name + ' structured data is valid JSON-LD');
+    } catch { check(false, name + ' structured data is valid JSON-LD'); }
+  }
+}
 
 console.log('\nBebo release checks: ' + passed + ' passed, ' + failures.length + ' failed.');
 if (failures.length) process.exitCode = 1;
