@@ -117,7 +117,7 @@ async function showProfile(username){
  const userURL=encodeURIComponent(who.username);
  const cover=retro.imageStyle(who,grad(who));
  const verifyAction=own?(approvedUserIDs.has(who.id)?
-  '<span class="bebo-profile-action bebo-profile-verify-complete">✓ Bebo Verified</span>':
+  '<button type="button" class="bebo-profile-action bebo-profile-verify-complete" data-action="verified-info" data-id="'+safe(who.id)+'" aria-haspopup="dialog" title="View Bebo Verified information and profile transparency">✓ Bebo Verified</button>':
   '<button type="button" class="bebo-profile-action bebo-profile-verify-cta" data-action="verified-profile-toggle" aria-controls="bebo-profile-verification" aria-expanded="false">'+
   (ownVerificationRequest?.status==='pending'?'✓ Verification Pending':ownVerificationRequest?.status==='declined'?'✓ Check Verification Status':'✓ Request Bebo Verified')+'</button>'):'';
  const actions=own?'<a class="bebo-profile-action" href="#/edit">✎ Edit my profile</a><a class="bebo-profile-action" href="#/skins">🎨 Change my skin</a>'+verifyAction:
