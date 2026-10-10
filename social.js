@@ -1,8 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import { createRetro } from './nostalgia.js?v=20261010-polls-quizzes-v2';
 import { createSafety } from './safety.js';
-import { createClassic } from './classic-modules.js?v=20261010-trending-v1';
-import { createAdmin } from './admin.js?v=20261010-suggestions-v1';
+import { createClassic } from './classic-modules.js?v=20261011-ad-readiness-v2';
+import { createAdmin } from './admin.js?v=20261011-ad-readiness-v2';
 import { createSuggestions } from './suggestions.js?v=20261010-suggestions-v1';
 import { createVerification } from './verified.js?v=20261010-transparency-v1';
 import { createVideos } from './videos.js?v=20261010-analytics-v5';

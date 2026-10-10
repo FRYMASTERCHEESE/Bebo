@@ -92,7 +92,7 @@ export function createAdmin(sb,{safe,panel}) {
         '<p class="muted">Review reports carefully. Removing a reported comment is permanent and will remove reports attached to that comment.</p>'+
         '<div class="admin-filters">'+tabs+'</div>'+
         (reportHTML||'<p class="admin-empty">♥ No '+safe(filter)+' reports. All caught up!</p>'))+
-      '</div>'+await photoModerationPanel(me)+await advanced.panels(me,role);
+      '</div>'+await photoModerationPanel(me)+await contentModerationPanel()+await advanced.panels(me,role);
   }
   async function photoModerationPanel(me) {
     // Review status and reports are protected by backend RLS; this only runs after guard().
@@ -138,6 +138,30 @@ export function createAdmin(sb,{safe,panel}) {
       '<h3>Open photo reports ('+reports.length+')</h3>'+
       (reportsHTML||'<p class="admin-empty">No photo reports waiting.</p>'));
   }
+  async function contentModerationPanel(){
+    const {data:reports,error}=await sb.from('bebo_content_reports')
+      .select('id,content_kind,content_id,reason,created_at,status')
+      .eq('status','open').order('created_at',{ascending:true}).limit(30);
+    if(error)throw error;
+    const tables={blog:'bebo_blogs',blog_comment:'bebo_blog_comments',group:'bebo_groups'};
+    const list=await Promise.all((reports||[]).map(async r=>{
+      const table=tables[r.content_kind];if(!table)return '';
+      const {data:content,error:lookup}=await sb.from(table).select('*').eq('id',r.content_id).maybeSingle();
+      if(lookup)throw lookup;
+      const summary=String(content?.title||content?.name||content?.body||content?.description||'Content removed').slice(0,350);
+      return '<article class="admin-report"><strong>🚩 '+safe(r.content_kind.replace('_',' '))+'</strong>'+
+        '<p class="muted">'+date(r.created_at)+(content?.is_hidden?' · Already hidden':' · Under review')+'</p>'+
+        '<p class="admin-post-preview">'+safe(summary)+'</p>'+
+        '<p><b>Report reason:</b> '+safe(r.reason)+'</p><div class="admin-report-actions">'+
+        (content&&!content.is_hidden?'<button class="button danger" data-action="admin-content-hide" data-id="'+
+         safe(r.content_kind+':'+r.content_id)+'">Hide content</button> ':'')+
+        '<button class="button secondary" data-action="admin-content-reviewed" data-id="'+
+         safe(r.id)+'">Mark reviewed</button></div></article>';
+    }));
+    return panel('🚩 Reported Blogs, Comments & Groups',
+      '<p>Review member reports and hide content without deleting member data. Reports need regular human review.</p>'+
+      (list.join('')||'<p class="admin-empty">No open text-content reports.</p>'));
+  }
   function setFilter(value){
     if(!['open','dismissed','actioned'].includes(value))throw Error('Invalid filter');
     filter=value;
@@ -145,6 +169,27 @@ export function createAdmin(sb,{safe,panel}) {
   async function action(name,id,me) {
     await guard(me);
     if(name==='admin-filter'){setFilter(id);return {message:'Showing '+filter+' reports.'};}
+    if(name==='admin-content-hide'){
+      const match=/^(blog|blog_comment|group):([0-9a-f-]{36})$/i.exec(String(id||''));
+      if(!match)throw Error('Invalid content reference.');
+      if(!confirm('Hide this reported content from public Bebo pages without deleting it?'))return {cancelled:true};
+      const table={blog:'bebo_blogs',blog_comment:'bebo_blog_comments',group:'bebo_groups'}[match[1]];
+      const {data,error}=await sb.from(table).update({is_hidden:true}).eq('id',match[2]).eq('is_hidden',false)
+        .select('id').maybeSingle();
+      if(error)throw error;
+      if(!data)throw Error('Content may already be hidden or deleted.');
+      return {message:'Reported content is now hidden from public pages.'};
+    }
+    if(name==='admin-content-reviewed'){
+      if(!/^[0-9a-f-]{36}$/i.test(id))throw Error('Invalid report ID.');
+      if(!confirm('Mark this content report reviewed?'))return {cancelled:true};
+      const {data,error}=await sb.from('bebo_content_reports')
+        .update({status:'reviewed',reviewed_by:me.id,reviewed_at:new Date().toISOString()})
+        .eq('id',id).eq('status','open').select('id').maybeSingle();
+      if(error)throw error;
+      if(!data)throw Error('Report may have been reviewed already.');
+      return {message:'Content report reviewed.'};
+    }
     if(['admin-photo-approve','admin-photo-reject','admin-photo-hide'].includes(name)){
       if(!/^[0-9a-f-]{36}$/i.test(id))throw Error('Invalid photo ID');
       const accepted=name==='admin-photo-approve';

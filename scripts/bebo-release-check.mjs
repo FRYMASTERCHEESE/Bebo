@@ -86,6 +86,19 @@ for(const file of ['privacy.html','community-guidelines.html','how-to.html','faq
 }
 check(read('privacy.html').includes('Google advertising is not enabled'),'No misleading claim that ads are currently live');
 check(!html.includes('pagead2.googlesyndication.com/pagead/js/adsbygoogle'),'No premature Google ad script');
+const adSeller='google.com, pub-4051392846058327, DIRECT, f08c47fec0942fa0';
+check(existsSync('ads.txt')&&read('ads.txt').trim()===adSeller,'AdSense ads.txt seller authorization matches Bebo publisher');
+check(existsSync('robots.txt')&&read('robots.txt').includes('https://bebo.nz/sitemap.xml'),'Robots TXT allows indexable sitemap');
+for(const file of ['index.html','about.html','privacy.html','community-guidelines.html','how-to.html','faq.html']){
+ check(read(file).includes('<meta name="google-adsense-account" content="ca-pub-4051392846058327">'),
+   file+' has ownership verification meta without ad-serving script');
+ check(!read(file).includes('pagead2.googlesyndication.com/pagead/js/adsbygoogle'),
+  file+' does not serve AdSense ads before approval and consent setup');
+}
+check(read('classic-modules.js').includes('classic-report-content')&&
+ read('admin.js').includes('admin-content-hide')&&
+ read('admin.js').includes('admin-content-reviewed'),
+ 'Blog, comment, group reporting and moderator hide queue wired');
 check(read('classic-modules.js').includes('classic-report-photo')&&read('admin.js').includes('admin-photo-approve')&&read('admin.js').includes('admin-photo-hide'),'Member photo reports and owner approvals wired');
 check(existsSync('supabase/bebo_photos_owner_review_reports_20261011.sql'),'Applied photo moderation database migration documented');
 check(sitemap.includes('https://bebo.nz/'), 'Sitemap includes homepage');

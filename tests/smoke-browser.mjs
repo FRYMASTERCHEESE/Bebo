@@ -35,7 +35,7 @@ for(let n=0;n<40;n++){
   try{
     const html=await (await fetch(host+'?wait-for-css='+Date.now(),{cache:'no-store'})).text();
     const aboutIsPublished=html.includes('<a class="bebo-about-link" href="./about.html">About Bebo</a>');
-    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261011-adsense-readiness-v1');
+    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261011-adsense-verification-v2');
     if(html.includes(expectedCSS)&&aboutIsPublished&&videoIsPublished){releaseReady=true;break;}
   }catch(error){console.warn('Waiting for Bebo Pages:',String(error));}
   await new Promise(resolve=>setTimeout(resolve,3000));

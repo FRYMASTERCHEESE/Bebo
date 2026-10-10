@@ -6,6 +6,7 @@ on:
       - 'videos.js'
       - 'tests/videos-smoke.mjs'
       - 'tests/photo-review-smoke.mjs'
+      - 'tests/content-report-smoke.mjs'
       - 'social.js'
       - 'verified.js'
       - 'safety.js'
@@ -48,6 +49,8 @@ jobs:
         run: node tests/videos-smoke.mjs
       - name: Test photo approval, member reporting and public visibility with synthetic records
         run: node tests/photo-review-smoke.mjs
+      - name: Test community blog, comment and group moderation using synthetic accounts
+        run: node tests/content-report-smoke.mjs
       - name: Test private Bebo suggestions, admin review and escaping
         run: node tests/suggestions-smoke.mjs
       - name: Test Skin Studio design safety and private drafts

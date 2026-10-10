@@ -67,10 +67,33 @@ await safeCheck('Unapproved album photos hidden from guests',async()=>{
   Array.isArray(items)&&items.every(x=>x.moderation_status==='approved'),
   'Pending or rejected album photo exposed through anonymous REST read');
 });
+await safeCheck('AdSense publisher verification and ads.txt',async()=>{
+ const [home,sellers,robots]=await Promise.all([
+  get(origin+'/?ad-review='+Date.now(),{headers:{accept:'text/html'}}),
+  get(origin+'/ads.txt',{headers:{accept:'text/plain'}}),
+  get(origin+'/robots.txt',{headers:{accept:'text/plain'}})]);
+ const html=await home.text(),ads=await sellers.text(),robot=await robots.text();
+ report('AdSense publisher verification and ads.txt',home.ok&&sellers.ok&&robots.ok&&
+  html.includes('google-adsense-account')&&
+  html.includes('ca-pub-4051392846058327')&&
+  ads.trim()==='google.com, pub-4051392846058327, DIRECT, f08c47fec0942fa0'&&
+  robot.includes('Sitemap: https://bebo.nz/sitemap.xml')&&
+  !html.includes('pagead2.googlesyndication.com/pagead/js/adsbygoogle'),
+  'Ownership verification, seller file or preapproval ad-script policy failed');
+});
+for(const table of ['bebo_blogs','bebo_blog_comments','bebo_groups']){
+ await safeCheck('Hidden '+table+' inaccessible to visitors',async()=>{
+  const res=await get(base+'/rest/v1/'+table+'?select=is_hidden&limit=30',{headers:publicHeaders});
+  if(!res.ok){report('Hidden '+table+' inaccessible to visitors',false,'Table read unavailable');return}
+  const rows=await res.json();
+  report('Hidden '+table+' inaccessible to visitors',Array.isArray(rows)&&rows.every(x=>x.is_hidden===false),
+  'Hidden content exposed in anonymous REST feed');
+ });
+}
 // Audit private table exposure as the anonymous visitor role. All SELECTs are read-only.
 // A 200 [] is acceptable: some well-configured RLS tables return an empty array instead of 403.
 // A 200 with any row is a launch-blocking privacy regression. Never print user records.
-for(const table of ['bebo_mail','bebo_reports','bebo_photo_reports','bebo_suggestions','bebo_moderators',
+for(const table of ['bebo_mail','bebo_reports','bebo_photo_reports','bebo_content_reports','bebo_suggestions','bebo_moderators',
  'bebo_admin_audit','bebo_member_controls','bebo_verification_requests','bebo_video_view_events']){
  await safeCheck('Private '+table+' inaccessible anonymously',async()=>{
   const res=await get(base+'/rest/v1/'+table+'?select=*&limit=1',{headers:publicHeaders});

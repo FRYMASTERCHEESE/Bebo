@@ -105,7 +105,9 @@ export function createClassic(sb,{safe,panel,btn,query}) {
       '<p><a href="#/u/'+encodeURIComponent(who.username)+'">« Profile</a></p>'+form+
       (blogs.map(b=>'<div class="item"><h3 class="classic-entry"><a href="#/blog/'+b.id+'">'+safe(b.title)+'</a></h3>'+
       '<p class="muted">'+when(b.created_at)+'</p><p>'+teaser(b.body,240)+'</p>'+
-      (mine?btn('Delete entry','classic-delete-blog',b.id,'secondary'):'')+'</div>').join('')||
+      (b.is_hidden?'<p class="muted">🚫 Hidden from public by moderators</p>':'')+
+      (mine?btn('Delete entry','classic-delete-blog',b.id,'secondary'):
+        me&&!b.is_hidden?btn('🚩 Report blog','classic-report-content','blog:'+b.id,'secondary'):'')+'</div>').join('')||
       '<p class="muted">No blog entries yet.</p>'));
   }
   async function blogPage(me,id){
@@ -123,9 +125,15 @@ export function createClassic(sb,{safe,panel,btn,query}) {
       '<label>Leave a comment<textarea name="body" maxlength="800" required></textarea></label>',
       'Post comment ♥'):'<p><a href="#/account">Log in</a> to comment.</p>';
     return panel(safe(b.title),'<p class="muted">By '+(owner?link(owner):'Member')+' · '+when(b.created_at)+'</p>'+
-      '<p class="longtext">'+safe(b.body)+'</p><hr><h3>Comments ('+comments.length+')</h3>'+form+
+      '<p class="longtext">'+safe(b.body)+'</p>'+
+      (b.is_hidden?'<p class="muted">🚫 This entry is hidden from the public.</p>':'')+
+      (me&&me.id!==b.owner_id&&!b.is_hidden?btn('🚩 Report this blog','classic-report-content','blog:'+b.id,'secondary'):'')+
+      '<hr><h3>Comments ('+comments.length+')</h3>'+form+
       comments.map(c=>'<div class="item"><strong>'+(byId.has(c.author_id)?link(byId.get(c.author_id)):'Member')+'</strong> <small>'+when(c.created_at)+'</small><p>'+safe(c.body)+'</p>'+
-      (me&&(me.id===c.author_id||me.id===b.owner_id)?btn('Delete','classic-delete-blog-comment',c.id,'secondary'):'')+'</div>').join(''));
+      (c.is_hidden?'<p class="muted">🚫 Hidden by moderators.</p>':'')+
+      (me&&(me.id===c.author_id||me.id===b.owner_id)?btn('Delete','classic-delete-blog-comment',c.id,'secondary'):'')+
+      (me&&me.id!==c.author_id&&!c.is_hidden?btn('🚩 Report comment','classic-report-content','blog_comment:'+c.id,'secondary'):'')+
+      '</div>').join(''));
   }
   async function otherHalfPage(me) {
     needMe(me);
@@ -178,7 +186,9 @@ export function createClassic(sb,{safe,panel,btn,query}) {
     const listing=groups.map(g=>'<div class="item"><strong>★ '+safe(g.name)+'</strong>'+
       '<p>'+safe(g.description)+'</p>'+
       (me?(membership.has(g.id)?btn('Leave group','classic-leave-group',g.id,'secondary'):btn('Join group ♥','classic-join-group',g.id)):'<p class="muted">Sign in to join</p>')+
-      (me?.id===g.owner_id?btn('Delete group','classic-delete-group',g.id,'danger'):'')+'</div>').join('');
+      (g.is_hidden?'<p class="muted">🚫 Hidden from public by moderators</p>':'')+
+      (me?.id===g.owner_id?btn('Delete group','classic-delete-group',g.id,'danger'):
+       me&&!g.is_hidden?btn('🚩 Report group','classic-report-content','group:'+g.id,'secondary'):'')+'</div>').join('');
     return panel('★ Bebo Groups', '<p>Find your people. Create a group for your mates, music or shared interests.</p>'+form+(listing||'<p class="muted">No groups yet — start the first!</p>'));
   }
   async function route(page,me) {
@@ -249,6 +259,18 @@ export function createClassic(sb,{safe,panel,btn,query}) {
       if(pics.length)throw Error('Remove pictures before deleting this album.');
       await db('bebo_albums',q=>q.delete().eq('id',id).eq('owner_id',me.id));
       return 'Album removed.';
+    }
+    if(name==='classic-report-content'){
+      const match=/^(blog|blog_comment|group):([0-9a-f-]{36})$/i.exec(String(id||''));
+      if(!match)throw Error('Invalid content report.');
+      const reason=prompt('Why are you reporting this content? (at least 10 characters)');
+      if(reason===null)return 'Report cancelled.';
+      const explanation=clean(reason,1000);
+      if(explanation.length<10)throw Error('Describe the issue in at least 10 characters.');
+      await db('bebo_content_reports',q=>q.insert({
+        content_kind:match[1],content_id:match[2],reporter_id:me.id,reason:explanation
+      }));
+      return 'Your report was sent privately to Bebo moderators.';
     }
     if(name==='classic-report-photo'){
       const reason=prompt('Why are you reporting this photo? (at least 10 characters)');
