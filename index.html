@@ -1254,51 +1254,6 @@ html[data-bebo-era="2005"] .bebo-2007-profile .panel .body{background:var(--bebo
 }
 
 
-/* Old Bebo Memories: accessible early-Bebo styled public archive search. */
-.bebo-memory-page{max-width:760px;margin:0 auto;line-height:1.6}
-.bebo-memory-hero{background:linear-gradient(125deg,#dff4fd,#fce9f3);
- border:1px solid #a9d5e9;border-radius:8px;padding:18px;margin:0 0 15px}
-.bebo-memory-hero h3{background:none!important;border:0!important;padding:0!important;
- font-size:21px!important;color:#a53c75!important;margin:0 0 7px!important}
-.bebo-memory-hero p{margin:0;font-size:13px}
-.bebo-memory-form{border:1px solid #b5d7e6;background:#f9fdff;padding:16px;margin-bottom:16px}
-.bebo-memory-form>label{display:block;font-weight:bold;color:#246d9d;margin-bottom:7px}
-.bebo-memory-search-row{display:flex;align-items:stretch;gap:8px}
-.bebo-memory-search-row input{
- flex:1;min-width:0;width:100%;border:1px solid #97bad3;border-radius:3px;
- padding:11px;font:13px Verdana,Arial,sans-serif;background:#fff;color:#242b36
-}
-.bebo-memory-search-row button{flex:none;margin:0;white-space:normal;max-width:42%;min-height:43px}
-.bebo-memory-form .muted{margin:9px 0 0}
-.bebo-memory-card,.bebo-memory-result{background:#fff;border:1px solid #cad9e4;
- border-radius:5px;padding:16px;margin:15px 0;overflow-wrap:anywhere}
-.bebo-memory-card>h3,.bebo-memory-result>h3{background:#e6f5fc!important;
- color:#267aab!important;font:700 15px/1.35 Verdana,Arial,sans-serif!important;
- margin:-16px -16px 13px!important;padding:10px 15px!important;
- border-bottom:1px solid #add5e9!important}
-.bebo-memory-card p{line-height:1.65}
-.bebo-memory-card .fields label{color:#414b59}
-.bebo-memory-card .fields textarea{min-height:115px}
-.bebo-memory-consent{display:flex!important;flex-direction:row;align-items:flex-start;
- gap:9px;font-weight:normal!important;line-height:1.5}
-.bebo-memory-consent input{width:auto!important;margin:3px 0 0;flex:none}
-.bebo-memory-result>ul{padding-left:20px;margin:10px 0}
-.bebo-memory-result>ul li{padding:5px 0;overflow-wrap:anywhere}
-.bebo-memory-hit{display:flex;flex-direction:column;gap:6px;
- padding:12px;margin:9px 0;background:#eaf8ee;border:1px solid #aed7ba}
-.bebo-memory-hit strong{color:#227944}.bebo-memory-hit a{font-weight:bold}
-.bebo-memory-loading{padding:14px;background:#ebf6fc;color:#285c7f}
-.bebo-memory-error{padding:14px;border:1px solid #e3a3a8;background:#fff0f2;color:#8e1c35}
-.bebo-memory-warning{padding:10px;background:#fff4d9;border:1px solid #e0c078}
-@media(max-width:600px){
- .bebo-memory-hero{padding:14px}
- .bebo-memory-search-row{flex-direction:column}
- .bebo-memory-search-row button{max-width:100%;width:100%}
- .bebo-memory-card,.bebo-memory-result{padding:13px}
- .bebo-memory-card>h3,.bebo-memory-result>h3{margin:-13px -13px 12px!important}
-}
-
-
 /* Always-available Bebo navigation: reachable while scrolling every route. */
 .bebo-quick-nav{
  position:fixed;z-index:700;
@@ -1343,7 +1298,7 @@ html[data-bebo-era="2007"] .bebo-quick-nav a{
 }
 
 </style>
-<script type="module" src="./social.js?v=20261010-global-back-v1"></script></head>
+<script type="module" src="./social.js?v=20261010-remove-old-bebo-v2"></script></head>
 <body><header class="top"><div class="wrap head">
 <div class="brand" aria-label="Bebo"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-be">be</span><span class="brand-bo">bo</span><span class="brand-star" aria-hidden="true"> ★</span></div>
 <div class="brand-message"><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p></div>
@@ -1356,7 +1311,7 @@ html[data-bebo-era="2007"] .bebo-quick-nav a{
   <span class="bebo-era-caption" id="bebo-era-caption">Original 2005 look</span>
 </div>
 </div></header>
-<nav class="nav"><div class="wrap" id="nav"><button data-nav="home">Home</button><button data-nav="profile">My Profile</button><button data-nav="friends">Friends</button><button data-nav="photos">Photos</button><button data-nav="blogs">Blog</button><button data-nav="messages">Mail ✉</button><button data-nav="groups">Groups</button><button data-nav="other-half">Other Half ♥</button><button data-nav="skins">Skins</button><button data-nav="old-bebo">♥ Old Bebo Memories</button><button data-nav="polls">Polls</button><button data-nav="quizzes">Quizzes</button><button data-nav="creators">Bands &amp; Authors</button><button data-nav="account">Account</button><button data-nav="safety">Safety &amp; Privacy</button></div></nav>
+<nav class="nav"><div class="wrap" id="nav"><button data-nav="home">Home</button><button data-nav="profile">My Profile</button><button data-nav="friends">Friends</button><button data-nav="photos">Photos</button><button data-nav="blogs">Blog</button><button data-nav="messages">Mail ✉</button><button data-nav="groups">Groups</button><button data-nav="other-half">Other Half ♥</button><button data-nav="skins">Skins</button><button data-nav="polls">Polls</button><button data-nav="quizzes">Quizzes</button><button data-nav="creators">Bands &amp; Authors</button><button data-nav="account">Account</button><button data-nav="safety">Safety &amp; Privacy</button></div></nav>
 <div class="bebo-quick-nav" role="navigation" aria-label="Quick Bebo navigation">
   <button type="button" id="bebo-back-button" aria-label="Back to Bebo Home" title="Back to Bebo Home">← Back</button>
   <a href="#/home" aria-label="Go to Bebo Home" title="Bebo Home">⌂ Home</a>
