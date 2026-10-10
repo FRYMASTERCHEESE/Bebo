@@ -23,6 +23,23 @@ async function get(url,opts={}){
 async function safeCheck(label,fn){
  try{await fn()}catch(e){report(label,false,String(e?.message||e).slice(0,160));}
 }
+// A GitHub push triggers this job concurrently with Pages publishing. Wait for the
+// expected public revision instead of reporting a false ownership-verification failure.
+let published=false;
+for(let attempt=0;attempt<40;attempt++){
+ try{
+  const [res,ads]=await Promise.all([
+   get(origin+'/?release-wait='+Date.now(),{headers:{accept:'text/html'}}),
+   get(origin+'/ads.txt',{headers:{accept:'text/plain'}})]);
+  const html=await res.text(),sellers=await ads.text();
+  if(res.ok&&ads.ok&&html.includes('20261011-adsense-verification-v2')&&
+     html.includes('google-adsense-account')&&
+     sellers.includes('pub-4051392846058327')){published=true;break;}
+ }catch{}
+ await new Promise(resolve=>setTimeout(resolve,3000));
+}
+if(!published)report('Latest site version published',false,
+ 'GitHub Pages still lacks ownership files after waiting for deployment');
 await safeCheck('HTTPS homepage',async()=>{
  const res=await get(origin+'/?health-check=1',{headers:{accept:'text/html'}});
  const html=await res.text();
