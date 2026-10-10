@@ -200,7 +200,7 @@ function safetyInfoPage(){
  <p><strong>Privacy:</strong> Display names, usernames, status, profile photos, profile skins, Wall comments, public quizzes and creative posts may be visible to everyone. We use Supabase for authentication and database storage and GitHub Pages for website hosting. Do not post addresses, phone numbers or sensitive information publicly.</p>
  <p><strong>Your data:</strong> You can edit your public profile, delete your comments, and request permanent deletion of your Bebo account through Account settings. Account deletion also removes linked social content and uploaded profile images. Some operational logs/backups may be retained temporarily by service providers.</p>
  <p><strong>Age and launch:</strong> This is a developing community for adults 18 and older during early testing. An age-checkbox is a self-declaration, not a verified proof of age. More moderation, appeals, spam protection, legal policy and privacy processes are required before a broad public launch.</p>
- <p><strong>Independent service:</strong> This community is not affiliated with the former Bebo company. Do not use an old Bebo password.</p>`);
+ <p><strong>Welcome to Bebo ♥</strong> Make a fresh profile, meet friends and enjoy the community. For your security, choose a strong, unique password you do not use on any other website.</p>`);
 }
 async function refresh(){
  const raw=decodeURIComponent(location.hash.replace(/^#\/?/,''));
