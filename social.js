@@ -249,16 +249,21 @@ function syncAdminNav(){
  }else if(!adminAccess&&tab)tab.remove();
 }
 let announcementsRequestId=0;
+let announcementsLastChecked=0;
 async function refreshBeboAnnouncement(){
- const token=++announcementsRequestId;
  const strip=document.querySelector('#bebo-announcement-bar');
  if(!strip||!sb)return;
+ strip.classList.toggle('bebo-announcement-compact',page==='polls'||page==='quizzes');
+ // Avoid repeating two database reads on every quick navigation.
+ if(Date.now()-announcementsLastChecked<45000)return;
+ const token=++announcementsRequestId;
  try{
   const [setting,latest]=await Promise.all([
    query('bebo_site_settings',q=>q.select('enabled').eq('key','announcements').maybeSingle()),
    query('bebo_announcements',q=>q.select('title,body,created_at').eq('published',true).order('created_at',{ascending:false}).limit(1))
   ]);
   if(token!==announcementsRequestId)return;
+  announcementsLastChecked=Date.now();
   if(!setting?.enabled||!latest.length){strip.hidden=true;strip.innerHTML='';return}
   const item=latest[0];
   const fullText=String(item.body||'').trim();
@@ -281,7 +286,37 @@ async function refreshBeboAnnouncement(){
   console.warn('Could not load public Bebo announcement',error);
  }
 }
-function render(){syncAdminNav();refresh().then(()=>{retro.afterRender();return refreshBeboAnnouncement()}).catch(e=>{app.innerHTML=note()+panel('Could not load this page',safe(escapeError(e))+'<p><a href="#/home">Return home</a></p>')})}
+/* Keep navigation orientation and loading state visible on every Bebo screen. */
+function updateActiveNav(){
+ const section=(location.hash||'#/home').replace(/^#\/?/,'').split('/')[0]||'home';
+ const selected=section==='u'||section==='transparency'?'profile':
+   section==='verification-policy'?'account':section;
+ document.querySelectorAll('#nav [data-nav]').forEach(button=>{
+  const active=button.dataset.nav===selected;
+  button.classList.toggle('bebo-nav-current',active);
+  if(active)button.setAttribute('aria-current','page');
+  else button.removeAttribute('aria-current');
+ });
+}
+let renderRevision=0;
+function render(){
+ const revision=++renderRevision;
+ syncAdminNav();updateActiveNav();
+ app.setAttribute('aria-busy','true');
+ document.body.classList.add('bebo-page-loading');
+ refresh().then(()=>{
+  if(revision!==renderRevision)return;
+  retro.afterRender();
+  refreshBeboAnnouncement().catch(error=>console.warn('Bebo news unavailable',error));
+ }).catch(e=>{
+  if(revision!==renderRevision)return;
+  app.innerHTML=note()+panel('Could not load this page',safe(escapeError(e))+'<p><a href="#/home">Return home</a></p>');
+ }).finally(()=>{
+  if(revision!==renderRevision)return;
+  app.removeAttribute('aria-busy');
+  document.body.classList.remove('bebo-page-loading');
+ });
+}
 // Bebo 2005 is the default for everyone. Changing the era only affects this browser's
 // presentation; all member data, custom skins and verified badges stay intact.
 function updateEraSwitcher(){
@@ -341,6 +376,8 @@ function updateBeboBack(){
  button.setAttribute('aria-label',button.title);
 }
 function backWithinBebo(){
+ // In-site back should close the verification panel before changing pages.
+ if(document.querySelector('#bebo-verified-overlay')){verified.closeDialog();return}
  // A previous Bebo route is recorded only after a genuine same-site navigation.
  // Never call history.back() when we arrived directly from an external archive.
  const previous=history.state?.beboPreviousRoute;
@@ -388,12 +425,6 @@ document.addEventListener('keydown',e=>{
 });
 
 document.addEventListener('input',e=>{if(e.target?.id==='skin-search')filterSkins()});
-document.addEventListener('submit',async e=>{
- const form=e.target.closest('#bebo-memory-search');
- if(!form)return;
- e.preventDefault();
- await memories.submit(form);
-});
 document.addEventListener('submit',async e=>{
  const f=e.target.closest('form[data-form]');if(!f)return;e.preventDefault();
  if(f.dataset.busy)return;f.dataset.busy='1';const b=f.querySelector('button');if(b)b.disabled=true;
