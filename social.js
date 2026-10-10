@@ -3,7 +3,7 @@ import { createRetro } from './nostalgia.js?v=20261010-polls-quizzes-v2';
 import { createSafety } from './safety.js';
 import { createClassic } from './classic-modules.js?v=20261010-bebo-verified-v1';
 import { createAdmin } from './admin.js?v=20261010-bebo-verified-v1';
-import { createVerification } from './verified.js';
+import { createVerification } from './verified.js?v=20261010-transparency-v1';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
@@ -206,6 +206,8 @@ async function refresh(){
  page=raw||'home';
  if(!configured){app.innerHTML=note()+authPage();return}
  if(page==='safety'){app.innerHTML=note()+safetyInfoPage();return}
+ if(page==='verification-policy'){app.innerHTML=note()+verified.policyPage();return}
+ if(page.startsWith('transparency/')){app.innerHTML=note()+await verified.transparencyPage(page.slice('transparency/'.length));return}
  if(!me){
   if(page==='home'){app.innerHTML=note()+await classic.home(null);return}
   if(page==='skins'){await showSkins();return}
@@ -278,7 +280,27 @@ async function refreshBeboAnnouncement(){
 }
 function render(){syncAdminNav();refresh().then(()=>{retro.afterRender();return refreshBeboAnnouncement()}).catch(e=>{app.innerHTML=note()+panel('Could not load this page',safe(escapeError(e))+'<p><a href="#/home">Return home</a></p>')})}
 document.querySelector('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-nav]');if(!b)return;location.hash='#/'+b.dataset.nav;render()});
-window.addEventListener('hashchange',()=>{message='';activeSkinCategory='All';render()});
+window.addEventListener('hashchange',()=>{verified.closeDialog();message='';activeSkinCategory='All';render()});
+
+/* Accessible blue badge: Enter/Space opens details; Escape and Tab work in the sheet. */
+document.addEventListener('keydown',e=>{
+ const dialog=document.querySelector('#bebo-verified-overlay .bebo-trust-dialog');
+ if(dialog){
+  if(e.key==='Escape'){e.preventDefault();verified.closeDialog();return}
+  if(e.key==='Tab'){
+   const elements=[...dialog.querySelectorAll('a[href],button:not([disabled]),[tabindex="0"]')]
+     .filter(el=>el.getClientRects().length>0);
+   if(elements.length){
+    const first=elements[0],last=elements.at(-1);
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();return}
+    if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();return}
+   }
+  }
+ }
+ const badge=e.target.closest?.('[data-action="verified-info"]');
+ if(badge&&(e.key==='Enter'||e.key===' ')){e.preventDefault();badge.click()}
+});
+
 document.addEventListener('input',e=>{if(e.target?.id==='skin-search')filterSkins()});
 document.addEventListener('submit',async e=>{
  const f=e.target.closest('form[data-form]');if(!f)return;e.preventDefault();
@@ -376,6 +398,8 @@ document.addEventListener('click',async e=>{
  const a=b.dataset.action,id=b.dataset.id;
  try{
  if(a==='go'){location.hash='#/'+id;return}
+ if(a==='verified-info'){await verified.openDialog(id);return}
+ if(a==='verified-close'){verified.closeDialog();return}
  if(a==='verified-profile-toggle'){
   const drawer=document.querySelector('#bebo-profile-verification');
   if(!drawer)return;
