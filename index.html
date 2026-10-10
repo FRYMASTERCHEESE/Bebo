@@ -1462,8 +1462,20 @@ body.bebo-page-loading .bebo-page-progress{opacity:1}
  .bebo-home-video-item{padding:10px}
  .bebo-home-video-item .bebo-video-player{max-height:330px}
 }
+
+/* Creator-owned Video Insights dashboard: real analytics with readable mobile cards. */
+.bebo-video-insight-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));
+ gap:8px;margin:14px 0}
+.bebo-video-insight-summary div{padding:12px 8px;border-radius:9px;background:#eaf5fd;
+ border:1px solid #c4e0f1;text-align:center}
+.bebo-video-insight-summary strong{display:block;font-size:23px;color:#215f84;font-variant-numeric:tabular-nums}
+.bebo-video-insight-summary span{display:block;font-size:11px;color:#395970}
+.bebo-video-insight-card{border:1px solid #d1e1ea;background:#fff;border-radius:10px;
+ padding:12px;margin:12px 0;min-width:0;overflow-wrap:anywhere}
+.bebo-video-insight-card h3{margin:0 0 5px;font-size:16px;color:#246389}
+@media(max-width:480px){.bebo-video-insight-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
-<script type="module" src="./social.js?v=20261010-analytics-v3"></script></head>
+<script type="module" src="./social.js?v=20261010-analytics-v4"></script></head>
 <body><button type="button" class="bebo-skip-link">Skip to main content</button><header class="top"><div class="wrap head">
 <div class="brand" aria-label="Bebo"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-be">be</span><span class="brand-bo">bo</span><span class="brand-star" aria-hidden="true"> ★</span></div>
 <div class="brand-message"><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p><p class="bebo-independent-note">Independent community inspired by classic Bebo · Not affiliated with its original owners.</p></div>
