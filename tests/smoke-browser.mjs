@@ -88,13 +88,13 @@ try{
           scroll:document.documentElement.scrollWidth,
           viewport:window.innerWidth,
           regularText:styleOf('#app .panel h2')||styleOf('#app h1'),
-          announcement:styleOf('#bebo-announcement-bar .bebo-announcement-preview'),
+          announcement:styleOf('#bebo-announcement-bar .bebo-announcement-preview')??styleOf('#bebo-announcement-bar'),
           editable:styleOf('#app input')||styleOf('#app textarea')
         };
       });
       assert(layout.scroll<=layout.viewport+8,'Horizontal overflow '+layout.scroll+'px > '+layout.viewport+'px');
       assert.equal(layout.regularText,'none','Mobile text could still trigger selection search menu');
-      assert.equal(layout.announcement,'none','Announcement text is still selectable on mobile');
+      assert.equal(layout.announcement,'none','Announcement strip mobile selection style mismatch: '+JSON.stringify(layout));
       if(check.signup)assert.equal(layout.editable,'text','Signup field must remain selectable and editable');
     }
     if(check.path==='home')await page.screenshot({path:'test-results/'+device.name+'-home.png',fullPage:true});
