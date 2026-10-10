@@ -41,14 +41,14 @@ const makeRenderer=({approved=false,pending=false,visitingOther=false,guest=fals
     return q.single?records[0]||null:records;
   };
   const helpers={
-    me,profile:owner,app,userViewed:null,query,safe:escape,note:()=>'',panel,
+    me,profile:owner,adminAccess:null,app,userViewed:null,query,safe:escape,note:()=>'',panel,
     handlePattern:x=>x,verified,safety:{myBlocks:async()=>new Set(),profileTools:async()=>''},
     classic:{publicModules:async()=>''},videos:{profilePanel:async()=>'<section class="panel">🎬 My Bebo Videos</section>'},retro:{sharedPanel:async()=>'',imageStyle:()=> 'linear-gradient(#f0f,#fff)'},
     getSkin:()=>['classic','Classic','#ffdeee','#c33062','#862453','','','♥'],
     grad:()=> 'linear-gradient(#fff,#eaa)',
     badge:()=>'<div class="avatar">B</div>',btn:()=>'<button>Add friend</button>',time:()=>'',userViewed:null
   };
-  const fn=new Function('deps','const {me,profile,app,query,safe,note,panel,handlePattern,verified,safety,classic,videos,retro,getSkin,grad,badge,btn,time}=deps;let userViewed=null;'+rendererSource+'\nreturn showProfile;')(helpers);
+  const fn=new Function('deps','const {me,profile,adminAccess,app,query,safe,note,panel,handlePattern,verified,safety,classic,videos,retro,getSkin,grad,badge,btn,time}=deps;let userViewed=null;'+rendererSource+'\nreturn showProfile;')(helpers);
   return {app,run:()=>fn(visitingOther?'opal':undefined)};
 };
 const fresh=makeRenderer();
