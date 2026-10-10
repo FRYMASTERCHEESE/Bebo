@@ -2,6 +2,7 @@
 export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
   const sections=[
     ['members','👥 Manage Members'],
+    ['signups','📧 Sign-up Emails'],
     ['analytics','📊 Website Analytics'],
     ['announcements','📢 Announcements'],
     ['skins','🎨 Review Skins'],
@@ -49,6 +50,22 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
       '<button class="button" type="submit">Find members</button></form>'+
       (list||'<p class="admin-empty">No matching Bebo members found.</p>')+
       '<p class="muted">Suspension blocks new posts, comments, uploads and other social writes. Members can still sign in, read public content and submit a safety report.</p>');
+  }
+  async function signups(){
+    // Supabase Auth is private: never expose its service-role credentials in
+    // GitHub Pages, and never try to query auth.users with a public anon key.
+    const {count,error}=await sb.from('bebo_profiles').select('id',{count:'exact',head:true});
+    if(error)throw error;
+    const url='https://supabase.com/dashboard/project/rnxiggzyqqzjtgdbpedb/auth/users';
+    return panel('📧 Sign-up Emails ♥',
+      '<p><strong>See everyone who registered for Bebo</strong> — including people whose email is confirmed but who have not finished choosing a profile name yet.</p>'+
+      '<div class="admin-signup-summary"><strong>'+Number(count||0).toLocaleString('en-NZ')+
+      '</strong><span>Completed Bebo profiles</span></div>'+
+      '<p><strong>All registration emails and confirmation statuses:</strong></p>'+
+      '<p><a class="button admin-signup-link" href="'+url+
+      '" target="_blank" rel="noopener noreferrer">📧 Open Secure Sign-up Email List ↗</a></p>'+
+      '<p class="muted">This opens your Bebo project in Supabase → Authentication → Users. You may need to sign in to your Supabase dashboard. The list includes accounts that do not yet have a Bebo profile.</p>'+
+      '<p class="admin-privacy-note">🔐 For member privacy, email addresses are kept inside protected Supabase Authentication—not published in GitHub or exposed to visitors on the Bebo website. Only people with access to your Supabase project can see the list.</p>');
   }
   async function analytics(){
     const days=7,from=new Date(Date.now()-days*864e5).toISOString();
@@ -156,7 +173,7 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
     if(role!=='owner')return panel('Owner tools','Only the Bebo owner can control members, announcements and site settings.');
     await requireOwner(me);
     const buttons=sections.map(([key,label])=>click(label,'admin-section',key,key===section?'':'secondary')).join('');
-    const views={members,analytics,announcements,skins,moderation,settings};
+    const views={members,signups,analytics,announcements,skins,moderation,settings};
     return panel('👑 Owner Control Centre',
       '<p>Choose an admin tool below. Only your verified Bebo owner account can make changes.</p>'+
       '<div class="admin-section-tabs">'+buttons+'</div>')+
