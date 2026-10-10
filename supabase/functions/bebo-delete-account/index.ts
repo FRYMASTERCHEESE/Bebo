@@ -67,6 +67,7 @@ Deno.serve(async (req: Request) => {
     await purgeFolder(admin,"bebo-avatars",user.id);
     await purgeFolder(admin,"bebo-skin-banners",user.id);
     await purgeFolder(admin,"bebo-photos",user.id);
+    await purgeFolder(admin,"bebo-videos",user.id);
     // Foreign keys cascade Bebo social content. This is permanent deletion, not a soft delete.
     const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
     if (deleteError) throw new Error("Account deletion was not completed");
