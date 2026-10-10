@@ -126,6 +126,11 @@ try{
       assert(checkNames.capitals&&checkNames.spaces&&checkNames.emoji,'Profile form rejected capitals, spaces or emoji');
       assert(/spaces are automatically changed to underscores/i.test(checkNames.info),'Missing username normalization guidance');
     }
+    if(check.path==='safety'){
+      assert(inner.includes('Welcome to Bebo'),'New member welcome is missing from Safety page');
+      assert(inner.includes('strong, unique password'),'Safe new-account password guidance is missing');
+      assert(!inner.includes('Independent service:')&&!inner.includes('Do not use an old Bebo password.'),'Old discouraging wording is still on the Safety page');
+    }
     if(check.guestAdmin){
       assert.equal(await page.locator('.bebo-admin-page').count(),0,'Private admin dashboard rendered for guest');
       assert(!/Member Reports|Owner Control Centre/.test(inner),'Admin data visible to guest');
