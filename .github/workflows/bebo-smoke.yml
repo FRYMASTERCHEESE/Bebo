@@ -3,6 +3,8 @@ on:
   push:
     paths:
       - 'index.html'
+      - 'videos.js'
+      - 'tests/videos-smoke.mjs'
       - 'social.js'
       - 'verified.js'
       - 'safety.js'
@@ -34,6 +36,8 @@ jobs:
           node-version: '22'
       - name: Install browser test runner
         run: npm install --no-save --no-package-lock playwright@1.56.1
+      - name: Test Bebo Videos permissions and rendering using mock members
+        run: node tests/videos-smoke.mjs
       - name: Test Bebo Verified badges and ranking without using real accounts
         run: node tests/verified-smoke.mjs
       - name: Test Verified button and application placement on member profiles
