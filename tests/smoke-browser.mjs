@@ -178,7 +178,7 @@ try{
       // A direct deep-link visit must not call native history.back() into another site.
       await globalBack.click();
       await page.waitForURL('**#/home',{timeout:10000});
-      assert.equal(await page.evaluate(()=>location.hostname),'frymastercheese.github.io','Direct-link Back left Bebo');
+      assert.equal(await page.evaluate(()=>location.hostname),'bebo.nz','Direct-link Back left Bebo');
       item.directBack='PASS';
       // Legacy bookmarks to the retired feature should route safely home.
       await page.goto(host+'?redirect-smoke=1#/old-bebo',{waitUntil:'domcontentloaded'});
