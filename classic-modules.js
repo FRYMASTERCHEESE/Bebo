@@ -282,14 +282,18 @@ export function createClassic(sb,{safe,panel,btn,query}) {
     throw Error('Unknown classic action.');
   }
   /** 2007-style front page: real friends, real member avatars and real activity. */
-  async function home(me,era='2005') {
+  async function home(me,era='2005',trendingVideos='') {
     const isMember=Boolean(me?.id);
-    const [own,people,blogs,albums,friends]=await Promise.all([
+    const [own,people,blogs,albums,friends,walls,polls,blogComments,pollVotes]=await Promise.all([
       isMember?db('bebo_profiles',q=>q.select('id,username,display_name,status,avatar_path').eq('id',me.id).maybeSingle()):Promise.resolve(null),
       db('bebo_profiles',q=>q.select('id,username,display_name,status,avatar_path,created_at').order('created_at',{ascending:false}).limit(60)),
       db('bebo_blogs',q=>q.select('id,title,body,created_at,owner_id').order('created_at',{ascending:false}).limit(20)),
       db('bebo_albums',q=>q.select('id,title,owner_id,created_at').order('created_at',{ascending:false}).limit(20)),
-      isMember?db('bebo_friendships',q=>q.select('requester_id,addressee_id').eq('status','accepted').or('requester_id.eq.'+me.id+',addressee_id.eq.'+me.id)):Promise.resolve([])
+      isMember?db('bebo_friendships',q=>q.select('requester_id,addressee_id').eq('status','accepted').or('requester_id.eq.'+me.id+',addressee_id.eq.'+me.id)):Promise.resolve([]),
+      db('bebo_wall_posts',q=>q.select('id,author_id,profile_id,body,created_at').order('created_at',{ascending:false}).limit(30)),
+      db('bebo_polls',q=>q.select('id,owner_id,question,created_at').order('created_at',{ascending:false}).limit(20)),
+      db('bebo_blog_comments',q=>q.select('blog_id').order('created_at',{ascending:false}).limit(400)),
+      db('bebo_poll_votes',q=>q.select('poll_id').order('created_at',{ascending:false}).limit(400))
     ]);
     const approvedIDs=await verified.approved([...people.map(p=>p.id),...blogs.map(b=>b.owner_id),...albums.map(a=>a.owner_id)]);
     const avatar=p=>{
@@ -336,7 +340,7 @@ export function createClassic(sb,{safe,panel,btn,query}) {
       '<p class="classic-home-empty">The first members will appear here soon. ♥</p>';
     const memberPanel=panel('★ People on Bebo · ✓ Verified first',recentMembers+
       '<p class="classic-home-linkline"><a href="#/friends">Find more Bebo friends »</a></p>');
-    const ids=[...new Set([...blogs.map(x=>x.owner_id),...albums.map(x=>x.owner_id)])];
+    const ids=[...new Set([...blogs.map(x=>x.owner_id),...albums.map(x=>x.owner_id),...walls.map(x=>x.author_id),...polls.map(x=>x.owner_id)])];
     const authors=ids.length?await db('bebo_profiles',q=>q.select('id,display_name,username,avatar_path').in('id',ids)):[];
     const authorsById=new Map(authors.map(p=>[p.id,p]));
     const byline=id=>{
@@ -359,6 +363,45 @@ export function createClassic(sb,{safe,panel,btn,query}) {
       '<div class="classic-home-empty"><span aria-hidden="true">✎ 📸 ♥</span>'+
       '<p>Be the first to share a photo album or write a blog!</p>'+
       '<a href="#/'+(isMember?'blogs':'account')+'">'+(isMember?'Write your first blog »':'Join and start sharing »')+'</a></div>';
+    // Transparent community spotlight: activity counts are sampled from the 400
+    // most recent public poll votes and blog comments. Wall posts rank by age only.
+    const tally=(items,key)=>{
+      const result=new Map();
+      for(const item of items)result.set(item[key],(result.get(item[key])||0)+1);
+      return result;
+    };
+    const commentTally=tally(blogComments,'blog_id'),voteTally=tally(pollVotes,'poll_id');
+    const freshness=value=>{
+      const age=(Date.now()-new Date(value).getTime())/86400000;
+      return Math.max(0,7-(Number.isFinite(age)?Math.max(0,age):7));
+    };
+    const spotlight=[
+      ...blogs.map(b=>{
+        const n=commentTally.get(b.id)||0;
+        return {score:5*n+freshness(b.created_at),date:b.created_at,
+         html:'<strong>✎ '+byline(b.owner_id)+' · Blog</strong>'+
+          '<p><a href="#/blog/'+encodeURIComponent(b.id)+'">'+safe(b.title)+'</a></p>'+
+          '<small>'+n+' recent comments</small>'};
+      }),
+      ...polls.map(p=>{
+        const n=voteTally.get(p.id)||0;
+        return {score:3*n+freshness(p.created_at),date:p.created_at,
+         html:'<strong>❓ '+byline(p.owner_id)+' · Poll</strong>'+
+          '<p><a href="#/polls">'+safe(p.question)+'</a></p>'+
+          '<small>'+n+' recent votes</small>'};
+      }),
+      ...walls.map(p=>({
+       score:freshness(p.created_at),date:p.created_at,
+       html:'<strong>♥ '+byline(p.author_id)+' · Wall post</strong>'+
+        '<p>'+teaser(p.body,125)+'</p>'+
+        '<small>Posted '+when(p.created_at)+'</small>'
+      }))
+    ].sort((a,b)=>b.score-a.score||String(b.date).localeCompare(String(a.date))).slice(0,5);
+    const spotlightPanel=panel('✨ Trending Posts, Blogs & Polls',
+      '<div class="bebo-community-trending">'+
+       (spotlight.map(entry=>'<article class="bebo-community-trending-card">'+entry.html+'</article>').join('')||
+        '<p>New community posts, blogs and polls will appear here.</p>')+'</div>'+
+       '<p class="muted">Community ranking: recent activity plus 5 points per recent blog comment or 3 per recent poll vote. Wall posts use recency only. No hidden promotion. Counts are recent sampled interactions, not lifetime totals.</p>');
     const styles=skins.filter(s=>['classic','emo','glitter','ocean','scene','sunset','princess','gothic'].includes(s[0]));
     const previews='<div class="classic-home-skin-grid">'+styles.map(s=>
       '<a class="classic-home-skin" href="#/skins" aria-label="Browse '+safe(s[1])+' skin">'+
@@ -414,6 +457,7 @@ export function createClassic(sb,{safe,panel,btn,query}) {
       return '<div class="classic-home classic-home-2005">'+
         '<div class="bebo05-ribbon"><span>★</span> Make your own corner of the internet <span>★</span></div>'+
         greeting+steps+
+        trendingVideos+spotlightPanel+
         '<div class="bebo05-columns"><div class="bebo05-main">'+
           panel('Find your Friends on Bebo','<p>Find your mates, share photos and catch up.</p>'+
             '<div class="bebo05-find-action"><a href="#/'+(isMember?'friends':'account')+'">'+
@@ -437,6 +481,7 @@ export function createClassic(sb,{safe,panel,btn,query}) {
     return '<div class="classic-home classic-home-2007">'+
       '<div class="classic-home-left">'+
         panel('♥ Welcome to My Bebo',cover)+
+        trendingVideos+spotlightPanel+
         actions+friendPanel+
         memberPanel+
       '</div>'+
