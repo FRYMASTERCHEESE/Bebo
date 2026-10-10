@@ -1,0 +1,29 @@
+-- Applied 2026-10-10 to the dedicated Bebo Supabase project.
+-- Safe additive indexes, confirmed afterwards: 46/46 Bebo foreign keys indexed.
+-- No existing data, RLS policies or foreign-key constraints are changed.
+CREATE INDEX IF NOT EXISTS bebo_admin_audit_admin_id_bebo_fk_idx ON public.bebo_admin_audit (admin_id);
+CREATE INDEX IF NOT EXISTS bebo_admin_audit_target_id_bebo_fk_idx ON public.bebo_admin_audit (target_id);
+CREATE INDEX IF NOT EXISTS bebo_albums_owner_id_bebo_fk_idx ON public.bebo_albums (owner_id);
+CREATE INDEX IF NOT EXISTS bebo_announcements_created_by_bebo_fk_idx ON public.bebo_announcements (created_by);
+CREATE INDEX IF NOT EXISTS bebo_blocks_blocked_id_bebo_fk_idx ON public.bebo_blocks (blocked_id);
+CREATE INDEX IF NOT EXISTS bebo_blog_comments_author_id_bebo_fk_idx ON public.bebo_blog_comments (author_id);
+CREATE INDEX IF NOT EXISTS bebo_creations_author_id_bebo_fk_idx ON public.bebo_creations (author_id);
+CREATE INDEX IF NOT EXISTS bebo_friendships_addressee_id_bebo_fk_idx ON public.bebo_friendships (addressee_id);
+CREATE INDEX IF NOT EXISTS bebo_friendships_requester_id_bebo_fk_idx ON public.bebo_friendships (requester_id);
+CREATE INDEX IF NOT EXISTS bebo_group_members_member_id_bebo_fk_idx ON public.bebo_group_members (member_id);
+CREATE INDEX IF NOT EXISTS bebo_groups_owner_id_bebo_fk_idx ON public.bebo_groups (owner_id);
+CREATE INDEX IF NOT EXISTS bebo_member_controls_updated_by_bebo_fk_idx ON public.bebo_member_controls (updated_by);
+CREATE INDEX IF NOT EXISTS bebo_other_halves_person_id_bebo_fk_idx ON public.bebo_other_halves (person_id);
+CREATE INDEX IF NOT EXISTS bebo_photos_owner_id_bebo_fk_idx ON public.bebo_photos (owner_id);
+CREATE INDEX IF NOT EXISTS bebo_poll_votes_voter_id_bebo_fk_idx ON public.bebo_poll_votes (voter_id);
+CREATE INDEX IF NOT EXISTS bebo_polls_owner_id_bebo_fk_idx ON public.bebo_polls (owner_id);
+CREATE INDEX IF NOT EXISTS bebo_quiz_answers_voter_id_bebo_fk_idx ON public.bebo_quiz_answers (voter_id);
+CREATE INDEX IF NOT EXISTS bebo_quizzes_owner_id_bebo_fk_idx ON public.bebo_quizzes (owner_id);
+CREATE INDEX IF NOT EXISTS bebo_reports_reported_post_id_bebo_fk_idx ON public.bebo_reports (reported_post_id);
+CREATE INDEX IF NOT EXISTS bebo_reports_reported_profile_id_bebo_fk_idx ON public.bebo_reports (reported_profile_id);
+CREATE INDEX IF NOT EXISTS bebo_reports_reporter_id_bebo_fk_idx ON public.bebo_reports (reporter_id);
+CREATE INDEX IF NOT EXISTS bebo_reports_reviewed_by_bebo_fk_idx ON public.bebo_reports (reviewed_by);
+CREATE INDEX IF NOT EXISTS bebo_skins_creator_id_bebo_fk_idx ON public.bebo_skins (creator_id);
+CREATE INDEX IF NOT EXISTS bebo_top_friends_friend_id_bebo_fk_idx ON public.bebo_top_friends (friend_id);
+CREATE INDEX IF NOT EXISTS bebo_wall_posts_author_id_bebo_fk_idx ON public.bebo_wall_posts (author_id);
+CREATE INDEX IF NOT EXISTS bebo_whiteboards_author_id_bebo_fk_idx ON public.bebo_whiteboards (author_id);
