@@ -56,12 +56,29 @@ const storage={from(name){
   return {data:{signedUrl:'https://storage.example.test/private/'+encodeURIComponent(path)+'?token=fictional'},error:null};
  }};
 }};
-const videosApi=createVideos({storage},{safe:esc,panel:(title,body)=>'<section><h2>'+title+'</h2>'+body+'</section>',query:db});
+const fakeStats=[{video_id:a,views:3,unique_members:2,views_7d:2,hearts:1,
+ comments:0,engagement_rate:33.3,ranking_score:12.1},{video_id:b,views:0,unique_members:0,
+ views_7d:0,hearts:0,comments:0,engagement_rate:0,ranking_score:0}];
+const sb={storage,async rpc(name,params){
+ assert.equal(name,'bebo_video_stats');
+ assert(Array.isArray(params.p_video_ids));
+ return {data:fakeStats.filter(item=>params.p_video_ids.includes(item.video_id)),error:null};
+}};
+const videosApi=createVideos(sb,{safe:esc,panel:(title,body)=>'<section><h2>'+title+'</h2>'+body+'</section>',query:db});
 const publicHTML=await videosApi.route('videos',{me:null,profile:null,adminAccess:null});
 assert(publicHTML.includes('Hello &lt;script&gt;oops&lt;/script&gt;'),'Member video title must be HTML escaped');
 assert(!publicHTML.includes('Private upload'),'Pending video should not appear in public feed');
 assert(publicHTML.includes('bebo-video-player'),'Native mobile video player missing');
 assert(publicHTML.includes('Sign in to react'),'Guests should not post hearts');
+assert(publicHTML.includes('3</strong> member views'),'Show actual backend-reported member views');
+assert(publicHTML.includes('2 unique members'),'Show anonymous aggregate unique viewer total');
+assert(publicHTML.includes('33.3%'),'Show calculated engagement only with member view baseline');
+assert(publicHTML.includes('data-bebo-video-id="'+a+'"'),'Video player must be identifiable for meaningful play tracking');
+const trending=await videosApi.homePanel({me:null});
+assert(trending.includes('Trending Bebo Videos'),'Home must feature ranked real member videos');
+assert(trending.includes('2 × recent member views'),'Ranking formula must be visible to members');
+assert(trending.includes('Hello &lt;script&gt;oops&lt;/script&gt;'),'Featured title must be HTML escaped');
+assert(trending.includes('data-bebo-video-id="'+a+'"'),'Featured video must support view tracking');
 assert(!publicHTML.includes('data-form="video-upload"'),'Guest video upload form must be hidden');
 const memberHTML=await videosApi.route('videos',{me:{id:uid},profile:profiles[0],adminAccess:null});
 assert(memberHTML.includes('Private upload'),'Uploader should see their pending video');
@@ -74,4 +91,4 @@ assert(modReview.includes('Private upload')&&modReview.includes('video-approve')
 const profileHTML=await videosApi.profilePanel(profiles[0],{me:null});
 assert(profileHTML.includes('videos/u/safe_member'),'Member profile needs video gallery link');
 assert(signed>0,'Video signing was not attempted');
-console.log('PASS: Bebo Videos 40 MiB Android MP4 validation, MIME fallback, guest feed, signed playback, owner drafts and moderation UI');
+console.log('PASS: Video analytics, counted member views, transparent ranked home, safe playback, mobile upload limits and moderation UI');
