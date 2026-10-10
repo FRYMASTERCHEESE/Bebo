@@ -103,6 +103,7 @@ try{
       await globalBack.click();
       await page.waitForURL('**#/home',{timeout:10000});
       assert.equal(await page.evaluate(()=>location.hostname),'frymastercheese.github.io','Back left the Bebo site');
+      await page.waitForFunction(()=>history.state?.beboPageRoute==='#/home'&&history.state?.beboPreviousRoute==='#/old-bebo',null,{timeout:10000});
       assert.equal(await page.evaluate(()=>history.state?.beboPreviousRoute),'#/old-bebo',
         'Home should retain its legitimate previous Bebo page');
       await globalBack.click();
