@@ -218,7 +218,7 @@ export function createVideos(sb,{safe,panel,query}) {
   const label=safe(who.display_name)+'’s videos';
   return panel('🎬 My Bebo Videos ♥','<p>'+count.length+' published clip'+(count.length===1?'':'s')+' · '+memberViews+' counted member views</p>'+
     '<p><a href="#/videos/u/'+encodeURIComponent(who.username)+'">▶ View '+label+' »</a></p>'+
-    (who.id===ctx?.me?.id?'<p><a href="#/videos">+ Upload a video</a></p>':''));
+    (who.id===ctx?.me?.id?'<p><a href="#/videos">+ Upload a video</a> · <a href="#/videos-insights">📊 My video stats</a></p>':''));
  }
  async function duration(file){
   return new Promise((resolve,reject)=>{
