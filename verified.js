@@ -155,12 +155,14 @@ export function createVerification(sb,{safe,panel,query}){
     dialog.innerHTML='<div class="bebo-trust-backdrop" data-action="verified-close" aria-hidden="true"></div>'+
       '<div class="bebo-trust-dialog" role="dialog" aria-modal="true" aria-labelledby="bebo-trust-dialog-heading">'+
       '<div class="bebo-trust-handle" aria-hidden="true"></div>'+
-      '<header class="bebo-trust-dialog-top"><h2 id="bebo-trust-dialog-heading">Profile information</h2>'+
+      '<header class="bebo-trust-dialog-top">'+
+      '<button type="button" class="bebo-trust-back" data-action="verified-close" aria-label="Go back to profile">← Back</button>'+
+      '<h2 id="bebo-trust-dialog-heading">Bebo Verified</h2>'+
       '<button type="button" class="bebo-trust-close" data-action="verified-close" aria-label="Close profile information">×</button></header>'+
       '<div class="bebo-trust-scroller">'+trustContent(details)+'</div></div>';
     document.body.append(dialog);
     document.body.classList.add('bebo-trust-dialog-open');
-    dialog.querySelector('.bebo-trust-close')?.focus({preventScroll:true});
+    dialog.querySelector('.bebo-trust-back')?.focus({preventScroll:true});
   }
   return {approved,badge,prioritizePeople,prioritizeActivity,requestPanel,submit,publicDetails,policyPage,transparencyPage,openDialog,closeDialog};
 
