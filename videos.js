@@ -1,6 +1,23 @@
 /* Bebo Videos V1: private, reviewed clips with public approved playback.
  * No third-party player, tracking, or browser-side moderator privileges.
  */
+export const BEBO_VIDEO_MAX_BYTES=40*1024*1024; // 40 MiB ≈ 41.9 decimal MB
+export function validateBeboVideoFile(file) {
+ const size=Number(file?.size||0),name=String(file?.name||'');
+ const reported=String(file?.type||'').toLowerCase().trim();
+ const mime=['video/mp4','video/webm'].includes(reported)?reported:
+  (!reported||reported==='application/octet-stream')&&/\.mp4$/i.test(name)?'video/mp4':
+  (!reported||reported==='application/octet-stream')&&/\.webm$/i.test(name)?'video/webm':'';
+ const sizeMB=Number.isFinite(size)?(size/1000000).toFixed(1):'unknown';
+ const limitMB=(BEBO_VIDEO_MAX_BYTES/1000000).toFixed(1);
+ if(!file||!Number.isFinite(size)||size<=0)
+  return {valid:false,message:'Choose an MP4 or WebM video to upload.'};
+ if(!mime)
+  return {valid:false,message:'Bebo accepts MP4 or WebM video files. Select an MP4 from your phone, or convert your video to MP4.'};
+ if(size>BEBO_VIDEO_MAX_BYTES)
+  return {valid:false,message:'Your video is '+sizeMB+' MB, over the '+limitMB+' MB (40 MiB) upload limit. Please compress it or choose a smaller clip.'};
+ return {valid:true,mime,message:name+' — '+sizeMB+' MB. Ready to check and upload for review.'};
+}
 export function createVideos(sb,{safe,panel,query}) {
  const bucket=()=>sb.storage.from('bebo-videos');
  const trim=(value,n)=>String(value??'').trim().slice(0,n);
@@ -77,8 +94,8 @@ export function createVideos(sb,{safe,panel,query}) {
     '<p><strong>New Bebo video ♥</strong> Choose your own clip. Every upload is reviewed by the Bebo owner before it becomes public.</p>'+
     '<label>Video title<input name="title" maxlength="100" required placeholder="My Bebo moment ♥"></label>'+
     '<label>Short caption<textarea name="caption" maxlength="500" rows="2" placeholder="Tell your friends about this clip"></textarea></label>'+
-    '<label>Video (MP4 or WebM, max 25 MB and 60 seconds)<input type="file" name="file" accept="video/mp4,video/webm,.mp4,.webm" required></label>'+
-    '<p class="muted">Early-access upload limit: 3 videos per member, up to 2 per hour, and 20 clips across the pilot. Public video needs approval first. Videos use Bebo storage and bandwidth.</p>'+
+    '<label>Video (MP4 or WebM, max 40 MiB / 41.9 MB and 60 seconds)<input type="file" name="file" accept="video/mp4,video/webm,.mp4,.webm" required></label>'+
+    '<p class="muted">Early-access upload limit: 3 videos per member, up to 2 per hour, and 15 clips across the pilot. Public video needs approval first. Videos use Bebo storage and bandwidth.</p>'+
     '<p class="bebo-video-upload-status" role="status" aria-live="polite"></p>'+
     '<button class="button" type="submit">Upload for review ♥</button>'+
     '</form>';
@@ -162,21 +179,22 @@ export function createVideos(sb,{safe,panel,query}) {
   if(type!=='video-upload')throw Error('Unknown video form');
   if(!ctx?.profile)throw Error('Create a Bebo profile before uploading.');
   const file=d.get('file');
-  if(!(file instanceof File)||!file.size||file.size>26214400||!['video/mp4','video/webm'].includes(file.type))
-   throw Error('Select an MP4 or WebM video of 25 MB or less.');
+  if(!(file instanceof File))throw Error('Choose a video file first.');
+  const checked=validateBeboVideoFile(file);
+  if(!checked.valid)throw Error(checked.message);
   const title=trim(d.get('title'),100),caption=trim(d.get('caption'),500);
   if(!title)throw Error('Your video needs a title.');
   const status=formElement?.querySelector('.bebo-video-upload-status');
   if(status)status.textContent='Checking video length…';
   const seconds=await duration(file);
   const id=crypto.randomUUID();
-  const path=ctx.me.id+'/'+id+(file.type==='video/mp4'?'.mp4':'.webm');
+  const path=ctx.me.id+'/'+id+(checked.mime==='video/mp4'?'.mp4':'.webm');
   if(status)status.textContent='Creating your private video entry…';
   await rows('bebo_videos',q=>q.insert({id,owner_id:ctx.me.id,object_path:path,
-   title,caption,content_type:file.type,size_bytes:file.size,duration_seconds:seconds}));
+   title,caption,content_type:checked.mime,size_bytes:file.size,duration_seconds:seconds}));
   try{
    if(status)status.textContent='Uploading your video securely…';
-   const {error}=await bucket().upload(path,file,{contentType:file.type,upsert:false,cacheControl:'600'});
+   const {error}=await bucket().upload(path,file,{contentType:checked.mime,upsert:false,cacheControl:'600'});
    if(error)throw error;
   }catch(error){
    await bucket().remove([path]).catch(()=>{});
@@ -235,5 +253,5 @@ export function createVideos(sb,{safe,panel,query}) {
   }
   throw Error('Unknown video action.');
  }
- return {route,profilePanel,form,action};
+ return {route,profilePanel,form,action,selectionHint:validateBeboVideoFile};
 }
