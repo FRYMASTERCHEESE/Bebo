@@ -35,7 +35,7 @@ for(let n=0;n<40;n++){
   try{
     const html=await (await fetch(host+'?wait-for-css='+Date.now(),{cache:'no-store'})).text();
     const aboutIsPublished=html.includes('<a class="bebo-about-link" href="./about.html">About Bebo</a>');
-    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261011-first-visit-v1');
+    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261011-adsense-readiness-v1');
     if(html.includes(expectedCSS)&&aboutIsPublished&&videoIsPublished){releaseReady=true;break;}
   }catch(error){console.warn('Waiting for Bebo Pages:',String(error));}
   await new Promise(resolve=>setTimeout(resolve,3000));
@@ -103,7 +103,7 @@ try{
       const guide=page.locator('#app .bebo-start-guide');
       assert.equal(await guide.count(),1,'First-visit guide missing');
       assert.equal(await page.locator('#nav [data-nav="start"]').count(),1,'Start Here top nav missing');
-      for(const link of ['#/signup','#/signin','#/skins','#/friends','#/safety','#/suggestions']){
+      for(const link of ['#/signup','#/signin','#/skins','#/friends','./community-guidelines.html','./privacy.html','./how-to.html','./faq.html','#/suggestions']){
         assert.equal(await guide.locator('a[href="'+link+'"]').count()>0,true,
           'Missing first-visit shortcut '+link);
       }
@@ -311,7 +311,7 @@ try{
   const aboutCheck={layout:device.name,route:'about.html',status:'UNKNOWN'};
   try{
     await page.goto(host+'?about-audit='+device.name+'#/home',{waitUntil:'domcontentloaded',timeout:45000});
-    await page.locator('#nav a.bebo-about-link').click();
+    await page.locator('#nav a[href="./about.html"]').click();
     await page.waitForURL('https://bebo.nz/about.html',{timeout:15000});
     const heading=await page.locator('main h1').innerText();
     const description=await page.locator('main').innerText();
@@ -324,6 +324,14 @@ try{
     assert(!/old Bebo accounts are restored/i.test(description),'About incorrectly promises old accounts');
     const siteWidth=await page.evaluate(()=>({page:document.documentElement.scrollWidth,screen:innerWidth}));
     assert(siteWidth.page<=siteWidth.screen+8,'About page horizontally overflows the viewport');
+    for(const policy of ['privacy.html','community-guidelines.html','how-to.html','faq.html']){
+      const response=await context.request.get(host+policy,{timeout:20000});
+      assert(response.ok(),policy+' is not accessible on Bebo.nz');
+      const body=await response.text();
+      assert(body.includes('<main id="content">'),policy+' missing original readable content');
+      assert(body.includes('https://bebo.nz/'+policy),policy+' missing canonical URL');
+      assert(body.includes('<h1>'),policy+' missing heading');
+    }
     await page.locator('nav a').first().click();
     await page.waitForURL('https://bebo.nz/#/home',{timeout:15000});
     aboutCheck.status='PASS';

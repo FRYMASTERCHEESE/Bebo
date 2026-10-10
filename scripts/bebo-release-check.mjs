@@ -75,6 +75,19 @@ check(about.includes('rel="canonical"'), 'About canonical URL');
 check(html.includes('property="og:title"'), 'Homepage social sharing metadata');
 check(about.includes('property="og:title"'), 'About social sharing metadata');
 check(sitemap.includes('https://bebo.nz/about.html'), 'Sitemap includes About page');
+for(const file of ['privacy.html','community-guidelines.html','how-to.html','faq.html']){
+ check(existsSync(file),'Public original content page '+file+' exists');
+ if(existsSync(file)){
+  const page=read(file);
+  check(page.includes('<h1>')&&page.includes('rel="canonical"')&&page.includes('bebo.nz'),file+' has content and canonical metadata');
+  check(sitemap.includes('https://bebo.nz/'+file),file+' included in sitemap');
+  check(html.includes('href="./'+file+'"'),file+' linked from main website');
+ }
+}
+check(read('privacy.html').includes('Google advertising is not enabled'),'No misleading claim that ads are currently live');
+check(!html.includes('pagead2.googlesyndication.com/pagead/js/adsbygoogle'),'No premature Google ad script');
+check(read('classic-modules.js').includes('classic-report-photo')&&read('admin.js').includes('admin-photo-approve')&&read('admin.js').includes('admin-photo-hide'),'Member photo reports and owner approvals wired');
+check(existsSync('supabase/bebo_photos_owner_review_reports_20261011.sql'),'Applied photo moderation database migration documented');
 check(sitemap.includes('https://bebo.nz/'), 'Sitemap includes homepage');
 for (const [name, source] of [['homepage',html],['about',about]]) {
   const match = source.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);

@@ -307,7 +307,8 @@ function gettingStartedPage(){
   '</div>'+
   panel('♥ Help make Bebo.nz better',
    '<p>Have an idea or found a bug? <a href="#/suggestions">Send a suggestion</a> so the Bebo team can review it. You will need to sign in to submit feedback.</p>'+
-   '<p>Stay safe: do not publish private addresses, phone numbers or account passwords. Use the Report or Block controls when needed. <a href="#/safety">Read our Community Rules &amp; Privacy guide »</a></p>'+
+   '<p>Stay safe: do not publish private addresses, phone numbers or account passwords. Use the Report or Block controls when needed. <a href="./community-guidelines.html">Read our Community Rules »</a> · <a href="./privacy.html">Privacy &amp; Advertising »</a></p>'+
+   '<p>Need help? <a href="./how-to.html">Read the Bebo how-to guide »</a> · <a href="./faq.html">Frequently asked questions »</a></p>'+
    '<p>Forgot your password? <a href="#/signin">Open Sign In</a> and choose <strong>Forgot password?</strong>.</p>')+
   '</div>';
 }
@@ -317,7 +318,8 @@ function safetyInfoPage(){
  <p><strong>Privacy:</strong> Display names, usernames, status, profile photos, profile skins, Wall comments, public quizzes and creative posts may be visible to everyone. We use Supabase for authentication and database storage and GitHub Pages for website hosting. Do not post addresses, phone numbers or sensitive information publicly.</p>
  <p><strong>Your data:</strong> You can edit your public profile, delete your comments, and request permanent deletion of your Bebo account through Account settings. Account deletion also removes linked social content and uploaded profile images. Some operational logs/backups may be retained temporarily by service providers.</p>
  <p><strong>Age and launch:</strong> This is a developing community for adults 18 and older during early testing. An age-checkbox is a self-declaration, not a verified proof of age. More moderation, appeals, spam protection, legal policy and privacy processes are required before a broad public launch.</p>
- <p><strong>Welcome to Bebo ♥</strong> Make a fresh profile, meet friends and enjoy the community. For your security, choose a strong, unique password you do not use on any other website.</p>`);
+ <p><strong>Welcome to Bebo ♥</strong> Make a fresh profile, meet friends and enjoy the community. For your security, choose a strong, unique password you do not use on any other website.</p>
+ <p><a href="./community-guidelines.html">Full Community Rules &amp; Reporting Policy</a> · <a href="./privacy.html">Detailed Privacy &amp; Advertising Policy</a> · <a href="./how-to.html">Help &amp; Getting Started</a></p>`);
 }
 async function refresh(){
  if(recoveryWaiting&&!recoveryMode){

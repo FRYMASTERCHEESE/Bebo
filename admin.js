@@ -92,7 +92,51 @@ export function createAdmin(sb,{safe,panel}) {
         '<p class="muted">Review reports carefully. Removing a reported comment is permanent and will remove reports attached to that comment.</p>'+
         '<div class="admin-filters">'+tabs+'</div>'+
         (reportHTML||'<p class="admin-empty">♥ No '+safe(filter)+' reports. All caught up!</p>'))+
-      '</div>'+await advanced.panels(me,role);
+      '</div>'+await photoModerationPanel(me)+await advanced.panels(me,role);
+  }
+  async function photoModerationPanel(me) {
+    // Review status and reports are protected by backend RLS; this only runs after guard().
+    const [pendingReq,reportsReq]=await Promise.all([
+      sb.from('bebo_photos').select('id,owner_id,caption,object_path,created_at,moderation_status')
+        .eq('moderation_status','pending').order('created_at',{ascending:true}).limit(25),
+      sb.from('bebo_photo_reports').select('id,photo_id,reason,status,created_at')
+        .eq('status','open').order('created_at',{ascending:true}).limit(25)
+    ]);
+    if(pendingReq.error)throw pendingReq.error;
+    if(reportsReq.error)throw reportsReq.error;
+    const pending=pendingReq.data||[],reports=reportsReq.data||[];
+    const ids=[...new Set(reports.map(r=>r.photo_id))];
+    const reported=ids.length?await sb.from('bebo_photos')
+      .select('id,caption,object_path,moderation_status').in('id',ids):{data:[],error:null};
+    if(reported.error)throw reported.error;
+    const byID=new Map((reported.data||[]).map(p=>[p.id,p]));
+    const photoPreview=p=>p?.object_path?
+      '<img loading="lazy" style="display:block;width:140px;max-width:100%;height:110px;object-fit:contain;margin:8px 0;border:1px solid #ddd" src="'+
+       safe(sb.storage.from('bebo-photos').getPublicUrl(p.object_path).data.publicUrl)+'" alt="Submitted member photo for moderator review">':'';
+    const buttons=p=>'<div class="admin-report-actions">'+
+      '<button type="button" class="button" data-action="admin-photo-approve" data-id="'+safe(p.id)+'">Approve photo</button>'+
+      '<button type="button" class="button danger" data-action="admin-photo-reject" data-id="'+safe(p.id)+'">Reject photo</button></div>';
+    const pendingHTML=pending.map(p=>'<article class="admin-report"><strong>⏳ New photo for approval</strong>'+
+      '<p class="muted">'+date(p.created_at)+'</p>'+photoPreview(p)+
+      '<p>'+safe(p.caption||'No caption')+'</p>'+buttons(p)+'</article>').join('');
+    const reportsHTML=reports.map(r=>{
+      const p=byID.get(r.photo_id);
+      return '<article class="admin-report"><strong>🚩 Reported photo</strong><p class="muted">'+date(r.created_at)+'</p>'+
+        (p?photoPreview(p)+'<p>'+safe(p.caption||'No caption')+' · '+safe(p.moderation_status)+'</p>':
+            '<p>Photo was deleted or is no longer accessible.</p>')+
+        '<p>Report reason: '+safe(r.reason)+'</p><div class="admin-report-actions">'+
+        (p&&p.moderation_status==='approved'?
+         '<button class="button danger" data-action="admin-photo-hide" data-id="'+safe(p.id)+'">Hide reported photo</button>':'')+
+        '<button class="button secondary" data-action="admin-photo-report-reviewed" data-id="'+safe(r.id)+'">Mark reviewed</button>'+
+        '</div></article>';
+    }).join('');
+    return panel('📸 Photo Approvals & Abuse Reports',
+      '<p><strong>Member photos require a decision before appearing in public galleries.</strong>'+
+      ' Review the picture, any personal information and copyright concerns. The storage URL is technically shareable; an unapproved image is not truly private.</p>'+
+      '<h3>Awaiting approval ('+pending.length+')</h3>'+
+      (pendingHTML||'<p class="admin-empty">No photos awaiting review.</p>')+
+      '<h3>Open photo reports ('+reports.length+')</h3>'+
+      (reportsHTML||'<p class="admin-empty">No photo reports waiting.</p>'));
   }
   function setFilter(value){
     if(!['open','dismissed','actioned'].includes(value))throw Error('Invalid filter');
@@ -101,6 +145,29 @@ export function createAdmin(sb,{safe,panel}) {
   async function action(name,id,me) {
     await guard(me);
     if(name==='admin-filter'){setFilter(id);return {message:'Showing '+filter+' reports.'};}
+    if(['admin-photo-approve','admin-photo-reject','admin-photo-hide'].includes(name)){
+      if(!/^[0-9a-f-]{36}$/i.test(id))throw Error('Invalid photo ID');
+      const accepted=name==='admin-photo-approve';
+      const expected=name==='admin-photo-hide'?'approved':'pending';
+      if(!confirm(accepted?'Approve this photo for public display?':'Hide this photo from public galleries?'))return {cancelled:true};
+      const {data,error}=await sb.from('bebo_photos')
+        .update({moderation_status:accepted?'approved':'rejected',reviewed_by:me.id,
+          reviewed_at:new Date().toISOString()})
+        .eq('id',id).eq('moderation_status',expected).select('id').maybeSingle();
+      if(error)throw error;
+      if(!data)throw Error('Photo could not be updated. It may have already been reviewed.');
+      return {message:accepted?'Photo approved for public galleries.':'Photo hidden from public galleries.'};
+    }
+    if(name==='admin-photo-report-reviewed'){
+      if(!/^[0-9a-f-]{36}$/i.test(id))throw Error('Invalid report ID');
+      if(!confirm('Mark this photo report as reviewed?'))return {cancelled:true};
+      const {data,error}=await sb.from('bebo_photo_reports')
+        .update({status:'reviewed',reviewed_at:new Date().toISOString(),reviewed_by:me.id})
+        .eq('id',id).eq('status','open').select('id').maybeSingle();
+      if(error)throw error;
+      if(!data)throw Error('Photo report may already have been reviewed.');
+      return {message:'Photo report marked reviewed.'};
+    }
     if(!['admin-dismiss','admin-delete-post'].includes(name))return advanced.action(name,id,me);
     if(!/^[0-9a-f-]{36}$/i.test(id))throw Error('Invalid report identifier');
     if(name==='admin-dismiss'){

@@ -59,10 +59,18 @@ await safeCheck('Only approved videos readable to guests',async()=>{
  report('Only approved videos readable to guests',Array.isArray(videos)&&videos.every(v=>v.status==='approved'),
   'Non-approved content visible or invalid response');
 });
+await safeCheck('Unapproved album photos hidden from guests',async()=>{
+ const res=await get(base+'/rest/v1/bebo_photos?select=moderation_status&limit=40',{headers:publicHeaders});
+ if(!res.ok){report('Unapproved album photos hidden from guests',false,'Photo query unavailable');return}
+ const items=await res.json();
+ report('Unapproved album photos hidden from guests',
+  Array.isArray(items)&&items.every(x=>x.moderation_status==='approved'),
+  'Pending or rejected album photo exposed through anonymous REST read');
+});
 // Audit private table exposure as the anonymous visitor role. All SELECTs are read-only.
 // A 200 [] is acceptable: some well-configured RLS tables return an empty array instead of 403.
 // A 200 with any row is a launch-blocking privacy regression. Never print user records.
-for(const table of ['bebo_mail','bebo_reports','bebo_suggestions','bebo_moderators',
+for(const table of ['bebo_mail','bebo_reports','bebo_photo_reports','bebo_suggestions','bebo_moderators',
  'bebo_admin_audit','bebo_member_controls','bebo_verification_requests','bebo_video_view_events']){
  await safeCheck('Private '+table+' inaccessible anonymously',async()=>{
   const res=await get(base+'/rest/v1/'+table+'?select=*&limit=1',{headers:publicHeaders});

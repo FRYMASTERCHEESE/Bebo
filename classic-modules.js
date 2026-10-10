@@ -16,7 +16,14 @@ export function createClassic(sb,{safe,panel,btn,query}) {
   const imgUrl=path=>sb.storage.from('bebo-photos').getPublicUrl(path).data.publicUrl;
   const postForm=(name,content,submit)=>'<form class="fields" data-form="'+name+'">'+content+'<button class="button">'+submit+'</button></form>';
   const teaser=(text,n)=>safe(String(text||'').slice(0,n))+(String(text||'').length>n?'…':'');
-  function photoTile(p){return '<div class="classic-photo"><a href="'+safe(imgUrl(p.object_path))+'" target="_blank" rel="noopener noreferrer"><img loading="lazy" src="'+safe(imgUrl(p.object_path))+'" alt="'+safe(p.caption||'Photo')+'"></a><div>'+teaser(p.caption,52)+'</div></div>';}
+  function photoTile(p){
+    const review=p.moderation_status==='pending'?
+      '<p class="muted">⏳ Awaiting moderator approval · not listed publicly</p>':
+      p.moderation_status==='rejected'?'<p class="muted">⛔ Hidden by moderators</p>':'';
+    return '<div class="classic-photo"><a href="'+safe(imgUrl(p.object_path))+
+      '" target="_blank" rel="noopener noreferrer"><img loading="lazy" src="'+safe(imgUrl(p.object_path))+
+      '" alt="'+safe(p.caption||'Photo')+'"></a><div>'+teaser(p.caption,52)+'</div>'+review+'</div>';
+  }
   async function publicModules(who,me){
     const [albums,blogs,other]=await Promise.all([
       db('bebo_albums',q=>q.select('id,title,created_at').eq('owner_id',who.id).order('created_at',{ascending:false}).limit(3)),
@@ -68,11 +75,15 @@ export function createClassic(sb,{safe,panel,btn,query}) {
     const form=mine && photos.length<96?postForm('classic-photo',
       '<input type="hidden" name="album_id" value="'+id+'">'+
       '<label>Upload a picture (JPG / PNG / WebP, up to 5MB)<input type="file" name="file" required accept="image/jpeg,image/png,image/webp"></label>'+
-      '<label>Caption<input name="caption" maxlength="250"></label>', 'Add photo ♥'):'';
+      '<label>Caption<input name="caption" maxlength="250"></label>'+
+      '<p class="muted">New pictures are held for owner review before appearing in public albums. Only upload photos you own or have permission to share.</p>', 'Submit photo for review ♥'):'';
     return panel('📸 '+safe(album.title),
       '<p><a href="#/photos/'+encodeURIComponent(owner?.username||'')+'">« All albums</a> | By '+(owner?link(owner):'Member')+'</p>'+
       '<p>'+safe(album.description)+'</p>'+form+
-      '<div class="classic-gallery">'+photos.map(p=>'<div>'+photoTile(p)+(mine?btn('Remove photo','classic-delete-photo',p.id,'secondary'):'')+'</div>').join('')+'</div>'+
+      '<div class="classic-gallery">'+photos.map(p=>'<div>'+photoTile(p)+
+       (mine?btn('Remove photo','classic-delete-photo',p.id,'secondary'):
+        me&&p.moderation_status==='approved'?btn('🚩 Report photo','classic-report-photo',p.id,'secondary'):'')+
+       '</div>').join('')+'</div>'+
       (!photos.length?'<p class="muted">Nothing in this album yet.</p>':'')+
       '<p class="muted">'+photos.length+' of 96 photos.</p>');
   }
@@ -201,7 +212,7 @@ export function createClassic(sb,{safe,panel,btn,query}) {
       try {
         await db('bebo_photos',q=>q.insert({album_id:albumID,owner_id:me.id,object_path:path,caption:clean(d.get('caption'),250)}));
       }catch(e){await sb.storage.from('bebo-photos').remove([path]);throw e;}
-      return 'Your photo was uploaded ♥';
+      return 'Your photo was uploaded for moderator review. It is not listed publicly until approved. ♥';
     }
     if(type==='classic-blog'){
       await db('bebo_blogs',q=>q.insert({owner_id:me.id,title:clean(d.get('title'),130),body:clean(d.get('body'),12000)}));
@@ -238,6 +249,14 @@ export function createClassic(sb,{safe,panel,btn,query}) {
       if(pics.length)throw Error('Remove pictures before deleting this album.');
       await db('bebo_albums',q=>q.delete().eq('id',id).eq('owner_id',me.id));
       return 'Album removed.';
+    }
+    if(name==='classic-report-photo'){
+      const reason=prompt('Why are you reporting this photo? (at least 10 characters)');
+      if(reason===null)return 'Report cancelled.';
+      const description=clean(reason,1000);
+      if(description.length<10)throw Error('Please describe the problem in at least 10 characters.');
+      await db('bebo_photo_reports',q=>q.insert({photo_id:id,reporter_id:me.id,reason:description}));
+      return 'Photo report sent to Bebo moderators for review. Thank you.';
     }
     if(name==='classic-delete-photo'){
       const p=await db('bebo_photos',q=>q.select('owner_id,object_path').eq('id',id).maybeSingle());
