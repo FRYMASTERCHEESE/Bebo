@@ -753,8 +753,17 @@ main.wrap{max-width:1010px;background:#fff;min-height:80vh;border-left:1px solid
  .retro-choice-you,.retro-choice-correct{font-size:9px}
 }
 
+
+/* Owner-only signup email shortcut: registrations remain inside Supabase Auth. */
+.admin-signup-summary{display:inline-flex;align-items:center;gap:12px;margin:10px 0 7px;padding:12px 17px;border:1px solid #d6a4bc;background:#fff3f9;color:#852958}
+.admin-signup-summary strong{font:700 30px Georgia,serif;color:#af3168}
+.admin-signup-summary span{font:bold 12px/1.5 Verdana,Arial,sans-serif}
+.admin-signup-link{display:inline-block;width:auto;max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:center;text-decoration:none!important}
+.admin-privacy-note{border-left:4px solid #5579a0;padding:11px;background:#f2f7fd;color:#254c70;font:12px/1.6 Verdana,Arial,sans-serif}
+@media(max-width:700px){.admin-signup-summary{width:100%;box-sizing:border-box}.admin-signup-link{width:100%;padding:12px 9px}}
+
 </style>
-<script type="module" src="./social.js?v=20261010-friendly-handles-v1"></script></head>
+<script type="module" src="./social.js?v=20261010-signup-emails-v1"></script></head>
 <body><header class="top"><div class="wrap head"><div class="brand">be<span>bo</span> ★</div><div><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p></div></div></header>
 <nav class="nav"><div class="wrap" id="nav"><button data-nav="home">Home</button><button data-nav="profile">My Profile</button><button data-nav="friends">Friends</button><button data-nav="photos">Photos</button><button data-nav="blogs">Blog</button><button data-nav="messages">Mail ✉</button><button data-nav="groups">Groups</button><button data-nav="other-half">Other Half ♥</button><button data-nav="skins">Skins</button><button data-nav="polls">Polls</button><button data-nav="quizzes">Quizzes</button><button data-nav="creators">Bands &amp; Authors</button><button data-nav="account">Account</button><button data-nav="safety">Safety &amp; Privacy</button></div></nav>
 <aside id="bebo-announcement-bar" class="bebo-announcement-strip" aria-label="Bebo announcements" hidden></aside>
