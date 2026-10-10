@@ -205,6 +205,32 @@ try{
    results.push(item);
    console.log(item.layout.padEnd(8)+' '+item.route.padEnd(12)+' '+item.status+(item.error?' '+item.error:''));
   }
+  const aboutCheck={layout:device.name,route:'about.html',status:'UNKNOWN'};
+  try{
+    await page.goto(host+'?about-audit='+device.name+'#/home',{waitUntil:'domcontentloaded',timeout:45000});
+    await page.locator('#nav a.bebo-about-link').click();
+    await page.waitForURL('**/Bebo/about.html',{timeout:15000});
+    const heading=await page.locator('main h1').innerText();
+    const description=await page.locator('main').innerText();
+    assert(/Bebo Is Officially Back/.test(heading),'Original slogan missing from About page');
+    assert(description.includes('Independent project notice:'),'Missing independent project clarification');
+    assert(description.includes('Supabase'),'Missing real backend explanation');
+    assert(description.includes('56 original'),'Missing accurate skin information');
+    assert.equal(await page.locator('link[rel="canonical"]').getAttribute('href'),host+'about.html');
+    assert.equal(await page.locator('nav a[href="./#/home"]').count(),2,'About page needs Back and Home links');
+    assert(!/old Bebo accounts are restored/i.test(description),'About incorrectly promises old accounts');
+    const siteWidth=await page.evaluate(()=>({page:document.documentElement.scrollWidth,screen:innerWidth}));
+    assert(siteWidth.page<=siteWidth.screen+8,'About page horizontally overflows the viewport');
+    await page.locator('nav a').first().click();
+    await page.waitForURL('**/Bebo/#/home',{timeout:15000});
+    aboutCheck.status='PASS';
+  }catch(error){
+    aboutCheck.status='FAIL';
+    aboutCheck.error=String(error.message).slice(0,600);
+    await page.screenshot({path:'test-results/'+device.name+'-about.png',fullPage:true}).catch(()=>{});
+  }
+  results.push(aboutCheck);
+  console.log(aboutCheck.layout.padEnd(8)+' '+aboutCheck.route.padEnd(12)+' '+aboutCheck.status+(aboutCheck.error?' '+aboutCheck.error:''));
   await context.close();
  }
 }finally{await browser.close()}
