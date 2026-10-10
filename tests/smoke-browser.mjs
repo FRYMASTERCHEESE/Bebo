@@ -20,7 +20,7 @@ const tests=[
 {path:'admin',label:'Admin guest denial',match:/join bebo|create your account|admin only/i,guestAdmin:true}
 ];
 // Wait until GitHub Pages publishes the matching revision; Actions can run before Pages.
-const expectedCSS='THE BEBO LOOK SWITCH: 2005 is the default. 2007 preserves the previous site look.';
+const expectedCSS='Mobile copy restoration: users can long-press and highlight Bebo posts, profiles,';
 let releaseReady=false;
 for(let n=0;n<40;n++){
   try{
@@ -29,7 +29,7 @@ for(let n=0;n<40;n++){
   }catch(error){console.warn('Waiting for Bebo Pages:',String(error));}
   await new Promise(resolve=>setTimeout(resolve,3000));
 }
-assert(releaseReady,'GitHub Pages has not published the mobile selection fix yet.');
+assert(releaseReady,'GitHub Pages has not published the Bebo mobile copying fix yet.');
 const results=[],errors=[];const browser=await chromium.launch({headless:true});
 try{
  await fs.mkdir('test-results',{recursive:true});
@@ -86,6 +86,13 @@ try{
       }
       assert(!trustText.includes('Dhar Mann'),'Example person name was copied into Bebo');
       assert(!trustText.includes('Official Meta'),'Bebo is being misrepresented as Meta');
+      if(device.name==='mobile'){
+        const trustSelection=await page.evaluate(()=>{
+          const node=document.querySelector('.bebo-trust-overlay .bebo-trust-card p');
+          return node?getComputedStyle(node).userSelect:null;
+        });
+        assert.equal(trustSelection,'text','Verified details cannot be highlighted and copied');
+      }
       await page.screenshot({path:'test-results/'+device.name+'-verified-sheet.png'});
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('#bebo-verified-overlay').count(),0,'Escape did not close the sheet');
@@ -138,9 +145,27 @@ try{
         };
       });
       assert(layout.scroll<=layout.viewport+8,'Horizontal overflow '+layout.scroll+'px > '+layout.viewport+'px');
-      assert.equal(layout.regularText,'none','Mobile text could still trigger selection search menu');
-      assert.equal(layout.announcement,'none','Announcement strip mobile selection style mismatch: '+JSON.stringify(layout));
+      assert.equal(layout.regularText,'text','Mobile page text cannot be highlighted and copied');
+      assert.equal(layout.announcement,'text','Bebo announcement cannot be highlighted and copied: '+JSON.stringify(layout));
       if(check.signup)assert.equal(layout.editable,'text','Signup field must remain selectable and editable');
+    }
+    if(device.name==='mobile'&&check.path==='safety'){
+      const selection=await page.evaluate(()=>{
+        const text=document.querySelector('#app .panel .body p');
+        if(!text)return {error:'No Safety page paragraph'};
+        const range=document.createRange();
+        range.selectNodeContents(text);
+        const selection=window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        const selected=selection.toString();
+        const style=getComputedStyle(text);
+        selection.removeAllRanges();
+        return {selected,style:style.userSelect};
+      });
+      assert.equal(selection.style,'text','Safety content cannot be selected');
+      assert(/respectful|harassment|impersonation/i.test(selection.selected),'Mobile Safety page content cannot be selected for copying');
+      item.copySelection='PASS';
     }
     if(check.path==='home')await page.screenshot({path:'test-results/'+device.name+'-home.png',fullPage:true});
     item.status='PASS';
