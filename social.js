@@ -13,6 +13,7 @@ let me=null, profile=null, page='home', userViewed=null, message='', success=fal
 
 const safe=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const clamp=(s,n)=>String(s??'').trim().slice(0,n);
+const handlePattern=value=>String(value||'').replace(/[\\%_]/g,'\\$&');
 const time=s=>new Date(s).toLocaleString('en-NZ',{dateStyle:'medium',timeStyle:'short'});
 const grad=p=>p?.skin==='custom'?`linear-gradient(125deg,${p.skin_secondary},${p.skin_primary},#522b5b)`:skinArtwork(getSkin(p?.skin));
 let activeSkinCategory='All';
@@ -43,7 +44,7 @@ function authPage(){
  return panel('Join Bebo — it’s free! ♥',`<div class="cols"><div>${panel('Create your account',`<form class="fields" data-form="signup">
  <label>Email address<input type="email" name="email" required maxlength="254" autocomplete="email"></label>
  <label>Password (8 characters minimum)<input type="password" name="password" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="At least 8 characters"></label>
- <label><input type="checkbox" name="adult" required> I confirm I am 18 or older and agree to the <a href="#/safety">community rules and privacy information</a>.</label><button class="button">Join Bebo ♥</button></form><p class="muted">You may need to confirm your email first. Do not use your old Bebo password.</p>`)}</div>
+ <label><input type="checkbox" name="adult" required> I confirm I am 18 or older and agree to the <a href="#/safety">community rules and privacy information</a>.</label><button class="button">Join Bebo ♥</button></form><p class="muted">Confirm the email we send you, then return to <strong>this Bebo website</strong> and log in. If your email link opens localhost or gives an error after confirmation, open Bebo here and log in with your new details instead. Do not use your old Bebo password.</p>`)}</div>
  <div>${panel('Already a member?',`<form class="fields" data-form="login"><label>Email<input type="email" name="email" required autocomplete="email"></label><label>Password<input type="password" name="password" required autocomplete="current-password"></label><button class="button">Log in</button></form><p><a href="#" data-action="reset">Forgot password?</a></p>`)}</div></div>`);
 }
 function welcome(){return panel('Welcome back to Bebo ♥',`<p>Your favourite Bebo features are here: the Top 16, three Luv a day, colourful custom skins, Whiteboards, music, Flashboxes, quizzes, polls, Bands and Authors.</p>
@@ -68,7 +69,7 @@ function editProfile(){return panel('Edit My Profile',`<form class="fields" data
  <p class="muted">You can change the picture or leave it as it is. The button below saves your status, About Me, location, music and photo together.</p></div>
  <button class="button" type="submit">Save Profile &amp; Photo ♥</button></form>`)}
 async function showProfile(username){
- const who=username?await query('bebo_profiles',q=>q.select('*').eq('username',username).maybeSingle()):profile;
+ const who=username?await query('bebo_profiles',q=>q.select('*').ilike('username',handlePattern(username)).maybeSingle()):profile;
  if(!who){app.innerHTML=note()+panel('Profile not found','This member has not created a profile yet.');return}
  userViewed=who;
  const [posts,friendships,top]=await Promise.all([
