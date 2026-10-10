@@ -21,7 +21,7 @@ const tests=[
 {path:'admin',label:'Admin guest denial',match:/join bebo|create your account|admin only/i,guestAdmin:true}
 ];
 // Wait until GitHub Pages publishes the matching revision; Actions can run before Pages.
-const expectedCSS='Old Bebo Memories: accessible early-Bebo styled public archive search.';
+const expectedCSS='Always-available Bebo navigation: reachable while scrolling every route.';
 let releaseReady=false;
 for(let n=0;n<40;n++){
   try{
@@ -30,7 +30,7 @@ for(let n=0;n<40;n++){
   }catch(error){console.warn('Waiting for Bebo Pages:',String(error));}
   await new Promise(resolve=>setTimeout(resolve,3000));
 }
-assert(releaseReady,'GitHub Pages has not published the old Bebo Memories feature yet.');
+assert(releaseReady,'GitHub Pages has not published the global Back and Home controls yet.');
 const results=[],errors=[];const browser=await chromium.launch({headless:true});
 try{
  await fs.mkdir('test-results',{recursive:true});
@@ -49,6 +49,17 @@ try{
     const inner=await page.locator('#app').innerText();
     assert(!/Could not load this page|me is not defined|ReferenceError|TypeError/i.test(inner),'Fatal error shown: '+inner.slice(0,450));
     assert(check.match.test(inner),'Missing expected '+check.label+': '+inner.slice(0,300));
+    const globalBack=page.locator('#bebo-back-button');
+    assert.equal(await globalBack.count(),1,'Missing global Bebo Back button');
+    assert.equal(await page.locator('.bebo-quick-nav a[href="#/home"]').count(),1,'Missing global Home link');
+    const backPosition=await globalBack.evaluate(button=>{
+      const rect=button.getBoundingClientRect();
+      return {width:rect.width,height:rect.height,left:rect.left,top:rect.top,bottom:rect.bottom,viewport:window.innerHeight,
+        fixed:getComputedStyle(button.closest('.bebo-quick-nav')).position};
+    });
+    assert.equal(backPosition.fixed,'fixed','Bebo Back button does not remain visible while scrolling');
+    assert(backPosition.height>=42,'Bebo Back button target too small for phone tapping');
+    assert(backPosition.bottom<=backPosition.viewport+2&&backPosition.top>=0,'Bebo Back button out of the viewport');
     if(check.memorySearch){
       const form=page.locator('#bebo-memory-search'),field=page.locator('#bebo-old-lookup');
       assert.equal(await form.count(),1,'Old Bebo search form missing');
@@ -81,6 +92,19 @@ try{
       await form.locator('button[type="submit"]').click();
       await page.locator('#bebo-memory-results[aria-live] .bebo-memory-error').waitFor({state:'visible',timeout:15000});
       assert(/Only original bebo.com profile URLs/.test(await page.locator('.bebo-memory-error').innerText()));
+      // Navigating inside Bebo must restore the last real Bebo page without leaving the site.
+      await page.locator('#nav [data-nav="safety"]').click();
+      await page.waitForURL('**#/safety',{timeout:10000});
+      await page.waitForFunction(()=>history.state?.beboPreviousRoute==='#/old-bebo',null,{timeout:10000});
+      await globalBack.click();
+      await page.waitForURL('**#/old-bebo',{timeout:10000});
+      assert.equal(await page.locator('#bebo-memory-search').count(),1,'Back failed to return to Old Bebo Memories');
+      // Direct initial Bebo route has no safe browser predecessor: fall back Home.
+      await globalBack.click();
+      await page.waitForURL('**#/home',{timeout:10000});
+      assert.equal(await page.evaluate(()=>location.hostname),'frymastercheese.github.io','Back left the Bebo site');
+      assert.equal(await globalBack.isDisabled(),true,'Back at initial Home should not act on an external history entry');
+      item.backNavigation='PASS';
       item.memorySearch='PASS';
     }
     if(check.eraTest){
@@ -165,6 +189,13 @@ try{
       assert(inner.includes('Welcome to Bebo'),'New member welcome is missing from Safety page');
       assert(inner.includes('strong, unique password'),'Safe new-account password guidance is missing');
       assert(!inner.includes('Independent service:')&&!inner.includes('Do not use an old Bebo password.'),'Old discouraging wording is still on the Safety page');
+    }
+    if(check.path==='safety'){
+      // A direct deep-link visit must not call native history.back() into another site.
+      await globalBack.click();
+      await page.waitForURL('**#/home',{timeout:10000});
+      assert.equal(await page.evaluate(()=>location.hostname),'frymastercheese.github.io','Direct-link Back left Bebo');
+      item.directBack='PASS';
     }
     if(check.guestAdmin){
       assert.equal(await page.locator('.bebo-admin-page').count(),0,'Private admin dashboard rendered for guest');
