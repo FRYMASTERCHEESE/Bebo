@@ -11,9 +11,17 @@ import { skinDesign, studioPanels, previewSkinStudio, fillSkinStudio, importSkin
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
 const configured=/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL||'')&&SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_');
+// Supabase's implicit password-recovery callback uses a #access_token fragment.
+// Capture intent BEFORE createClient parses/removes that fragment. Never log or persist tokens.
+const initialAuthFragment=new URLSearchParams(location.hash.startsWith('#')?location.hash.slice(1):'');
+const recoveryLinkArrived=initialAuthFragment.get('type')==='recovery'&&
+ Boolean(initialAuthFragment.get('access_token'))&&Boolean(initialAuthFragment.get('refresh_token'));
+const recoveryLinkError=initialAuthFragment.has('error')?
+ String(initialAuthFragment.get('error_description')||'This authentication link is invalid or expired.').slice(0,150):'';
 const sb=configured?createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
 const BEBO_SITE_URL='https://bebo.nz/'; // Supabase Auth > URL Configuration: Site URL and allowed redirect.
-let recoveryMode=false; // Only true after Supabase confirms a PASSWORD_RECOVERY auth event.
+let recoveryMode=false; // Only true once Supabase has verified a recovery session.
+let recoveryWaiting=recoveryLinkArrived&&!recoveryLinkError;
 const BEBO_ERA_KEY='bebo-classic-look-v1';
 const classicEra=()=>document.documentElement.dataset.beboEra==='2007'?'2007':'2005';
 let me=null, profile=null, page='home', userViewed=null, message='', success=false, adminAccess=null, memberRestriction=null;
@@ -41,33 +49,65 @@ const videos=createVideos(sb,{safe,panel,query});
 const admin=createAdmin(sb,{safe,panel});
 const suggestions=createSuggestions(sb,{safe,panel});
 async function loadMine(){if(!me){profile=null;adminAccess=null;memberRestriction=null;return}profile=await query('bebo_profiles',q=>q.select('*').eq('id',me.id).maybeSingle());const status=await query('bebo_member_controls',q=>q.select('status,reason').eq('member_id',me.id).maybeSingle());memberRestriction=status;adminAccess=await admin.check(me)}
+async function activatePasswordRecovery(){
+ try{
+  // getUser consults the Auth server; never trust the URL fragment as proof of identity.
+  const {data,error}=await sb.auth.getUser();
+  if(error||!data?.user)throw Error('This password reset link expired or could not be verified. Request another email.');
+  me=data.user;
+  recoveryMode=true;recoveryWaiting=false;
+  message='';success=false;
+  // Set the Bebo route ONLY after Supabase has consumed the link tokens.
+  location.hash='#/reset-password';
+  render();
+ }catch(error){
+  recoveryMode=false;recoveryWaiting=false;
+  message=escapeError(error);success=false;
+  location.hash='#/account';
+  render();
+ }
+}
 async function init(){
  if(!sb){render();return}
- // Subscribe before session recovery so the initial PASSWORD_RECOVERY event cannot be missed.
+ // Register events before awaiting initial session: otherwise PASSWORD_RECOVERY can be missed.
  sb.auth.onAuthStateChange((event,session)=>{
   if(event==='PASSWORD_RECOVERY'){
-   recoveryMode=true;
-   // Delay rendering until Supabase has completed callback session initialization.
-   setTimeout(async()=>{
-    try{
-     const {data,error}=await sb.auth.getUser();
-     if(error||!data?.user)throw Error('Password reset link is invalid or expired.');
-     me=data.user;
-     location.hash='#/reset-password';
-     render();
-    }catch(error){recoveryMode=false;message=escapeError(error);success=false;location.hash='#/account';render();}
-   },0);
+   recoveryWaiting=true;
+   setTimeout(()=>activatePasswordRecovery(),0);
    return;
   }
+  if(recoveryWaiting&&event==='SIGNED_IN'&&session?.user){
+   // Some Supabase clients emit SIGNED_IN instead of PASSWORD_RECOVERY during URL recovery.
+   setTimeout(()=>activatePasswordRecovery(),0);
+   return;
+  }
+  if(recoveryMode)return;
   const id=session?.user?.id||null;
   if(id!==me?.id){me=session?.user||null;profile=null;adminAccess=null;memberRestriction=null;
    setTimeout(async()=>{try{await loadMine()}catch(e){message=escapeError(e)}render()},0);}
  });
  try{
   const {data,error}=await sb.auth.getUser();
-  if(error&&error.name!=='AuthSessionMissingError')throw error;
-  me=data.user||null;await loadMine();
- }catch(e){message='Could not connect to Bebo database: '+escapeError(e)}
+  if(error&&error.name!=='AuthSessionMissingError'&&!recoveryWaiting)throw error;
+  if(recoveryWaiting&&data?.user){
+   await activatePasswordRecovery();
+   return;
+  }
+  me=data?.user||null;
+  await loadMine();
+ }catch(e){
+  if(recoveryWaiting){
+   recoveryWaiting=false;
+   message='Your password reset link expired or could not be verified. Please request a new one.';
+   success=false;
+   location.hash='#/account';
+  }else message='Could not connect to Bebo database: '+escapeError(e);
+ }
+ if(recoveryLinkError){
+  message='The email link is invalid or expired. Please request another reset email.';
+  success=false;
+  location.hash='#/account';
+ }
  render();
 }
 function authPage(){
@@ -246,6 +286,11 @@ function safetyInfoPage(){
  <p><strong>Welcome to Bebo ♥</strong> Make a fresh profile, meet friends and enjoy the community. For your security, choose a strong, unique password you do not use on any other website.</p>`);
 }
 async function refresh(){
+ if(recoveryWaiting&&!recoveryMode){
+  app.innerHTML=panel('Verifying your Bebo password-reset link ♥',
+   '<p>Please wait while Bebo securely checks your recovery email link…</p>');
+  return;
+ }
  const raw=decodeURIComponent(location.hash.replace(/^#\/?/,''));
  if(raw.startsWith('u/')){page='view';await showProfile(raw.slice(2));return}
  page=raw||'home';
@@ -401,7 +446,7 @@ updateEraSwitcher();
 /* Every internal Bebo hash page has a safe back path. Never send users to a previous
    external website by accident. history.state belongs to the browser entry, so
    Android/desktop Back and Forward also keep the correct Bebo predecessor. */
-const beboRoute=()=>location.hash||'#/home';
+const beboRoute=()=>location.hash.startsWith('#/')?location.hash:'#/home';
 let lastBeboRoute=beboRoute();
 const isBeboRoute=route=>typeof route==='string'&&route.startsWith('#/')&&route.length<1000;
 function recordBeboRoute(from){
@@ -453,7 +498,7 @@ document.querySelector('#nav').addEventListener('click',e=>{
  if(beboRoute()===lastBeboRoute)render();
 });
 window.addEventListener('hashchange',event=>{
- const oldHash=(()=>{try{return new URL(event.oldURL).hash||'#/home'}catch{return lastBeboRoute}})();
+ const oldHash=(()=>{try{const h=new URL(event.oldURL).hash;return h.startsWith('#/')?h:'#/home'}catch{return lastBeboRoute}})();
  recordBeboRoute(oldHash);
  verified.closeDialog();message='';activeSkinCategory='All';render();
 });
@@ -576,7 +621,7 @@ document.addEventListener('submit',async e=>{
   if(password!==String(d.get('confirm_password')||''))throw Error('Both passwords must match.');
   const {error}=await sb.auth.updateUser({password});
   if(error)throw error;
-  recoveryMode=false;
+  recoveryMode=false;recoveryWaiting=false;
   await sb.auth.signOut();
   me=null;profile=null;adminAccess=null;memberRestriction=null;
   message='Password updated successfully. Please sign in with your new password ♥';success=true;
@@ -753,7 +798,7 @@ document.addEventListener('click',async e=>{
  if(a.startsWith('classic-')){message=await classic.action(a,id,{me,profile,userViewed});success=true}
  if(a.startsWith('safety-')){message=await safety.action(a,id,{me,profile,userViewed});success=true}
  else if(a.startsWith('retro-')){message=await retro.action(a,id,{me,profile,userViewed});success=true}
- else if(a==='logout'){await sb.auth.signOut();me=null;profile=null;adminAccess=null;memberRestriction=null;message='You are signed out.';location.hash='#/home'}
+ else if(a==='logout'){recoveryMode=false;recoveryWaiting=false;await sb.auth.signOut();me=null;profile=null;adminAccess=null;memberRestriction=null;message='You are signed out.';location.hash='#/home'}
  else if(a==='reset'){const email=prompt('Enter your account email');if(!email)return;const {error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo:BEBO_SITE_URL});if(error)throw error;message='Check your email for the password reset link.';success=true}
  else if(a==='friend-request'){await query('bebo_friendships',q=>q.insert({requester_id:me.id,addressee_id:id}));message='Friend request sent ♥';success=true}
  else if(a==='friend-accept'||a==='friend-decline'){await query('bebo_friendships',q=>q.update({status:a==='friend-accept'?'accepted':'declined'}).eq('id',id));message=a==='friend-accept'?'Friend added ♥':'Request declined';success=true}
