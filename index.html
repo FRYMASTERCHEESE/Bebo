@@ -1439,8 +1439,31 @@ body.bebo-page-loading .bebo-page-progress{opacity:1}
  .bebo-video-actions .button{min-height:44px}
  .bebo-video-top{flex-wrap:wrap}
 }
+
+/* Transparent organic discovery stats: no autoplay and no cosmetic fake counts. */
+.bebo-video-metrics{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;
+ margin:10px 0 12px;font:12px/1.5 Verdana,Arial,sans-serif;color:#344c64}
+.bebo-video-metrics span{display:inline-flex;align-items:center;min-height:31px;
+ padding:5px 9px;border:1px solid #d6e4ed;border-radius:7px;background:#ecf6fb;
+ white-space:normal;overflow-wrap:anywhere}
+.bebo-video-metrics strong{font-variant-numeric:tabular-nums;margin:0 4px}
+.bebo-home-video-item{padding:12px;margin:12px 0;border:1px solid #d2e3ee;
+ border-radius:12px;background:linear-gradient(#fff,#f6fafe);min-width:0}
+.bebo-home-video-item h3{margin:0 0 6px;color:#245b83;font-size:16px}
+.bebo-home-video-item .bebo-video-player{max-height:350px;width:min(100%,560px)}
+.bebo-community-trending{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:10px}
+.bebo-community-trending-card{padding:12px;border:1px solid #d7e1eb;border-radius:10px;
+ min-width:0;background:#fff;overflow-wrap:anywhere}
+.bebo-community-trending-card p{margin:8px 0;line-height:1.6}
+.bebo-community-trending-card small{color:#597085}
+@media(max-width:640px){
+ .bebo-video-metrics{gap:5px;font-size:11px}
+ .bebo-video-metrics span{padding:4px 7px}
+ .bebo-home-video-item{padding:10px}
+ .bebo-home-video-item .bebo-video-player{max-height:330px}
+}
 </style>
-<script type="module" src="./social.js?v=20261010-phone-upload-v2"></script></head>
+<script type="module" src="./social.js?v=20261010-analytics-v3"></script></head>
 <body><button type="button" class="bebo-skip-link">Skip to main content</button><header class="top"><div class="wrap head">
 <div class="brand" aria-label="Bebo"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-be">be</span><span class="brand-bo">bo</span><span class="brand-star" aria-hidden="true"> ★</span></div>
 <div class="brand-message"><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p><p class="bebo-independent-note">Independent community inspired by classic Bebo · Not affiliated with its original owners.</p></div>
