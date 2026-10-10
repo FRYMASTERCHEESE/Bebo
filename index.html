@@ -842,30 +842,27 @@ main.wrap{max-width:1010px;background:#fff;min-height:80vh;border-left:1px solid
 }
 
 
-/* Touchscreen fix: prevent regular Bebo words being selected on smaller screens.
-   A width rule works in Chrome Android and embedded browser views, including
-   devices where pointer/hover media queries don't report reliably.
-   Keep desktop text selection and editing fields functional. */
+/* Mobile copy restoration: users can long-press and highlight Bebo posts, profiles,
+   announcements, help, policies and other regular text. Google search menus are
+   controlled by the browser and must not be prevented by blocking selection. */
 @media screen and (max-width: 900px) {
-  .top, .top *,
-  .nav, .nav *,
+  .top, .top *, .nav, .nav *,
   #bebo-announcement-bar, #bebo-announcement-bar *,
-  #app, #app *,
-  .footer, .footer * {
-    -webkit-user-select: none !important;
-    user-select: none !important;
-    -webkit-touch-callout: none;
-  }
-  #app input, #app textarea, #app select,
-  #app [contenteditable], #app [contenteditable] *,
-  #app [role="textbox"], #app [role="textbox"] * {
-    -webkit-user-select: text !important;
-    user-select: text !important;
+  #app, #app *, .footer, .footer *,
+  .bebo-trust-overlay, .bebo-trust-overlay *,
+  .bebo-trust-full, .bebo-trust-full * {
+    -webkit-user-select: text;
+    user-select: text;
     -webkit-touch-callout: default;
   }
-  /* Do not disable pointer interaction: links, buttons, Whiteboard and canvas stay usable. */
+  /* Buttons, artwork and canvas remain controls, not selectable page text. */
+  .nav button, .bebo-era-controls button,
+  #app button, #app canvas, #app [role="button"],
+  .bebo-trust-overlay button, .bebo-trust-full button {
+    -webkit-user-select: none;
+    user-select: none;
+  }
 }
-
 
 /* Bebo Verified transparency dialog: a mobile bottom sheet with genuine public profile facts. */
 .bebo-verified-badge[role="button"]{cursor:pointer;position:relative;touch-action:manipulation}
@@ -966,9 +963,6 @@ body.bebo-trust-dialog-open{overflow:hidden}
  .bebo-trust-card{padding:12px}
 }
 @media screen and (max-width:900px){
- .bebo-trust-overlay,.bebo-trust-overlay *,.bebo-trust-full,.bebo-trust-full *{
-   -webkit-user-select:none;user-select:none;-webkit-touch-callout:none
- }
  .bebo-trust-overlay button,.bebo-trust-overlay a{touch-action:manipulation}
 }
 
@@ -1260,7 +1254,7 @@ html[data-bebo-era="2005"] .bebo-2007-profile .panel .body{background:var(--bebo
 }
 
 </style>
-<script type="module" src="./social.js?v=20261010-2005-default-v1"></script></head>
+<script type="module" src="./social.js?v=20261010-mobile-copy-restored-v1"></script></head>
 <body><header class="top"><div class="wrap head">
 <div class="brand" aria-label="Bebo"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-be">be</span><span class="brand-bo">bo</span><span class="brand-star" aria-hidden="true"> ★</span></div>
 <div class="brand-message"><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p></div>
