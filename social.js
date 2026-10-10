@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import { createRetro } from './nostalgia.js?v=20261010-polls-quizzes-v2';
 import { createSafety } from './safety.js';
-import { createClassic } from './classic-modules.js?v=20261010-classic-home-v2';
+import { createClassic } from './classic-modules.js?v=20261010-friendly-handles-v1';
 import { createAdmin } from './admin.js?v=20261010-owner-me-fix';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
