@@ -32,7 +32,7 @@ export function createSafety(sb,{safe,panel,btn,query}) {
       panel('Delete my Bebo account','<p>This permanently removes your Bebo login, profile, friendships, comments, drawings and other linked content. Uploaded images will also be removed. This cannot be undone.</p>'+
       '<form class="fields" data-form="safety-delete-account">'+
       '<label>Type DELETE MY BEBO ACCOUNT<input name="confirmation" autocomplete="off" required placeholder="DELETE MY BEBO ACCOUNT"></label>'+
-      '<label>Current password (required to confirm)<input name="password" type="password" autocomplete="current-password" required></label>'+
+      '<div class="bebo-password-field"><label>Current password (required to confirm)<input name="password" type="password" autocomplete="current-password" required></label><button type="button" class="bebo-password-toggle" data-toggle-password aria-pressed="false" aria-label="Show password">👁 Show password</button></div>'+
       '<button class="button danger">Permanently delete my account</button></form>');
   }
   async function action(name,id,ctx) {

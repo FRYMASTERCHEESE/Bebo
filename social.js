@@ -114,9 +114,9 @@ function authPage(){
  if(!configured)return panel('Bebo is being prepared',`<p>The public Bebo website is online, but its new community database is not connected yet. No accounts are being collected while setup is incomplete.</p><p>Come back soon when our account system is available.</p>`);
  return panel('Join Bebo — it’s free! ♥',`<div class="cols"><div>${panel('Create your account',`<form class="fields" data-form="signup">
  <label>Email address<input type="email" name="email" required maxlength="254" autocomplete="email"></label>
- <label>Password (8 characters minimum)<input type="password" name="password" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="At least 8 characters"></label>
+ <div class="bebo-password-field"><label>Password (8 characters minimum)<input type="password" name="password" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="At least 8 characters"></label><button type="button" class="bebo-password-toggle" data-toggle-password aria-pressed="false" aria-label="Show password">👁 Show password</button></div>
  <label><input type="checkbox" name="adult" required> I confirm I am 18 or older and agree to the <a href="#/safety">community rules and privacy information</a>.</label><button class="button">Join Bebo ♥</button></form><p class="muted">Confirm the email we send you, then return to <strong>this Bebo website</strong> and log in. If your confirmation link was issued before the move to bebo.nz, open https://bebo.nz and log in after confirming your email. Do not use your old Bebo password.</p>`)}</div>
- <div>${panel('Already a member?',`<form class="fields" data-form="login"><label>Email<input type="email" name="email" required autocomplete="email"></label><label>Password<input type="password" name="password" required autocomplete="current-password"></label><button class="button">Log in</button></form><p><a href="#" data-action="reset">Forgot password?</a></p>`)}</div></div>`);
+ <div>${panel('Already a member?',`<form class="fields" data-form="login"><label>Email<input type="email" name="email" required autocomplete="email"></label><div class="bebo-password-field"><label>Password<input type="password" name="password" required autocomplete="current-password"></label><button type="button" class="bebo-password-toggle" data-toggle-password aria-pressed="false" aria-label="Show password">👁 Show password</button></div><button class="button">Log in</button></form><p><a href="#" data-action="reset">Forgot password?</a></p>`)}</div></div>`);
 }
 function passwordRecoveryPage(){
  if(!recoveryMode||!me){
@@ -125,8 +125,8 @@ function passwordRecoveryPage(){
  return panel('Choose a new Bebo password ♥',
   '<p>Your reset link was accepted. Choose a new password for this Bebo account.</p>'+
   '<form class="fields" data-form="recover-password">'+
-  '<label>New password<input type="password" name="password" autocomplete="new-password" required minlength="8" maxlength="128"></label>'+
-  '<label>Repeat new password<input type="password" name="confirm_password" autocomplete="new-password" required minlength="8" maxlength="128"></label>'+
+  '<div class="bebo-password-field"><label>New password<input type="password" name="password" autocomplete="new-password" required minlength="8" maxlength="128"></label><button type="button" class="bebo-password-toggle" data-toggle-password aria-pressed="false" aria-label="Show password">👁 Show password</button></div>'+
+  '<div class="bebo-password-field"><label>Repeat new password<input type="password" name="confirm_password" autocomplete="new-password" required minlength="8" maxlength="128"></label><button type="button" class="bebo-password-toggle" data-toggle-password aria-pressed="false" aria-label="Show password">👁 Show password</button></div>'+
   '<button class="button" type="submit">Save new password ♥</button></form>');
 }
 function welcome(){return panel('Welcome back to Bebo ♥',`<p>Your favourite Bebo features are here: the Top 16, three Luv a day, colourful custom skins, Whiteboards, music, Flashboxes, quizzes, polls, Bands and Authors.</p>
@@ -524,6 +524,18 @@ document.addEventListener('keydown',e=>{
  if(badge&&(e.key==='Enter'||e.key===' ')){e.preventDefault();badge.click()}
 });
 
+// Never store, log or transmit the visibility choice. Every password starts hidden.
+document.addEventListener('click',event=>{
+ const button=event.target?.closest?.('button[data-toggle-password]');
+ if(!button)return;
+ const input=button.closest('.bebo-password-field')?.querySelector('input[name="password"],input[name="confirm_password"]');
+ if(!input)return;
+ const show=input.type==='password';
+ input.type=show?'text':'password';
+ button.textContent=show?'🙈 Hide password':'👁 Show password';
+ button.setAttribute('aria-label',show?'Hide password':'Show password');
+ button.setAttribute('aria-pressed',String(show));
+});
 document.addEventListener('input',e=>{if(e.target?.id==='skin-search')filterSkins();if(e.target?.closest?.('form[data-form="skin"]'))previewSkinStudio(e.target.closest('form'))});
 document.addEventListener('dragstart',e=>{if(e.target?.matches?.('[data-studio-drag="photo"]'))e.dataTransfer?.setData('text/plain','bebo-photo')});
 document.addEventListener('dragover',e=>{if(e.target?.closest?.('[data-studio-drop]'))e.preventDefault()});

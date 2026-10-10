@@ -32,7 +32,7 @@ for(let n=0;n<40;n++){
   try{
     const html=await (await fetch(host+'?wait-for-css='+Date.now(),{cache:'no-store'})).text();
     const aboutIsPublished=html.includes('<a class="bebo-about-link" href="./about.html">About Bebo</a>');
-    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261010-recovery-v2');
+    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261010-password-toggle-v1');
     if(html.includes(expectedCSS)&&aboutIsPublished&&videoIsPublished){releaseReady=true;break;}
   }catch(error){console.warn('Waiting for Bebo Pages:',String(error));}
   await new Promise(resolve=>setTimeout(resolve,3000));
@@ -128,6 +128,28 @@ try{
       const password=page.locator('form[data-form="signup"] input[name="password"]');
       assert.equal(await password.count(),1,'Missing signup password input');
       assert(Number(await password.getAttribute('minlength'))>=8,'Password rule below 8 characters');
+      const signupToggle=page.locator('form[data-form="signup"] button[data-toggle-password]');
+      const loginToggle=page.locator('form[data-form="login"] button[data-toggle-password]');
+      assert.equal(await signupToggle.count(),1,'Signup Show password control missing');
+      assert.equal(await loginToggle.count(),1,'Login Show password control missing');
+      assert.equal(await password.getAttribute('type'),'password','Signup should hide password by default');
+      await password.fill('DemoPass_123!');
+      await signupToggle.click();
+      assert.equal(await password.getAttribute('type'),'text','Signup Show password did not reveal text');
+      assert.equal(await signupToggle.getAttribute('aria-pressed'),'true','Signup reveal button accessibility state missing');
+      assert.equal(await password.inputValue(),'DemoPass_123!','Password changed when visibility toggled');
+      assert.equal(await page.locator('form[data-form="login"] input[name="password"]').getAttribute('type'),'password',
+        'Revealing signup password must not reveal login password');
+      await signupToggle.click();
+      assert.equal(await password.getAttribute('type'),'password','Signup Hide password did not conceal text');
+      assert.equal(await signupToggle.getAttribute('aria-pressed'),'false','Signup button not reset');
+      const loginPassword=page.locator('form[data-form="login"] input[name="password"]');
+      await loginPassword.fill('AnotherSafePassword!');
+      await loginToggle.click();
+      assert.equal(await loginPassword.getAttribute('type'),'text','Login Show password not working');
+      assert.equal(await loginPassword.inputValue(),'AnotherSafePassword!','Login password was changed');
+      await loginToggle.click();
+      assert.equal(await loginPassword.getAttribute('type'),'password','Login Hide password not working');
       assert.equal(await page.locator('form[data-form="signup"] input[name="adult"]').count(),1);
 
       // Read-only inspect the authenticated profile form template without creating an account.

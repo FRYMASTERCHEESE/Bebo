@@ -1548,8 +1548,18 @@ body.bebo-page-loading .bebo-page-progress{opacity:1}
 .bebo-suggestion-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:560px){.bebo-suggestion-card{padding:10px}.bebo-suggestion-fields{grid-template-columns:1fr}.bebo-suggestion-filters .button{font-size:11px;padding:9px}}
 
+
+/* Password visibility controls: explicit opt-in per field; no passwords stored in UI state. */
+.bebo-password-field{min-width:0;margin-bottom:9px}
+.bebo-password-field>label{display:block}
+.bebo-password-field>label>input{display:block;width:100%;min-width:0}
+.bebo-password-toggle{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin-top:6px;
+ padding:8px 13px;border:1px solid #b4c9d9;border-radius:7px;background:#f1f8fd;color:#205b83;
+ font:700 13px Verdana,Arial,sans-serif;cursor:pointer;touch-action:manipulation}
+.bebo-password-toggle[aria-pressed="true"]{background:#fff0f5;border-color:#c48ea7;color:#8b2553}
+.bebo-password-toggle:focus-visible{outline:3px solid #f0ad2d;outline-offset:2px}
 </style>
-<script type="module" src="./social.js?v=20261010-recovery-v2"></script></head>
+<script type="module" src="./social.js?v=20261010-password-toggle-v1"></script></head>
 <body><button type="button" class="bebo-skip-link">Skip to main content</button><header class="top"><div class="wrap head">
 <div class="brand" aria-label="Bebo"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-be">be</span><span class="brand-bo">bo</span><span class="brand-star" aria-hidden="true"> ★</span></div>
 <div class="brand-message"><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p><p class="bebo-independent-note">Independent community inspired by classic Bebo · Not affiliated with its original owners.</p></div>

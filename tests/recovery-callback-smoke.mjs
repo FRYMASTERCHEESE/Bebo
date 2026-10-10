@@ -42,6 +42,25 @@ try{
  assert(seen.some(x=>x.endsWith('/user')),'Recovery callback must validate identity with Supabase Auth');
  assert.equal(await page.locator('form[data-form="recover-password"] input[name="password"]').count(),1);
  assert.equal(await page.locator('form[data-form="recover-password"] input[name="confirm_password"]').count(),1);
+ const recoveryInputs=page.locator('form[data-form="recover-password"] input[type="password"]');
+ assert.equal(await recoveryInputs.count(),2,'Both reset passwords should be concealed by default');
+ const firstInput=page.locator('form[data-form="recover-password"] input[name="password"]');
+ const secondInput=page.locator('form[data-form="recover-password"] input[name="confirm_password"]');
+ const buttons=page.locator('form[data-form="recover-password"] button[data-toggle-password]');
+ assert.equal(await buttons.count(),2,'Both reset fields need independent Show/Hide buttons');
+ await firstInput.fill('NewPassword123!');
+ await secondInput.fill('NewPassword123!');
+ await buttons.nth(0).click();
+ assert.equal(await firstInput.getAttribute('type'),'text','First reset password not revealed');
+ assert.equal(await secondInput.getAttribute('type'),'password','Showing first reset field must not reveal confirmation');
+ assert.equal(await firstInput.inputValue(),'NewPassword123!','First password changed on toggle');
+ await buttons.nth(0).click();
+ assert.equal(await firstInput.getAttribute('type'),'password','Hide new password did not work');
+ await buttons.nth(1).click();
+ assert.equal(await secondInput.getAttribute('type'),'text','Show confirmation password did not work');
+ assert.equal(await secondInput.inputValue(),'NewPassword123!','Confirmation password changed on toggle');
+ await buttons.nth(1).click();
+ assert.equal(await secondInput.getAttribute('type'),'password','Hide confirmation password did not work');
  assert.equal(errors.length,0,'JavaScript errors: '+errors.join('; '));
  console.log('PASS: Synthetic Supabase recovery callback opens password-change form on bebo.nz, keeps credentials out of URLs, and verifies user');
 }finally{
