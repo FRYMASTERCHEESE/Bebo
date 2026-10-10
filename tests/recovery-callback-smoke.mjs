@@ -37,6 +37,8 @@ try{
  await page.waitForFunction(()=>Boolean(document.querySelector('#app')?.innerText?.trim()),null,{timeout:20000});
  await page.locator('form[data-form="recover-password"]').waitFor({state:'visible',timeout:30000});
  assert.equal(new URL(page.url()).hostname,'bebo.nz');
+ assert.equal(await page.locator('#bebo-auth-bar').isVisible(),false,
+  'Sign In and Sign Up header must not show after Supabase recovery authentication');
  assert.equal(new URL(page.url()).hash,'#/reset-password','Valid recovery callback should route to password-change page');
  assert(!page.url().includes('access_token='),'Recovery token must not remain in address bar');
  assert(seen.some(x=>x.endsWith('/user')),'Recovery callback must validate identity with Supabase Auth');

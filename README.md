@@ -207,3 +207,7 @@ All password fields default to hidden with an adjacent **👁 Show password** / 
 ## Back / Home footer relocation — 10 October 2026
 
 On user feedback from mobile screenshots, the globally fixed Back / Home box was moved **inside the page footer**, outside the content overlay. This preserves the existing safe in-site Back handling and Home shortcut without covering sign-up buttons, photos, text or profile modules. Navigation remains accessible via the normal top menu; the two footer controls remain touch-friendly and keyboard-accessible. Public mobile and desktop browser smoke checks require footer-only, non-fixed positioning and confirm no overlap or horizontal overflow. No backend or member data was modified.
+
+## Guest top Sign In / Sign Up — 11 October 2026
+
+For signed-out visitors, a compact nonfloating Sign In / Sign Up bar appears under the masthead, above the main menu, in both 2005 and 2007 skins. Each button opens its own login (`#/signin`) or registration (`#/signup`) form. The original combined `#/account` page is preserved. The bar remains hidden until Supabase auth resolves and hides when signed in or validating a recovery link. Mobile/desktop checks cover top positioning, correct forms, no horizontal overflow and authenticated recovery visibility. No backend changes.

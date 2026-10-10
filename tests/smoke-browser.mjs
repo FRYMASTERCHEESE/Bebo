@@ -21,7 +21,9 @@ const tests=[
 {path:'creators',label:'Bands and Authors',match:/bands|authors|creators/i},
 {path:'safety',label:'Privacy',match:/community rules.*privacy/i},
  {path:'suggestions',label:'Public suggestion page',match:/suggest an improvement/i,suggestions:true},
-{path:'account',label:'Signup',match:/join bebo|create your account/i,signup:true},
+{path:'account',label:'Signup and sign-in',match:/join bebo|create your account/i,signup:true},
+{path:'signin',label:'Top Sign In destination',match:/sign in to bebo|already a member/i,headerSignin:true},
+{path:'signup',label:'Top Sign Up destination',match:/sign up for bebo|create your account/i,headerSignup:true},
 {path:'reset-password',label:'Secure password reset entry',match:/Password reset/i,passwordGuest:true},
 {path:'admin',label:'Admin guest denial',match:/join bebo|create your account|admin only/i,guestAdmin:true}
 ];
@@ -32,7 +34,7 @@ for(let n=0;n<40;n++){
   try{
     const html=await (await fetch(host+'?wait-for-css='+Date.now(),{cache:'no-store'})).text();
     const aboutIsPublished=html.includes('<a class="bebo-about-link" href="./about.html">About Bebo</a>');
-    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261010-password-toggle-v1');
+    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261011-header-auth-v1');
     if(html.includes(expectedCSS)&&aboutIsPublished&&videoIsPublished){releaseReady=true;break;}
   }catch(error){console.warn('Waiting for Bebo Pages:',String(error));}
   await new Promise(resolve=>setTimeout(resolve,3000));
@@ -56,6 +58,28 @@ try{
     const inner=await page.locator('#app').innerText();
     assert(!/Could not load this page|me is not defined|ReferenceError|TypeError/i.test(inner),'Fatal error shown: '+inner.slice(0,450));
     assert(check.match.test(inner),'Missing expected '+check.label+': '+inner.slice(0,300));
+    const authBar=page.locator('#bebo-auth-bar');
+    await authBar.waitFor({state:'visible',timeout:20000});
+    assert.equal(await authBar.getAttribute('hidden'),null,'Guest Sign In / Sign Up strip should be visible');
+    assert.equal(await authBar.locator('a[href="#/signin"]').count(),1,'Guest Sign In button missing');
+    assert.equal(await authBar.locator('a[href="#/signup"]').count(),1,'Guest Sign Up button missing');
+    const barLayout=await authBar.evaluate(bar=>{
+      const rect=bar.getBoundingClientRect(),nav=document.querySelector('nav.nav').getBoundingClientRect();
+      return {position:getComputedStyle(bar).position,height:rect.height,bottom:rect.bottom,navTop:nav.top,
+       horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth+8};
+    });
+    assert.equal(barLayout.position,'static','Guest buttons should not float over content');
+    assert(barLayout.height>=44,'Guest auth controls are too small');
+    assert(barLayout.bottom<=barLayout.navTop+2,'Guest buttons are not above the main menu');
+    assert(!barLayout.horizontalOverflow,'Guest auth strip creates horizontal scrolling');
+    if(check.headerSignin){
+      assert.equal(await page.locator('form[data-form="login"]').count(),1,'Sign In route must display login form');
+      assert.equal(await page.locator('form[data-form="signup"]').count(),0,'Sign In route should not show signup form');
+    }
+    if(check.headerSignup){
+      assert.equal(await page.locator('form[data-form="signup"]').count(),1,'Sign Up route must display registration form');
+      assert.equal(await page.locator('form[data-form="login"]').count(),0,'Sign Up route should not show login form');
+    }
     const globalBack=page.locator('#bebo-back-button');
     assert.equal(await globalBack.count(),1,'Missing global Bebo Back button');
     assert.equal(await page.locator('.bebo-quick-nav a[href="#/home"]').count(),1,'Missing global Home link');

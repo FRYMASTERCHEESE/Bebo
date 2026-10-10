@@ -55,7 +55,7 @@ async function activatePasswordRecovery(){
   const {data,error}=await sb.auth.getUser();
   if(error||!data?.user)throw Error('This password reset link expired or could not be verified. Request another email.');
   me=data.user;
-  recoveryMode=true;recoveryWaiting=false;
+  recoveryMode=true;recoveryWaiting=false;authReady=true;
   message='';success=false;
   // Set the Bebo route ONLY after Supabase has consumed the link tokens.
   location.hash='#/reset-password';
@@ -68,7 +68,7 @@ async function activatePasswordRecovery(){
  }
 }
 async function init(){
- if(!sb){render();return}
+ if(!sb){authReady=true;render();return}
  // Register events before awaiting initial session: otherwise PASSWORD_RECOVERY can be missed.
  sb.auth.onAuthStateChange((event,session)=>{
   if(event==='PASSWORD_RECOVERY'){
@@ -108,15 +108,22 @@ async function init(){
   success=false;
   location.hash='#/account';
  }
+ authReady=true;
  render();
 }
-function authPage(){
+function authPage(mode='both'){
  if(!configured)return panel('Bebo is being prepared',`<p>The public Bebo website is online, but its new community database is not connected yet. No accounts are being collected while setup is incomplete.</p><p>Come back soon when our account system is available.</p>`);
- return panel('Join Bebo — it’s free! ♥',`<div class="cols"><div>${panel('Create your account',`<form class="fields" data-form="signup">
+ const signUpPanel=panel('Create your account',`<form class="fields" data-form="signup">
  <label>Email address<input type="email" name="email" required maxlength="254" autocomplete="email"></label>
  <div class="bebo-password-field"><label>Password (8 characters minimum)<input type="password" name="password" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="At least 8 characters"></label><button type="button" class="bebo-password-toggle" data-toggle-password aria-pressed="false" aria-label="Show password">👁 Show password</button></div>
- <label><input type="checkbox" name="adult" required> I confirm I am 18 or older and agree to the <a href="#/safety">community rules and privacy information</a>.</label><button class="button">Join Bebo ♥</button></form><p class="muted">Confirm the email we send you, then return to <strong>this Bebo website</strong> and log in. If your confirmation link was issued before the move to bebo.nz, open https://bebo.nz and log in after confirming your email. Do not use your old Bebo password.</p>`)}</div>
- <div>${panel('Already a member?',`<form class="fields" data-form="login"><label>Email<input type="email" name="email" required autocomplete="email"></label><div class="bebo-password-field"><label>Password<input type="password" name="password" required autocomplete="current-password"></label><button type="button" class="bebo-password-toggle" data-toggle-password aria-pressed="false" aria-label="Show password">👁 Show password</button></div><button class="button">Log in</button></form><p><a href="#" data-action="reset">Forgot password?</a></p>`)}</div></div>`);
+ <label><input type="checkbox" name="adult" required> I confirm I am 18 or older and agree to the <a href="#/safety">community rules and privacy information</a>.</label><button class="button">Join Bebo ♥</button></form><p class="muted">Confirm the email we send you, then return to <strong>this Bebo website</strong> and log in. If your confirmation link was issued before the move to bebo.nz, open https://bebo.nz and log in after confirming your email. Do not use your old Bebo password.</p>`);
+ const signInPanel=panel('Already a member?',`<form class="fields" data-form="login"><label>Email<input type="email" name="email" required autocomplete="email"></label><div class="bebo-password-field"><label>Password<input type="password" name="password" required autocomplete="current-password"></label><button type="button" class="bebo-password-toggle" data-toggle-password aria-pressed="false" aria-label="Show password">👁 Show password</button></div><button class="button">Log in</button></form><p><a href="#" data-action="reset">Forgot password?</a></p>`);
+ if(mode==='signin')return panel('Sign in to Bebo ♥',
+  signInPanel+'<p>New to Bebo? <a href="#/signup">Sign up for free ♥</a></p>');
+ if(mode==='signup')return panel('Sign up for Bebo — free ♥',
+  signUpPanel+'<p>Already a member? <a href="#/signin">Sign in</a></p>');
+ return panel('Join Bebo — it’s free! ♥',
+  '<div class="cols"><div>'+signUpPanel+'</div><div>'+signInPanel+'</div></div>');
 }
 function passwordRecoveryPage(){
  if(!recoveryMode||!me){
@@ -312,7 +319,7 @@ async function refresh(){
      page==='blogs'||page.startsWith('blogs/')||page.startsWith('blog/')||page==='groups'){
     app.innerHTML=note()+await classic.route(page,null);return
   }
-  app.innerHTML=note()+authPage();return
+  app.innerHTML=note()+authPage(page==='signin'?'signin':page==='signup'?'signup':'both');return
  }
  if(!profile){app.innerHTML=note()+createProfile();return}
  switch(page){
@@ -392,10 +399,16 @@ function updateActiveNav(){
   else button.removeAttribute('aria-current');
  });
 }
+// Keep guest links hidden while auth is loading and after sign-in or recovery.
+let authReady=false;
+function syncHeaderAuth(){
+ const bar=document.querySelector('#bebo-auth-bar');
+ if(bar)bar.hidden=!(configured&&authReady&&!me&&!recoveryWaiting&&!recoveryMode);
+}
 let renderRevision=0;
 function render(){
  const revision=++renderRevision;
- syncAdminNav();updateActiveNav();
+ syncAdminNav();updateActiveNav();syncHeaderAuth();
  app.setAttribute('aria-busy','true');
  document.body.classList.add('bebo-page-loading');
  refresh().then(()=>{

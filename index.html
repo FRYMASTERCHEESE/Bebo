@@ -1544,6 +1544,27 @@ body.bebo-page-loading .bebo-page-progress{opacity:1}
 @media(max-width:560px){.bebo-suggestion-card{padding:10px}.bebo-suggestion-fields{grid-template-columns:1fr}.bebo-suggestion-filters .button{font-size:11px;padding:9px}}
 
 
+/* Guest-only account links in page flow: no floating buttons or content overlap. */
+.bebo-auth-bar[hidden]{display:none!important}
+.bebo-auth-bar{border-bottom:1px solid #d8c0ce;background:#fff7fb;color:#7f2c53}
+.bebo-auth-bar-inner{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;
+ gap:9px;padding-top:6px;padding-bottom:6px;font:700 12px/1.3 Verdana,Arial,sans-serif}
+.bebo-auth-buttons{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bebo-auth-buttons a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;
+ padding:8px 13px;border-radius:7px;border:1px solid #bc86a6;
+ color:#8e2256;background:#fff;text-decoration:none;font:700 13px/1.2 Verdana,Arial,sans-serif}
+.bebo-auth-buttons .bebo-header-signup{background:#b52c68;color:#fff;border-color:#9b1f56}
+.bebo-auth-buttons a:hover{filter:brightness(.95)}
+.bebo-auth-buttons a:focus-visible{outline:3px solid #f3b746;outline-offset:2px}
+html[data-bebo-era="2005"] .bebo-auth-bar{background:#f2faff;border-bottom-color:#b7d9eb;color:#245f88}
+html[data-bebo-era="2005"] .bebo-auth-buttons a{background:#fff;color:#28658d;border-color:#9dcbe5}
+html[data-bebo-era="2005"] .bebo-auth-buttons .bebo-header-signup{background:#4c9ed1;border-color:#277cac;color:#fff}
+@media(max-width:440px){
+ .bebo-auth-bar-inner{justify-content:center;gap:5px}
+ .bebo-auth-bar-inner>span{font-size:11px}
+ .bebo-auth-buttons{gap:6px}
+ .bebo-auth-buttons a{min-height:44px;padding:7px 12px;font-size:12px}
+}
 /* Password visibility controls: explicit opt-in per field; no passwords stored in UI state. */
 .bebo-password-field{min-width:0;margin-bottom:9px}
 .bebo-password-field>label{display:block}
@@ -1554,7 +1575,7 @@ body.bebo-page-loading .bebo-page-progress{opacity:1}
 .bebo-password-toggle[aria-pressed="true"]{background:#fff0f5;border-color:#c48ea7;color:#8b2553}
 .bebo-password-toggle:focus-visible{outline:3px solid #f0ad2d;outline-offset:2px}
 </style>
-<script type="module" src="./social.js?v=20261010-password-toggle-v1"></script></head>
+<script type="module" src="./social.js?v=20261011-header-auth-v1"></script></head>
 <body><button type="button" class="bebo-skip-link">Skip to main content</button><header class="top"><div class="wrap head">
 <div class="brand" aria-label="Bebo"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-be">be</span><span class="brand-bo">bo</span><span class="brand-star" aria-hidden="true"> ★</span></div>
 <div class="brand-message"><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p><p class="bebo-independent-note">Independent community inspired by classic Bebo · Not affiliated with its original owners.</p></div>
@@ -1567,6 +1588,15 @@ body.bebo-page-loading .bebo-page-progress{opacity:1}
   <span class="bebo-era-caption" id="bebo-era-caption">Original 2005 look</span>
 </div>
 </div></header>
+<nav class="bebo-auth-bar" id="bebo-auth-bar" aria-label="Member sign in and sign up" hidden>
+  <div class="wrap bebo-auth-bar-inner">
+    <span>♥ Welcome to Bebo!</span>
+    <div class="bebo-auth-buttons">
+      <a class="bebo-header-signin" href="#/signin">Sign In</a>
+      <a class="bebo-header-signup" href="#/signup">Sign Up — Free ♥</a>
+    </div>
+  </div>
+</nav>
 <nav class="nav" aria-label="Bebo sections"><div class="wrap" id="nav"><button data-nav="home">Home</button><button data-nav="profile">My Profile</button><button data-nav="friends">Friends</button><button data-nav="photos">Photos</button><button data-nav="videos">Videos 🎬</button><button data-nav="blogs">Blog</button><button data-nav="messages">Mail ✉</button><button data-nav="groups">Groups</button><button data-nav="other-half">Other Half ♥</button><button data-nav="skins">Skins</button><button data-nav="polls">Polls</button><button data-nav="quizzes">Quizzes</button><button data-nav="creators">Bands &amp; Authors</button><button data-nav="account">Account</button><button data-nav="suggestions">💡 Suggestions</button><button data-nav="safety">Safety &amp; Privacy</button><a class="bebo-about-link" href="./about.html">About Bebo</a></div></nav>
 <div class="bebo-page-progress" aria-hidden="true"><span></span></div>
 <aside id="bebo-announcement-bar" class="bebo-announcement-strip" aria-label="Bebo announcements" hidden></aside>
