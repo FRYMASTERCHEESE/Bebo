@@ -327,7 +327,7 @@ export function createClassic(sb,{safe,panel,btn,query}) {
       '<div class="classic-home-heart-note"><span>♥</span> Friends · Luv · Skins · Whiteboards · Music</div></section>';
     const shortcuts=(isMember?[
       ['★ My Profile','profile'],['✎ Edit Profile','edit'],['📸 My Photos','photos'],
-      ['✉ My Mail','messages'],['♥ My Other Half','other-half'],['✿ My Blog','blogs'],['🎬 Bebo Videos','videos']
+      ['✉ My Mail','messages'],['♥ My Other Half','other-half'],['✿ My Blog','blogs'],['🎬 Bebo Videos','videos'],['📊 Video Stats','videos-insights']
     ]:[
       ['♥ Join Bebo','account'],['🎨 Profile Skins','skins'],
       ['🎬 Watch Bebo Videos','videos'],
