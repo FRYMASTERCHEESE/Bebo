@@ -78,7 +78,7 @@ assert(!otherPage.app.innerHTML.includes('id="bebo-profile-verification"'),'Priv
 assert(!otherPage.app.innerHTML.includes('✓ Request Bebo Verified'),'Visitors can request verification for someone else');
 
 const drawer={hidden:true,scrollIntoView(){this.scrolled=true}};
-const toggle=social.slice(social.indexOf("if(a==='verified-profile-toggle'){"),social.indexOf(" if(a.startsWith('admin-'))",social.indexOf("if(a==='verified-profile-toggle'){")));
+const toggle=social.slice(social.indexOf("if(a==='verified-profile-toggle'){"),social.indexOf(" if(a.startsWith('video-'))",social.indexOf("if(a==='verified-profile-toggle'){")));
 assert(toggle.includes("scrollIntoView"),'Toggle does not scroll to the verification form');
 const element={attributes:{},setAttribute(k,v){this.attributes[k]=v}};
 const click=new Function('a','b','document',toggle);
