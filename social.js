@@ -4,7 +4,7 @@ import { createSafety } from './safety.js';
 import { createClassic } from './classic-modules.js?v=20261010-bebo-memory-v2';
 import { createAdmin } from './admin.js?v=20261010-bebo-verified-v1';
 import { createVerification } from './verified.js?v=20261010-transparency-v1';
-import { createVideos } from './videos.js?v=20261010-analytics-v3';
+import { createVideos } from './videos.js?v=20261010-analytics-v4';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
@@ -212,7 +212,7 @@ async function refresh(){
  page=raw||'home';
  if(!configured){app.innerHTML=note()+authPage();return}
  if(page==='safety'){app.innerHTML=note()+safetyInfoPage();return}
- if(page==='videos'||page==='videos-review'||page.startsWith('videos/u/')){
+ if(page==='videos'||page==='videos-review'||page==='videos-insights'||page.startsWith('videos/u/')){
   app.innerHTML=note()+await videos.route(page,{me,profile,adminAccess});return;
  }
  if(page==='old-bebo'){location.replace(location.pathname+location.search+'#/home');return}
@@ -297,7 +297,8 @@ async function refreshBeboAnnouncement(){
 function updateActiveNav(){
  const section=(location.hash||'#/home').replace(/^#\/?/,'').split('/')[0]||'home';
  const selected=section==='u'||section==='transparency'?'profile':
-   section==='verification-policy'?'account':section;
+   section==='verification-policy'?'account':
+   section==='videos-review'||section==='videos-insights'?'videos':section;
  document.querySelectorAll('#nav [data-nav]').forEach(button=>{
   const active=button.dataset.nav===selected;
   button.classList.toggle('bebo-nav-current',active);
