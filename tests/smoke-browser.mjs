@@ -38,6 +38,27 @@ try{
       assert.equal(await password.count(),1,'Missing signup password input');
       assert(Number(await password.getAttribute('minlength'))>=8,'Password rule below 8 characters');
       assert.equal(await page.locator('form[data-form="signup"] input[name="adult"]').count(),1);
+
+      // Read-only inspect the authenticated profile form template without creating an account.
+      const checkNames=await page.evaluate(async()=>{
+        const response=await fetch('./social.js?name-smoke-20261010',{cache:'no-store'});
+        if(!response.ok)throw Error('Could not load Bebo signup code');
+        const source=await response.text();
+        const start=source.indexOf('function createProfile(){');
+        const end=source.indexOf('function editProfile(){',start);
+        if(start<0||end<start)throw Error('Profile name form not found');
+        const formHTML=Function('panel',source.slice(start,end)+';return createProfile();')((title,body)=>body);
+        const root=document.createElement('div');root.innerHTML=formHTML;
+        const username=root.querySelector('input[name="username"]');
+        const display=root.querySelector('input[name="display_name"]');
+        if(!username||!display)throw Error('Missing editable names');
+        username.value='Rose_red'; const capitals=username.checkValidity();
+        username.value='Rose Red'; const spaces=username.checkValidity();
+        display.value='Opal ❤️'; const emoji=display.checkValidity();
+        return {capitals,spaces,emoji,info:root.textContent};
+      });
+      assert(checkNames.capitals&&checkNames.spaces&&checkNames.emoji,'Profile form rejected capitals, spaces or emoji');
+      assert(/spaces are automatically changed to underscores/i.test(checkNames.info),'Missing username normalization guidance');
     }
     if(check.guestAdmin){
       assert.equal(await page.locator('.bebo-admin-page').count(),0,'Private admin dashboard rendered for guest');
