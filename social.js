@@ -4,7 +4,7 @@ import { createSafety } from './safety.js';
 import { createClassic } from './classic-modules.js?v=20261010-bebo-memory-v2';
 import { createAdmin } from './admin.js?v=20261010-bebo-verified-v1';
 import { createVerification } from './verified.js?v=20261010-transparency-v1';
-import { createVideos } from './videos.js?v=20261010-phone-upload-v2';
+import { createVideos } from './videos.js?v=20261010-analytics-v3';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
@@ -219,7 +219,7 @@ async function refresh(){
  if(page==='verification-policy'){app.innerHTML=note()+verified.policyPage();return}
  if(page.startsWith('transparency/')){app.innerHTML=note()+await verified.transparencyPage(page.slice('transparency/'.length));return}
  if(!me){
-  if(page==='home'){app.innerHTML=note()+await classic.home(null,classicEra());return}
+  if(page==='home'){app.innerHTML=note()+await classic.home(null,classicEra(),await videos.homePanel({me:null}));return}
   if(page==='skins'){await showSkins();return}
   if(['polls','quizzes','creators'].includes(page)){app.innerHTML=note()+await retro.route(page,null);return}
   if(page==='photos'||page.startsWith('photos/')||page.startsWith('album/')||
@@ -238,7 +238,7 @@ async function refresh(){
  default:
    if(page.startsWith('photos/')||page.startsWith('album/')||page.startsWith('blogs/')||
       page.startsWith('blog/')||page.startsWith('messages/'))app.innerHTML=note()+await classic.route(page,me);
-   else app.innerHTML=note()+await classic.home(me,classicEra());
+   else app.innerHTML=note()+await classic.home(me,classicEra(),await videos.homePanel({me,profile}));
    break;
  case 'skins':await showSkins();break;
  case 'edit':app.innerHTML=note()+editProfile();break;
@@ -449,6 +449,51 @@ document.addEventListener('change',e=>{
  status.textContent=checked.message;
  status.classList.toggle('bebo-upload-warning',!checked.valid);
 });
+
+/* Authentic Bebo view counter: listen to real media playback, not page loads.
+   Guest plays are not counted. One registered viewer contributes at most one
+   view per approved clip per UTC day. Seeking forward does not count as watch. */
+const beboWatchState=new WeakMap();
+function videoWatchState(video){
+ let state=beboWatchState.get(video);
+ if(!state){state={last:video.currentTime||0,watched:0,reported:false};beboWatchState.set(video,state)}
+ return state;
+}
+document.addEventListener('play',event=>{
+ const video=event.target;
+ if(!video?.matches?.('video[data-bebo-video-id]'))return;
+ videoWatchState(video).last=video.currentTime;
+},true);
+document.addEventListener('seeking',event=>{
+ const video=event.target;
+ if(video?.matches?.('video[data-bebo-video-id]'))videoWatchState(video).last=video.currentTime;
+},true);
+document.addEventListener('timeupdate',async event=>{
+ const video=event.target;
+ if(!video?.matches?.('video[data-bebo-video-id]')||!sb||!me?.id||
+    video.paused||video.seeking||document.hidden)return;
+ const state=videoWatchState(video);
+ if(state.reported)return;
+ const t=video.currentTime,delta=t-state.last;
+ state.last=t;
+ // Ignore jumps/seeking and suspiciously large deltas.
+ if(Number.isFinite(delta)&&delta>0&&delta<2.2)state.watched+=delta;
+ const threshold=Math.max(3,Math.min(10,Number(video.duration)*0.5));
+ if(!Number.isFinite(threshold)||state.watched<threshold)return;
+ state.reported=true;
+ const id=video.dataset.beboVideoId;
+ if(!/^[0-9a-f-]{36}$/i.test(id||''))return;
+ try{
+  const {data,error}=await sb.rpc('bebo_record_video_view',
+   {p_video_id:id,p_watched_seconds:Math.round(state.watched*10)/10});
+  if(error)throw error;
+  if(data===true){
+   document.querySelectorAll('[data-video-views]').forEach(el=>{
+    if(el.dataset.videoViews===id)el.textContent=String((Number(el.textContent)||0)+1);
+   });
+  }
+ }catch(error){console.warn('Bebo member view could not be counted',error.message)}
+},true);
 
 document.addEventListener('submit',async e=>{
  const f=e.target.closest('form[data-form]');if(!f)return;e.preventDefault();
