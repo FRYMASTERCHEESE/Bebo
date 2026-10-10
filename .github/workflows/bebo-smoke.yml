@@ -4,6 +4,7 @@ on:
     paths:
       - 'tests/smoke-browser.mjs'
       - 'tests/verified-smoke.mjs'
+      - 'tests/profile-verified-smoke.mjs'
       - '.github/workflows/bebo-smoke.yml'
   workflow_dispatch:
 permissions:
@@ -24,6 +25,8 @@ jobs:
         run: npm install --no-save --no-package-lock playwright@1.56.1
       - name: Test Bebo Verified badges and ranking without using real accounts
         run: node tests/verified-smoke.mjs
+      - name: Test Verified button and application placement on member profiles
+        run: node tests/profile-verified-smoke.mjs
       - name: Install headless Chromium
         run: npx playwright install --with-deps chromium
       - name: Run mobile and desktop read-only smoke tests
