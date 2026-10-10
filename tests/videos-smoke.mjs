@@ -2,7 +2,18 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const source=readFileSync(new URL('../videos.js',import.meta.url),'utf8');
-const {createVideos}=await import('data:text/javascript;charset=utf-8,'+encodeURIComponent(source));
+const {createVideos,validateBeboVideoFile,BEBO_VIDEO_MAX_BYTES}=await import('data:text/javascript;charset=utf-8,'+encodeURIComponent(source));
+assert.equal(BEBO_VIDEO_MAX_BYTES,41943040,'Expected 40 MiB video limit');
+const phoneRecording={name:'VID20261010013838.mp4',size:35507185,type:'video/mp4'};
+assert.equal(validateBeboVideoFile(phoneRecording).valid,true,'Original 35.5 MB Android MP4 should fit');
+assert.equal(validateBeboVideoFile({...phoneRecording,type:''}).mime,'video/mp4','Empty Android MIME must accept MP4 extension');
+assert.equal(validateBeboVideoFile({...phoneRecording,type:'application/octet-stream'}).mime,'video/mp4','Generic Android MIME must accept MP4 extension');
+assert.equal(validateBeboVideoFile({...phoneRecording,size:41943040}).valid,true,'40 MiB boundary must pass');
+const overLimit=validateBeboVideoFile({...phoneRecording,size:41943041});
+assert.equal(overLimit.valid,false,'Oversized videos must be rejected');
+assert.match(overLimit.message,/41\.9 MB|40 MiB/,'Size error must explain actual upload limit');
+assert.equal(validateBeboVideoFile({...phoneRecording,type:'text/plain'}).valid,false,'Wrong file MIME must not pass');
+assert.equal(validateBeboVideoFile({...phoneRecording,name:'f.txt',type:''}).valid,false,'Nonvideo extension must fail');
 const uid='11111111-1111-4111-8111-111111111111';
 const a='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const b='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -63,4 +74,4 @@ assert(modReview.includes('Private upload')&&modReview.includes('video-approve')
 const profileHTML=await videosApi.profilePanel(profiles[0],{me:null});
 assert(profileHTML.includes('videos/u/safe_member'),'Member profile needs video gallery link');
 assert(signed>0,'Video signing was not attempted');
-console.log('PASS: Bebo Videos guest feed, escaping, signed playback, owner drafts, upload form, review guard, profile gallery');
+console.log('PASS: Bebo Videos 40 MiB Android MP4 validation, MIME fallback, guest feed, signed playback, owner drafts and moderation UI');
