@@ -107,7 +107,7 @@ try{
         return {
           scroll:document.documentElement.scrollWidth,
           viewport:window.innerWidth,
-          regularText:styleOf('#app .panel h2')||styleOf('#app h1'),
+          regularText:styleOf('#app .panel h2')||styleOf('#app h1')||styleOf('#app .bebo-trust-intro h2'),
           announcement:styleOf('#bebo-announcement-bar .bebo-announcement-preview')??styleOf('#bebo-announcement-bar'),
           editable:styleOf('#app input')||styleOf('#app textarea')
         };
