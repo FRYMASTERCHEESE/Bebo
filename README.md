@@ -173,3 +173,13 @@ Important: Some browsers cannot play **HEVC/H.265 MP4** even when the upload its
 **Community spotlight:** Recently published public blogs, polls and wall comments are included. Blogs receive 5 points for each observed recent comment, polls receive 3 per recent vote, and all content gets a small, seven-day freshness boost. Wall comments rank by recency only, since they do not yet have separate reactions/views. To keep reads bounded, the home page samples the most recent 400 blog comments and 400 poll votes; counts explicitly say **recent** rather than claiming full historical totals.
 
 **Owner validation still needed:** Open Bebo as a second, real signed-in member, play an approved video for five or more seconds, then refresh the video card and creator insights to verify the event recorded. Verify guest plays don't increment tracked member views and the same member can't increment it twice in a day. No live accounts or view counts are fabricated by the automated tests.
+
+## Bebo Skin Studio — 10 October 2026
+
+The 56 original built-in skins remain compatible. The authenticated Skin Studio now adds original member-designed skins with custom primary, secondary and accent colours, profile panel placement, optional gentle animation (respects reduced motion), optional custom header and full-page background photo, a real-time design preview, draggable photo placement plus mobile-friendly layout selection, private drafts, publication, member-only edit/delete, and safe JSON import/export.
+
+Design JSON never contains storage file paths, image bytes, private account IDs, or executable HTML/CSS/JS. Re-upload your own image after importing. Uploaded images still use the per-member `bebo-skin-banners` storage bucket and the 5 MiB PNG/JPG/WebP limit. Hiding a shared design removes it from the gallery but does not undo the design already applied to profiles. Deleting a shared design does not delete previously applied profile images; orphan image cleanup remains an administrative storage task.
+
+Database: `bebo_skin_studio_profiles_drafts_and_gallery_v1` and `bebo_skin_studio_background_pattern_correction_v1` were applied to the dedicated Bebo Supabase project. Drafts are visible only to their author or the site owner. Member edits and deletes are scoped by RLS; a trigger blocks non-admin members from reversing moderator hidden status or transferring skin authorship.
+
+Read-only CI tests confirm design JSON/HTML security and the guest gallery; actual signed-in save, image upload, profile appearance and delete workflows still require testing with two genuine disposable accounts before production-level completion can be claimed.

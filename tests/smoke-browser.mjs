@@ -30,7 +30,7 @@ for(let n=0;n<40;n++){
   try{
     const html=await (await fetch(host+'?wait-for-css='+Date.now(),{cache:'no-store'})).text();
     const aboutIsPublished=html.includes('<a class="bebo-about-link" href="./about.html">About Bebo</a>');
-    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261010-analytics-v5');
+    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261010-skin-studio-v1');
     if(html.includes(expectedCSS)&&aboutIsPublished&&videoIsPublished){releaseReady=true;break;}
   }catch(error){console.warn('Waiting for Bebo Pages:',String(error));}
   await new Promise(resolve=>setTimeout(resolve,3000));
@@ -121,7 +121,7 @@ try{
       assert.equal(await page.locator('#bebo-verified-overlay').count(),0,'Escape did not close the sheet');
       item.verifiedSheet='PASS';
     }
-    if(check.skins){const n=await page.locator('.skin-card').count();assert(n>=50,'Expected at least 50 skins, found '+n);item.skins=n;}
+    if(check.skins){const n=await page.locator('.skin-card').count();assert(n>=50,'Expected at least 50 skins, found '+n);item.skins=n;assert.equal(await page.locator('form[data-form="skin"]').count(),0,'Guest should not see authenticated Skin Studio editing form');assert.equal(await page.locator('#skin-tryout').count(),1,'Guest skin preview missing');}
     if(check.signup){
       const password=page.locator('form[data-form="signup"] input[name="password"]');
       assert.equal(await password.count(),1,'Missing signup password input');

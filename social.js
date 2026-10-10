@@ -6,6 +6,7 @@ import { createAdmin } from './admin.js?v=20261010-bebo-verified-v1';
 import { createVerification } from './verified.js?v=20261010-transparency-v1';
 import { createVideos } from './videos.js?v=20261010-analytics-v5';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
+import { skinDesign, studioPanels, previewSkinStudio, fillSkinStudio, importSkinJSON, downloadSkin } from './skin-studio.js?v=20261010-studio-v1';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
 const configured=/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL||'')&&SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_');
@@ -21,6 +22,7 @@ const handlePattern=value=>String(value||'').replace(/[\\%_]/g,'\\$&');
 const time=s=>new Date(s).toLocaleString('en-NZ',{dateStyle:'medium',timeStyle:'short'});
 const grad=p=>p?.skin==='custom'?`linear-gradient(125deg,${p.skin_secondary},${p.skin_primary},#522b5b)`:skinArtwork(getSkin(p?.skin));
 let activeSkinCategory='All';
+let editingSkinId='';
 const btn=(label,action,id='',extra='')=>`<button class="button ${extra}" data-action="${action}" data-id="${safe(id)}">${label}</button>`;
 const panel=(title,html)=>`<section class="panel"><h2>${title}</h2><div class="body">${html}</div></section>`;
 const report=(txt,ok=false)=>{message=txt;success=ok;render()};
@@ -121,6 +123,10 @@ async function showProfile(username){
  const verificationPanel=own?await verified.requestPanel(me):'';
  const userURL=encodeURIComponent(who.username);
  const cover=retro.imageStyle(who,grad(who));
+ const backdrop=who.skin==='custom'?retro.imageStyle({skin_banner_path:who.skin_background_path},grad(who)):grad(who);
+ const accent=who.skin==='custom'&&/^#[0-9a-fA-F]{6}$/.test(who.skin_accent||'')?who.skin_accent:'#ffffff';
+ const layout=who.skin==='custom'&&who.skin_layout==='right'?'right':'left';
+ const motion=who.skin==='custom'&&who.skin_motion==='soft'?'soft':'off';
  const verifyAction=own?(approvedUserIDs.has(who.id)?
   '<button type="button" class="bebo-profile-action bebo-profile-verify-complete" data-action="verified-info" data-id="'+safe(who.id)+'" aria-haspopup="dialog" title="View Bebo Verified information and profile transparency">✓ Bebo Verified</button>':
   '<button type="button" class="bebo-profile-action bebo-profile-verify-cta" data-action="verified-profile-toggle" aria-controls="bebo-profile-verification" aria-expanded="false">'+
@@ -136,7 +142,7 @@ async function showProfile(username){
   '<a href="#/friends">★ Friends</a>'+
   (own?'<a href="#/skins">🎨 Skins</a>':me?'<a href="#/messages/'+userURL+'">✉ Mail</a>':'<a href="#/account">✉ Join Bebo</a>')+
   '</nav>';
- app.innerHTML=note()+`<article class="themed-profile bebo-2007-profile" style="--retro-primary:${safe(themePrimary)};--retro-secondary:${safe(themeSecondary)};--retro-dark:${safe(skinPreset[4])}">
+ app.innerHTML=note()+`<article class="themed-profile bebo-2007-profile" data-skin-layout="${layout}" data-skin-motion="${motion}" style="--retro-primary:${safe(themePrimary)};--retro-secondary:${safe(themeSecondary)};--retro-dark:${safe(skinPreset[4])};--skin-accent:${safe(accent)};--skin-page-bg:${safe(backdrop)}">
    <header class="profile-art bebo-profile-cover" data-decor="${safe(skinPreset[7])}" style="--banner:${safe(cover)}">
     <div class="bebo-cover-copy"><span class="bebo-cover-kicker">♥ My Bebo • My Friends • My Skin ♥</span><h1>${name}'s Profile</h1><span class="bebo-cover-bottom">★ Welcome to my page ★</span></div>
    </header>
@@ -170,18 +176,17 @@ function bigSkinPreview(x){
  return `<div class="skin-tryout"><div class="skin-tryout-banner" data-motif="${safe(x[7])}" style="background:${safe(skinArtwork(x))}"><strong>your bebo ★</strong></div><div class="skin-tryout-flex"><div class="skin-tryout-left"><div class="skin-tryout-avatar">♥</div><span>your photo</span></div><div class="skin-tryout-main"><div class="skin-tryout-bar" style="background:${safe(x[3])}">my profile ♥</div><p>your status goes here...</p><div class="skin-tryout-bar" style="background:${safe(x[4])}">my top 16</div><p>friends • luv • whiteboard</p></div></div><p class="skin-tryout-caption"><strong>${safe(x[1])}</strong> <span>${safe(x[5])}</span></p></div>`;
 }
 async function showSkins(){
- const saved=await query('bebo_skins',q=>q.select('id,name,primary_color,secondary_color,creator_id,banner_path').eq('is_hidden',false).order('created_at',{ascending:false}).limit(50));
+ const [saved,mine]=await Promise.all([
+  query('bebo_skins',q=>q.select('id,name,primary_color,secondary_color,creator_id,banner_path,background_path,accent_color,motion,layout,is_draft,is_hidden').eq('is_hidden',false).eq('is_draft',false).order('created_at',{ascending:false}).limit(50)),
+  me?query('bebo_skins',q=>q.select('*').eq('creator_id',me.id).order('created_at',{ascending:false}).limit(50)):Promise.resolve([])
+ ]);
  const categories=skinCategories.map(c=>`<button type="button" class="skin-filter ${c===activeSkinCategory?'active':''}" data-action="skin-filter" data-id="${safe(c)}" aria-pressed="${c===activeSkinCategory}">${safe(c)}</button>`).join('');
  const cards=skins.map(x=>`<div class="skin skin-card" data-category="${safe(x[5])}" data-name="${safe(x[1].toLowerCase())}"><button type="button" class="skin-preview-button" data-action="skin-preview" data-id="${safe(x[0])}" aria-label="Preview ${safe(x[1])}">${miniSkin(x)}<strong>${safe(x[1])}</strong><span class="skin-category-name">${safe(x[5])}</span></button><button type="button" class="button skin-use-button" data-action="use-skin" data-id="${safe(x[0])}">Use skin ♥</button></div>`).join('');
  const userSkins=saved.map(x=>`<button type="button" class="skin" data-action="use-shared-skin" data-id="${safe(x.id)}"><div class="swatch" style="background:${safe(retro.imageStyle({skin_banner_path:x.banner_path},`linear-gradient(120deg,${x.secondary_color},${x.primary_color})`))}"></div><strong>${safe(x.name)}</strong></button>`).join('');
  const memberPrompt=!me?'<p class="muted">You can browse and preview every skin for free. Log in to apply one to your own profile.</p>':'<p class="muted">Preview any skin below, then press Use skin to save it to your Bebo profile.</p>';
  app.innerHTML=note()+panel('Bebo Skin Gallery ★',`<div class="skins-intro"><div><strong>★ ${skins.length} old-school inspired profile skins</strong><p>Emo hearts, glitter, scene queen, pink princess, butterflies, summer love and more. Choose your look, just like the 2000s.</p></div><span>pick your mood ♥</span></div>${memberPrompt}<div class="skin-controls"><label class="skin-search-label" for="skin-search">Find your perfect skin <input id="skin-search" type="search" placeholder="Try emo, pink, glitter or rock..." autocomplete="off"></label><span id="skin-count" class="muted">${skins.length} skins</span></div><div class="skin-filters">${categories}</div><div id="skin-tryout">${bigSkinPreview(skins[0])}</div><div id="skin-gallery" class="skin-grid">${cards}</div>`)
- +panel('Community Skin Designs ♥',`<p>Real members can upload their own banner image and share coloured skins with the community.</p><div class="skin-grid">${userSkins||'<p class="muted">Be the first to share a skin!</p>'}</div>`)
- +(me&&profile?panel('Create & Share Your Own Skin',`<form class="fields" data-form="skin">
- <label>Skin name<input name="name" maxlength="70" required placeholder="My amazing skin"></label>
- <label>Main colour<input name="primary" type="color" value="#c52d61"></label>
- <label>Second colour<input name="secondary" type="color" value="#f5b2ce"></label><label>Optional banner picture (PNG, JPG, WebP — maximum 5 MB)<input type="file" name="banner" accept="image/png,image/jpeg,image/webp"></label>
- <button class="button">Save & share skin ♥</button></form>`):'');
+ +panel('Community Skin Designs ♥',`<p>Published member-made skins are available to everyone. Private drafts are only visible to their creator.</p><div class="skin-grid">${userSkins||'<p class="muted">Be the first to share a skin!</p>'}</div>`)
+ +(me&&profile?studioPanels(mine,editingSkinId,safe,panel,retro.imageStyle):'');
  filterSkins();
 }
 function filterSkins(category){
@@ -438,9 +443,30 @@ document.addEventListener('keydown',e=>{
  if(badge&&(e.key==='Enter'||e.key===' ')){e.preventDefault();badge.click()}
 });
 
-document.addEventListener('input',e=>{if(e.target?.id==='skin-search')filterSkins()});
-document.addEventListener('change',e=>{
+document.addEventListener('input',e=>{if(e.target?.id==='skin-search')filterSkins();if(e.target?.closest?.('form[data-form="skin"]'))previewSkinStudio(e.target.closest('form'))});
+document.addEventListener('dragstart',e=>{if(e.target?.matches?.('[data-studio-drag="photo"]'))e.dataTransfer?.setData('text/plain','bebo-photo')});
+document.addEventListener('dragover',e=>{if(e.target?.closest?.('[data-studio-drop]'))e.preventDefault()});
+document.addEventListener('drop',e=>{const zone=e.target?.closest?.('[data-studio-drop]');if(!zone||e.dataTransfer?.getData('text/plain')!=='bebo-photo')return;e.preventDefault();const form=zone.closest('form[data-form="skin"]');if(form){form.elements.namedItem('layout').value=zone.dataset.studioDrop;previewSkinStudio(form)}});
+document.addEventListener('change',async e=>{
  const field=e.target;
+ if(field?.id==='skin-studio-import'){
+  const file=field.files?.[0];if(!file)return;
+  try{
+   if(!me||!profile)throw Error('Sign in and create a Bebo profile to import skins.');
+   if(file.size>65536)throw Error('This skin JSON file is too large.');
+   const design=importSkinJSON(await file.text());
+   const form=document.querySelector('form[data-form="skin"]');
+   if(!form)throw Error('Skin editor is not available.');
+   fillSkinStudio(form,design);
+   form.elements.namedItem('visibility').value='draft';
+   message='Skin design imported into the editor. Review it, then save as a new skin ♥';
+   const help=document.createElement('p');help.className='notice good';help.textContent=message;form.prepend(help);
+   form.scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(err){message=escapeError(err);success=false;render()}
+  finally{field.value=''}
+  return;
+ }
+ if(field?.closest?.('form[data-form="skin"]'))previewSkinStudio(field.closest('form'));
  if(!field?.matches?.('form[data-form="video-upload"] input[name="file"]'))return;
  const status=field.closest('form')?.querySelector('.bebo-video-upload-status');
  if(!status)return;
@@ -558,12 +584,44 @@ document.addEventListener('submit',async e=>{
   await query('bebo_wall_posts',q=>q.insert({author_id:me.id,profile_id:userViewed.id,body}));
   message='Your comment was posted ♥';success=true;
  }else if(type==='skin'){
-  const primary=String(d.get('primary')),secondary=String(d.get('secondary'));
-  const bannerFile=d.get('banner');
-  const bannerPath=await retro.uploadBanner(bannerFile,me.id);
-  const rows=await query('bebo_skins',q=>q.insert({creator_id:me.id,name:clamp(d.get('name'),70),primary_color:primary,secondary_color:secondary,banner_path:bannerPath}).select().single());
-  await query('bebo_profiles',q=>q.update({skin:'custom',skin_primary:rows.primary_color,skin_secondary:rows.secondary_color,skin_banner_path:bannerPath}).eq('id',me.id));
-  await loadMine();message='Your skin is saved and shared ♥';success=true;
+  if(!me||!profile)throw Error('Sign in and create a Bebo profile first.');
+  const id=String(d.get('skin_id')||'');
+  if(id&&!/^[0-9a-f-]{36}$/i.test(id))throw Error('Invalid skin ID.');
+  const design=skinDesign({name:d.get('name'),primary:d.get('primary'),secondary:d.get('secondary'),
+    accent:d.get('accent'),layout:d.get('layout'),motion:d.get('motion')});
+  const draft=d.get('visibility')!=='public';
+  const old=id?await query('bebo_skins',q=>q.select('*').eq('id',id).eq('creator_id',me.id).maybeSingle()):null;
+  if(id&&!old)throw Error('This skin does not belong to your account.');
+  let bannerPath=d.get('clear_banner')==='on'?'':(old?.banner_path||'');
+  let backgroundPath=d.get('clear_background')==='on'?'':(old?.background_path||'');
+  const uploads=[];
+  try{
+   for(const [field,key] of [['banner','banner'],['background','background']]){
+    const file=d.get(field);
+    if(file instanceof File&&file.size){
+     const path=await retro.uploadBanner(file,me.id);
+     uploads.push(path);
+     if(key==='banner')bannerPath=path;else backgroundPath=path;
+    }
+   }
+   const values={...design,banner_path:bannerPath,background_path:backgroundPath,is_draft:draft};
+   if(old){
+    await query('bebo_skins',q=>q.update(values).eq('id',id).eq('creator_id',me.id).select('id').single());
+   }else{
+    await query('bebo_skins',q=>q.insert({...values,creator_id:me.id}).select('id').single());
+   }
+   if(!draft){
+    await query('bebo_profiles',q=>q.update({skin:'custom',skin_primary:design.primary_color,
+      skin_secondary:design.secondary_color,skin_banner_path:bannerPath,
+      skin_background_path:backgroundPath,skin_accent:design.accent_color,
+      skin_layout:design.layout,skin_motion:design.motion}).eq('id',me.id));
+    await loadMine();
+   }
+   editingSkinId='';message=draft?'Private skin draft saved ♥':'Skin published and applied to your Bebo profile ♥';success=true;
+  }catch(err){
+   if(uploads.length)await sb.storage.from('bebo-skin-banners').remove(uploads).catch(()=>{});
+   throw err;
+  }
  }else if(type==='video-upload'||type==='video-comment'){
   message=await videos.form(type,d,{me,profile,adminAccess},f);success=true;
  }else if(type==='verification-request'){
@@ -582,7 +640,7 @@ document.addEventListener('submit',async e=>{
  }
  }catch(err){message=escapeError(err);success=false}finally{
   f.dataset.busy='';if(b)b.disabled=false;
-  if((type==='edit-profile'||type==='video-upload'||type==='video-comment'||type.startsWith('admin-')||type==='retro-poll-create'||type==='retro-quiz-create'||type==='verification-request')&&!success){
+  if((type==='skin'||type==='edit-profile'||type==='video-upload'||type==='video-comment'||type.startsWith('admin-')||type==='retro-poll-create'||type==='retro-quiz-create'||type==='verification-request')&&!success){
     let notice=f.querySelector('.edit-profile-error');
     if(!notice){notice=document.createElement('p');notice.className='notice bad edit-profile-error';notice.setAttribute('role','alert');f.prepend(notice);}
     notice.textContent=message;
@@ -613,6 +671,30 @@ document.addEventListener('click',async e=>{
   if(!result?.cancelled){message=result?.message||'Admin action completed';success=true;render()}
   return;
  }
+ if(a==='skin-edit'){
+  if(!me||!profile)throw Error('Sign in first.');
+  const row=await query('bebo_skins',q=>q.select('id').eq('id',id).eq('creator_id',me.id).maybeSingle());
+  if(!row)throw Error('You can only edit your own skins.');
+  editingSkinId=id;await showSkins();
+  document.querySelector('form[data-form="skin"]')?.scrollIntoView({behavior:'smooth',block:'start'});return;
+ }
+ if(a==='skin-cancel'){editingSkinId='';await showSkins();return}
+ if(a==='skin-swap'){const f=document.querySelector('form[data-form="skin"]');if(f){const el=f.elements.namedItem('layout');el.value=el.value==='right'?'left':'right';previewSkinStudio(f)}return}
+ if(a==='skin-export'){
+  if(!me)throw Error('Sign in first.');
+  const row=await query('bebo_skins',q=>q.select('*').eq('id',id).eq('creator_id',me.id).maybeSingle());
+  if(!row)throw Error('You can only export your own skin designs.');
+  downloadSkin(row);return;
+ }
+ if(a==='skin-delete'){
+  if(!me)throw Error('Sign in first.');
+  const row=await query('bebo_skins',q=>q.select('id').eq('id',id).eq('creator_id',me.id).maybeSingle());
+  if(!row)throw Error('You can only delete your own skins.');
+  if(!confirm('Delete this skin from your collection? Applied profile themes will remain. This cannot be undone.'))return;
+  await query('bebo_skins',q=>q.delete().eq('id',id).eq('creator_id',me.id).select('id').single());
+  if(editingSkinId===id)editingSkinId='';
+  message='Your skin design was deleted. Applied profiles remain unchanged.';success=true;render();return;
+ }
  if(a==='skin-filter'){filterSkins(id);return}
  if(a==='skin-preview'){const preset=skins.find(s=>s[0]===id);if(preset){const target=document.querySelector('#skin-tryout');if(target)target.innerHTML=bigSkinPreview(preset)}return}
  if(a==='retro-play-example'){retro.fillPollExample(id==='quiz');return}
@@ -628,8 +710,8 @@ document.addEventListener('click',async e=>{
  else if(a==='friend-remove'){await query('bebo_friendships',q=>q.delete().eq('id',id));message='Friend removed';success=true}
  else if(a==='delete-post'){await query('bebo_wall_posts',q=>q.delete().eq('id',id));message='Comment deleted';success=true}
  else if(a==='report-post'){const reason=prompt('Why are you reporting this comment? (minimum 10 characters)');if(!reason)return;if(reason.trim().length<10)throw Error('Please give a little more information.');await query('bebo_reports',q=>q.insert({reporter_id:me.id,reported_post_id:id,reason:clamp(reason,1000)}));message='Your report was submitted for review.';success=true}
- else if(a==='use-skin'){if(!me||!profile)throw Error('Sign in and create a profile to use this skin.');if(!skins.some(x=>x[0]===id))throw Error('Unknown skin.');await query('bebo_profiles',q=>q.update({skin:id,skin_banner_path:''}).eq('id',me.id));await loadMine();message='Skin applied to your public Bebo profile ♥';success=true}
- else if(a==='use-shared-skin'){if(!profile)throw Error('Create a profile first.');const row=await query('bebo_skins',q=>q.select('*').eq('id',id).single());await query('bebo_profiles',q=>q.update({skin:'custom',skin_primary:row.primary_color,skin_secondary:row.secondary_color,skin_banner_path:row.banner_path||''}).eq('id',me.id));await loadMine();message='Community skin applied ♥';success=true}
+ else if(a==='use-skin'){if(!me||!profile)throw Error('Sign in and create a profile to use this skin.');if(!skins.some(x=>x[0]===id))throw Error('Unknown skin.');await query('bebo_profiles',q=>q.update({skin:id,skin_banner_path:'',skin_background_path:'',skin_accent:'#ffffff',skin_layout:'left',skin_motion:'off'}).eq('id',me.id));await loadMine();message='Skin applied to your public Bebo profile ♥';success=true}
+ else if(a==='use-shared-skin'){if(!profile)throw Error('Create a profile first.');const row=await query('bebo_skins',q=>q.select('*').eq('id',id).single());if(row.is_hidden)throw Error('This skin has been hidden by moderation.');if(row.is_draft&&row.creator_id!==me.id)throw Error('This skin is private.');await query('bebo_profiles',q=>q.update({skin:'custom',skin_primary:row.primary_color,skin_secondary:row.secondary_color,skin_banner_path:row.banner_path||'',skin_background_path:row.background_path||'',skin_accent:row.accent_color||'#ffffff',skin_motion:row.motion||'off',skin_layout:row.layout||'left'}).eq('id',me.id));await loadMine();message='Community skin applied ♥';success=true}
  }catch(err){message=escapeError(err);success=false}
  render();
 });

@@ -1474,8 +1474,60 @@ body.bebo-page-loading .bebo-page-progress{opacity:1}
  padding:12px;margin:12px 0;min-width:0;overflow-wrap:anywhere}
 .bebo-video-insight-card h3{margin:0 0 5px;font-size:16px;color:#246389}
 @media(max-width:480px){.bebo-video-insight-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Bebo Skin Studio: the profile can wear a saved background, accent and optional gentle motion. */
+.themed-profile.bebo-2007-profile{background:var(--skin-page-bg,linear-gradient(130deg,#fae7f1,#fff));background-position:center;background-size:cover}
+.themed-profile.bebo-2007-profile .bebo-mini-nav{border-bottom:3px solid var(--skin-accent,#fff)}
+.themed-profile.bebo-2007-profile .panel{border-color:var(--retro-primary,#d12f6a)}
+@media(min-width:701px){
+ .themed-profile[data-skin-layout="right"] .bebo-profile-layout{grid-template-columns:minmax(0,1fr) 235px}
+ .themed-profile[data-skin-layout="right"] .bebo-profile-sidebar{grid-column:2;grid-row:1}
+ .themed-profile[data-skin-layout="right"] .bebo-profile-main{grid-column:1;grid-row:1}
+}
+@media(min-width:701px) and (max-width:930px){
+ .themed-profile[data-skin-layout="right"] .bebo-profile-layout{grid-template-columns:minmax(0,1fr) 200px}
+}
+@keyframes bebo-skin-shimmer{0%,100%{transform:rotate(-19deg) translateY(0)}50%{transform:rotate(-16deg) translateY(7px)}}
+.themed-profile[data-skin-motion="soft"] .profile-art::before{animation:bebo-skin-shimmer 6s ease-in-out infinite}
+.skin-studio-owned{display:flex;align-items:center;gap:10px;border:1px solid #ead3df;padding:9px;margin:7px 0;background:#fff9fc}
+.skin-studio-owned-swatch{width:54px;height:50px;border-radius:5px;border:2px solid #fff;outline:1px solid #cba8b9;flex-shrink:0}
+.skin-studio-owned>div:nth-child(2){min-width:0;flex:1;overflow-wrap:anywhere}
+.skin-studio-owned p{margin:3px 0}
+.skin-studio-owned-actions{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
+.skin-studio-owned-actions .button{font-size:11px;padding:7px}
+.skin-studio-colours,.skin-studio-settings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.skin-studio-settings{grid-template-columns:repeat(2,minmax(0,1fr))}
+.skin-studio-colours label,.skin-studio-settings label{min-width:0}
+.skin-studio-colours input[type="color"]{width:100%;min-height:46px;cursor:pointer}
+.skin-studio-settings select{width:100%;min-height:44px;background:#fff;color:#442838;border:1px solid #bfa5b3;padding:8px}
+.skin-studio-preview{--studio-primary:#c52d61;--studio-secondary:#f5b2ce;--studio-accent:#fff;max-width:610px;border:3px solid var(--studio-accent);outline:1px solid #b8a8b4;margin:14px 0;background:linear-gradient(135deg,var(--studio-secondary),#fff);padding:8px}
+.skin-studio-preview-head{background:linear-gradient(120deg,var(--studio-primary),var(--studio-secondary));color:#fff;text-shadow:0 1px 2px #222;font:700 18px Georgia,serif;padding:12px;word-break:break-word}
+.skin-studio-dropzones,.skin-studio-preview-body{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.skin-studio-dropzones>div{border:2px dashed #a56c8a;background:#fffafccc;text-align:center;padding:9px;font-size:11px;min-height:40px}
+.skin-studio-preview-photo,.skin-studio-preview-posts{background:#fff;border:2px solid var(--studio-primary);border-radius:5px;padding:15px 8px;min-height:92px;text-align:center;font-weight:bold;font-size:12px}
+.skin-studio-preview-photo{cursor:grab;display:grid;place-content:center;user-select:none;touch-action:auto}
+.skin-studio-preview-posts p{font-weight:normal;font-size:11px;margin-top:10px}
+.skin-studio-preview[data-layout="right"] .skin-studio-preview-photo{grid-column:2;grid-row:1}
+.skin-studio-preview[data-layout="right"] .skin-studio-preview-posts{grid-column:1;grid-row:1}
+.skin-studio-preview[data-motion="soft"] .skin-studio-preview-head{animation:bebo-skin-studio-pulse 5s ease-in-out infinite}
+@keyframes bebo-skin-studio-pulse{50%{filter:brightness(1.12)}}
+.skin-studio-actions{display:flex;flex-wrap:wrap;gap:9px}
+.skin-studio-import{display:block;background:#f8eef5;border:1px dashed #bd8ca6;padding:12px}
+.skin-studio-import input{display:block;margin-top:9px;max-width:100%}
+@media(max-width:560px){
+ .skin-studio-colours{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+ .skin-studio-settings{grid-template-columns:1fr}
+ .skin-studio-owned{flex-wrap:wrap}
+ .skin-studio-owned-actions{width:100%;justify-content:flex-start}
+ .skin-studio-preview-photo,.skin-studio-preview-posts{min-height:75px;padding:12px 4px}
+}
+@media(prefers-reduced-motion:reduce){
+ .themed-profile[data-skin-motion="soft"] .profile-art::before,
+ .skin-studio-preview[data-motion="soft"] .skin-studio-preview-head{animation:none!important}
+}
+
 </style>
-<script type="module" src="./social.js?v=20261010-analytics-v5"></script></head>
+<script type="module" src="./social.js?v=20261010-skin-studio-v1"></script></head>
 <body><button type="button" class="bebo-skip-link">Skip to main content</button><header class="top"><div class="wrap head">
 <div class="brand" aria-label="Bebo"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-be">be</span><span class="brand-bo">bo</span><span class="brand-star" aria-hidden="true"> ★</span></div>
 <div class="brand-message"><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p><p class="bebo-independent-note">Independent community inspired by classic Bebo · Not affiliated with its original owners.</p></div>
