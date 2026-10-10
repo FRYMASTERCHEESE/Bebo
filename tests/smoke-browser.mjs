@@ -65,8 +65,23 @@ try{
       assert(!/Member Reports|Owner Control Centre/.test(inner),'Admin data visible to guest');
     }
     if(device.name==='mobile'){
-      const width=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,viewport:window.innerWidth}));
-      assert(width.scroll<=width.viewport+8,'Horizontal overflow '+width.scroll+'px > '+width.viewport+'px');
+      const layout=await page.evaluate(()=>{
+        const styleOf=selector=>{
+          const node=document.querySelector(selector);
+          return node?getComputedStyle(node).userSelect:null;
+        };
+        return {
+          scroll:document.documentElement.scrollWidth,
+          viewport:window.innerWidth,
+          regularText:styleOf('#app .panel h2')||styleOf('#app h1'),
+          announcement:styleOf('#bebo-announcement-bar .bebo-announcement-preview'),
+          editable:styleOf('#app input')||styleOf('#app textarea')
+        };
+      });
+      assert(layout.scroll<=layout.viewport+8,'Horizontal overflow '+layout.scroll+'px > '+layout.viewport+'px');
+      assert.equal(layout.regularText,'none','Mobile text could still trigger selection search menu');
+      assert.equal(layout.announcement,'none','Announcement text is still selectable on mobile');
+      if(check.signup)assert.equal(layout.editable,'text','Signup field must remain selectable and editable');
     }
     if(check.path==='home')await page.screenshot({path:'test-results/'+device.name+'-home.png',fullPage:true});
     item.status='PASS';
