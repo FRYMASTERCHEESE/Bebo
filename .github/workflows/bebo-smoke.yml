@@ -19,6 +19,7 @@ on:
       - 'tests/skin-studio-smoke.mjs'
       - 'config.js'
       - 'tests/smoke-browser.mjs'
+      - 'tests/auth-domain-flow.mjs'
       - 'tests/verified-smoke.mjs'
       - 'tests/profile-verified-smoke.mjs'
       - 'tests/verified-transparency-smoke.mjs'
@@ -54,6 +55,8 @@ jobs:
         run: node tests/verified-transparency-smoke.mjs
       - name: Install headless Chromium
         run: npx playwright install --with-deps chromium
+      - name: Test auth redirect endpoints safely on bebo.nz with intercepted synthetic requests
+        run: node tests/auth-domain-flow.mjs
       - name: Run mobile and desktop read-only smoke tests
         run: node tests/smoke-browser.mjs
       - name: Keep audit results and screenshots
