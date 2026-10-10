@@ -127,7 +127,7 @@ export function createVerification(sb,{safe,panel,query}){
       '<p class="bebo-trust-profile-link"><a href="#/u/'+username+'">♥ Back to '+safe(profile.display_name)+'’s profile</a></p>';
   }
   async function transparencyPage(username){
-    const p=await query('bebo_profiles',q=>q.select('id,username').ilike('username',String(username||'').replace(/[\\%_]/g,'\\  return {approved,badge,prioritizePeople,prioritizeActivity,requestPanel,submit};')).maybeSingle());
+    const p=await query('bebo_profiles',q=>q.select('id,username').ilike('username',String(username||'').replace(/[%_\\]/g,'\\$&')).maybeSingle());
     if(!p)return panel('Profile not found','This Bebo profile does not exist.');
     try{
       const details=await publicDetails(p.id);
