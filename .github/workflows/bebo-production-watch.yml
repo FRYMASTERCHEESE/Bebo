@@ -1,0 +1,28 @@
+name: Bebo Daily Site and Privacy Watch
+on:
+  schedule:
+    # Once per day. No user logins, passwords, uploads or database writes.
+    - cron: '13 5 * * *'
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/bebo-production-watch.yml'
+      - 'scripts/bebo-production-health.mjs'
+      - 'config.js'
+permissions:
+  contents: read
+concurrency:
+  group: bebo-daily-public-watch
+  cancel-in-progress: false
+jobs:
+  check-live-public-site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check HTTPS and anonymous privacy without account access
+        run: node scripts/bebo-production-health.mjs
