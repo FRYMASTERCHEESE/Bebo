@@ -857,8 +857,114 @@ main.wrap{max-width:1010px;background:#fff;min-height:80vh;border-left:1px solid
   /* Do not disable pointer interaction: links, buttons, Whiteboard and canvas stay usable. */
 }
 
+
+/* Bebo Verified transparency dialog: a mobile bottom sheet with genuine public profile facts. */
+.bebo-verified-badge[role="button"]{cursor:pointer;position:relative;touch-action:manipulation}
+.bebo-verified-badge[role="button"]::before{content:"";position:absolute;inset:-8px;border-radius:50%}
+.bebo-verified-badge[role="button"]:focus-visible{
+ outline:3px solid #245eaf;outline-offset:4px;box-shadow:0 0 0 3px #fff
+}
+.bebo-verified-badge[role="button"]:hover{filter:brightness(1.12);transform:scale(1.08)}
+body.bebo-trust-dialog-open{overflow:hidden}
+.bebo-trust-overlay{
+ position:fixed;inset:0;z-index:2147483000;
+ display:flex;justify-content:center;align-items:center;
+ padding:16px;box-sizing:border-box;
+ font:14px/1.5 Arial,Verdana,sans-serif;color:#20232a;
+}
+.bebo-trust-backdrop{position:absolute;inset:0;background:#000b}
+.bebo-trust-dialog{
+ position:relative;display:flex;flex-direction:column;
+ width:min(100%,570px);max-height:min(92dvh,860px);
+ background:#f3f4f8;border-radius:22px;overflow:hidden;
+ box-shadow:0 12px 55px #0006;isolation:isolate;
+}
+.bebo-trust-handle{display:none}
+.bebo-trust-dialog-top{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ flex:0 0 auto;background:#fff;padding:12px 16px;
+ border-bottom:1px solid #e0e2e7;
+}
+.bebo-trust-dialog-top h2{margin:0;font:700 18px/1.25 Arial,Verdana,sans-serif;color:#1e232a}
+.bebo-trust-close{
+ appearance:none;display:grid;place-items:center;
+ width:38px;height:38px;flex:none;padding:0;cursor:pointer;
+ border:0;border-radius:50%;background:#e4e6eb;color:#242932;
+ font:32px/1 Arial,sans-serif;
+}
+.bebo-trust-close:hover,.bebo-trust-close:focus-visible{background:#d6e5f2;outline:2px solid #4c92d0}
+.bebo-trust-scroller{overflow:auto;overscroll-behavior:contain;min-height:0;padding:0 14px 16px;scrollbar-width:thin}
+.bebo-trust-intro{text-align:center;padding:20px 10px 14px;color:#242831}
+.bebo-trust-avatar{display:grid;place-items:center;object-fit:cover;width:88px;height:88px;
+ border-radius:50%;background:#bdd7f1;color:#13588e;margin:0 auto 12px;
+ border:3px solid #fff;box-shadow:0 2px 7px #151c272a}
+.bebo-trust-initial{font:700 38px/1 Georgia,serif;background:linear-gradient(140deg,#eaa4c5,#bd5e9b);color:#fff}
+.bebo-trust-intro h2{font:700 24px/1.2 Arial,Verdana,sans-serif;color:#20232a;margin:0 0 2px;overflow-wrap:anywhere}
+.bebo-trust-intro>p{margin:2px 0;color:#666e79;overflow-wrap:anywhere}
+.bebo-trust-intro .bebo-trust-intro-note{margin:10px auto 0;font-size:13px;line-height:1.5;max-width:400px}
+.bebo-trust-card{background:#fff;border-radius:17px;margin:0 0 11px;padding:17px 18px;
+ box-shadow:0 1px 2px #00000012;color:#30323a;overflow-wrap:anywhere}
+.bebo-trust-card>p{margin:12px 0;font:13px/1.55 Arial,Verdana,sans-serif;color:#656d79}
+.bebo-trust-card>h3,.bebo-trust-card-title h3{
+ font:700 18px/1.35 Arial,Verdana,sans-serif;color:#22252d;margin:0 0 6px
+}
+.bebo-trust-card-title{display:flex;align-items:flex-start;gap:12px}
+.bebo-trust-card-title>div{min-width:0;flex:1}
+.bebo-trust-card-title p{font:13px/1.4 Arial,Verdana,sans-serif;color:#656e7a;margin:0}
+.bebo-trust-icon{
+ display:grid;place-items:center;flex:none;align-self:flex-start;
+ width:34px;height:34px;border-radius:50%;
+ background:#e6f1ff;color:#1374d0;
+ font:700 23px/1 Arial,Verdana,sans-serif
+}
+.bebo-trust-card-title>.bebo-trust-icon{background:#1877d9;color:#fff;font-size:22px}
+.bebo-trust-fact{
+ display:flex;align-items:flex-start;gap:14px;
+ margin:0;padding:11px 0;border-bottom:1px solid #eff0f2
+}
+.bebo-trust-fact:last-of-type{border-bottom:0}
+.bebo-trust-fact>div{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.bebo-trust-fact strong{font:700 13px/1.45 Arial,Verdana,sans-serif;color:#252934}
+.bebo-trust-fact span:not(.bebo-trust-icon){font:13px/1.45 Arial,Verdana,sans-serif;color:#656d79;overflow-wrap:anywhere}
+.bebo-trust-fact small{font-size:11px;color:#7c8290}
+.bebo-trust-card .bebo-trust-section{font-size:19px;margin-bottom:3px}
+.bebo-trust-link{display:inline-block;color:#1769ba;font-weight:700;text-decoration:none;padding:5px 0}
+.bebo-trust-link:hover,.bebo-trust-link:focus-visible{color:#124e8d;text-decoration:underline}
+.bebo-trust-fineprint{font-size:12px!important;color:#777d88!important;border-top:1px solid #edf0f3;padding-top:11px}
+.bebo-trust-benefits p{margin:8px 0;color:#4a5362}
+.bebo-trust-profile-link{text-align:center;margin:14px 0}
+.bebo-trust-profile-link a{color:#206eab;font-weight:700;text-decoration:underline}
+.bebo-trust-full{max-width:690px;margin:12px auto 30px;padding:16px;background:#f3f4f8;border:1px solid #d6dbe4;border-radius:15px}
+.bebo-trust-full .bebo-trust-card{box-shadow:0 1px 3px #141b2815}
+.bebo-trust-info-page{padding:2px 4px 8px;color:#30333d;line-height:1.75}
+.bebo-trust-info-page h3{margin:20px 0 5px;color:#234f76}
+.bebo-trust-info-page p{margin:9px 0}
+@media(max-width:700px){
+ .bebo-trust-overlay{align-items:flex-end;padding:0}
+ .bebo-trust-dialog{
+   width:100%;height:auto;max-height:90dvh;
+   border-radius:24px 24px 0 0;box-shadow:0 -8px 40px #0006;
+ }
+ .bebo-trust-handle{display:block;flex:none;width:45px;height:5px;border-radius:7px;background:#a2a6ad;margin:9px auto 0}
+ .bebo-trust-dialog-top{padding:7px 14px 10px}
+ .bebo-trust-scroller{padding:0 12px 22px}
+ .bebo-trust-card{padding:16px 15px}
+ .bebo-trust-full{margin:8px auto;padding:9px}
+}
+@media(max-width:380px){
+ .bebo-trust-intro h2{font-size:21px}
+ .bebo-trust-card-title h3{font-size:16px}
+ .bebo-trust-card{padding:12px}
+}
+@media screen and (max-width:900px){
+ .bebo-trust-overlay,.bebo-trust-overlay *,.bebo-trust-full,.bebo-trust-full *{
+   -webkit-user-select:none;user-select:none;-webkit-touch-callout:none
+ }
+ .bebo-trust-overlay button,.bebo-trust-overlay a{touch-action:manipulation}
+}
+
 </style>
-<script type="module" src="./social.js?v=20261010-touch-selection-v2"></script></head>
+<script type="module" src="./social.js?v=20261010-trust-info-v1"></script></head>
 <body><header class="top"><div class="wrap head"><div class="brand">be<span>bo</span> ★</div><div><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p></div></div></header>
 <nav class="nav"><div class="wrap" id="nav"><button data-nav="home">Home</button><button data-nav="profile">My Profile</button><button data-nav="friends">Friends</button><button data-nav="photos">Photos</button><button data-nav="blogs">Blog</button><button data-nav="messages">Mail ✉</button><button data-nav="groups">Groups</button><button data-nav="other-half">Other Half ♥</button><button data-nav="skins">Skins</button><button data-nav="polls">Polls</button><button data-nav="quizzes">Quizzes</button><button data-nav="creators">Bands &amp; Authors</button><button data-nav="account">Account</button><button data-nav="safety">Safety &amp; Privacy</button></div></nav>
 <aside id="bebo-announcement-bar" class="bebo-announcement-strip" aria-label="Bebo announcements" hidden></aside>
