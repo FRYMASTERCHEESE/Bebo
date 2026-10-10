@@ -142,7 +142,7 @@ Safety limitations: Suspended accounts retain sign-in and public-read ability; t
 ## Bebo Videos V1 — 10 October 2026
 
 - **Dedicated real video storage:** Private Supabase bucket `bebo-videos` in the dedicated Bebo project, not simulated browser-local files. Only signed-in members with profiles can upload.
-- **Pilot limits:** MP4 or WebM up to **25 MiB** (storage-enforced), with **60-second browser duration checks**, at most **3 video records per member**, **2 new records per hour**, and **20 across the pilot** to protect free storage capacity. The backend cannot independently verify true video duration without server-side transcoding/inspection; do not describe the 60-second limit as server-enforced.
+- **Pilot limits:** MP4 or WebM up to **40 MiB (~41.9 MB)** (storage and database enforced), with **60-second browser duration checks**, at most **3 video records per member**, **2 new records per hour**, and **15 across the pilot** to protect free storage capacity. The backend cannot independently verify true video duration without server-side transcoding/inspection; do not describe the 60-second limit as server-enforced.
 - **Moderation before public playback:** Metadata is created as `pending`; uploads are not shown publicly until a pre-existing authenticated owner/moderator approves through `#/videos-review`. Private signed video URLs expire after 10 minutes.
 - **Social features:** Public videos feed, member galleries, mobile native playback, hearts, comments, abuse reporting, member deletion and moderator hide/review controls. Member contributions are escaped before HTML rendering.
 - **Member account deletion:** The already-deployed `bebo-delete-account` Edge Function **v3** now purges the video bucket alongside avatars, banners and photos before account removal.
@@ -150,3 +150,11 @@ Safety limitations: Suspended accounts retain sign-in and public-read ability; t
 - **Testing:** `tests/videos-smoke.mjs` uses only synthetic data, and browser smoke includes Videos and profile video routes on mobile/desktop.
 
 **Before broad launch:** Test at least one disposable registered member uploading and deleting an actual MP4, a different owner account approving the upload, public/guest playback, comments/hearts, reports and moderation. Review storage usage and abuse response. Uploads do not currently transcode or scan video content and are not a guarantee of free unlimited hosting.
+
+## Bebo phone video upload compatibility — 10 October 2026
+
+The first real Android video reported **35,507,185 bytes (35.5 MB), 10.944 seconds**, in MP4 with HEVC video, which exceeded the old 25 MiB pilot cap. The error did not mean the file was corrupt. The live `bebo-videos` storage bucket and `bebo_videos` constraint were safely raised to **40 MiB** and the global pilot cap reduced to **15 video records** (~600 MiB maximum at the upload limit). The deployed schema change is recorded in `supabase/bebo_video_mobile_upload_40mib_v2.sql`.
+
+The Videos upload interface now displays the selected video's size before submitting, gives a clear file-size message for clips over the limit, and accepts `.mp4`/`.webm` file extensions from Android when the browser reports an empty or generic MIME type. It does not silently override a known nonvideo MIME type. The upload stays private until an owner/moderator approves it.
+
+Important: Some browsers cannot play **HEVC/H.265 MP4** even when the upload itself succeeds. For broader playback compatibility, use H.264/AAC MP4; high-resolution phone footage may be compressed before upload. Supabase's global file limit must also be at least 40 MiB (the Free plan allows up to 50 MB); a project-specific lower global setting would still block larger files. Real authenticated upload and playback remain to be verified separately.
