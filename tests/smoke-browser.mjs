@@ -16,7 +16,6 @@ const tests=[
 {path:'groups',label:'Groups',match:/groups/i},
 {path:'creators',label:'Bands and Authors',match:/bands|authors|creators/i},
 {path:'safety',label:'Privacy',match:/community rules.*privacy/i},
-{path:'old-bebo',label:'Old Bebo Memories',match:/Find My Old Bebo Memories|Remember your first Bebo/i,memorySearch:true},
 {path:'account',label:'Signup',match:/join bebo|create your account/i,signup:true},
 {path:'admin',label:'Admin guest denial',match:/join bebo|create your account|admin only/i,guestAdmin:true}
 ];
@@ -60,58 +59,6 @@ try{
     assert.equal(backPosition.fixed,'fixed','Bebo Back button does not remain visible while scrolling');
     assert(backPosition.height>=42,'Bebo Back button target too small for phone tapping');
     assert(backPosition.bottom<=backPosition.viewport+2&&backPosition.top>=0,'Bebo Back button out of the viewport');
-    if(check.memorySearch){
-      const form=page.locator('#bebo-memory-search'),field=page.locator('#bebo-old-lookup');
-      assert.equal(await form.count(),1,'Old Bebo search form missing');
-      assert.equal(await page.locator('form[data-form="old-bebo-restore"]').count(),0,'Guest must not see profile-restoration form');
-      let returnSnapshot=true;
-      await page.route('https://archive.org/wayback/available**',async route=>{
-        const archived=returnSnapshot?{
-          closest:{available:true,url:'http://web.archive.org/web/20071018010101/http://www.bebo.com/Profile.jsp?MemberId=1584189657',timestamp:'20071018010101',status:'200'}
-        }:{};
-        await route.fulfill({status:200,contentType:'application/json',
-          headers:{'access-control-allow-origin':'*'},
-          body:JSON.stringify({archived_snapshots:archived})});
-      });
-      await field.fill('1584189657');
-      await form.locator('button[type="submit"]').click();
-      const found=page.locator('.bebo-memory-hit');
-      await found.first().waitFor({state:'visible',timeout:20000});
-      assert.equal(await found.count(),1,'Identical archived snapshots should be deduplicated');
-      const archiveLink=found.first().locator('a');
-      assert((await archiveLink.getAttribute('href')).startsWith('https://web.archive.org/web/'),'Archive snapshot should use HTTPS');
-      assert.equal(await archiveLink.getAttribute('rel'),'noopener noreferrer','External archive links need safe target relationship');
-      assert((await page.locator('#bebo-memory-results').innerText()).includes('Archived Bebo snapshot found'));
-      returnSnapshot=false;
-      await field.fill('MyOldName');
-      await form.locator('button[type="submit"]').click();
-      await page.getByText('No confirmed snapshot from this quick check.').waitFor({state:'visible',timeout:20000});
-      assert.equal(await page.locator('#bebo-memory-results a[href^="https://web.archive.org/web/*/"]').count(),3,
-        'Fallback archive calendar links not shown when no snapshot found');
-      await field.fill('https://invalid.example/you');
-      await form.locator('button[type="submit"]').click();
-      await page.locator('#bebo-memory-results[aria-live] .bebo-memory-error').waitFor({state:'visible',timeout:15000});
-      assert(/Only original bebo.com profile URLs/.test(await page.locator('.bebo-memory-error').innerText()));
-      // Navigating inside Bebo must restore the last real Bebo page without leaving the site.
-      await page.locator('#nav [data-nav="safety"]').click();
-      await page.waitForURL('**#/safety',{timeout:10000});
-      await page.waitForFunction(()=>history.state?.beboPreviousRoute==='#/old-bebo',null,{timeout:10000});
-      await globalBack.click();
-      await page.waitForURL('**#/old-bebo',{timeout:10000});
-      assert.equal(await page.locator('#bebo-memory-search').count(),1,'Back failed to return to Old Bebo Memories');
-      // Direct initial Bebo route has no safe browser predecessor: fall back Home.
-      await globalBack.click();
-      await page.waitForURL('**#/home',{timeout:10000});
-      assert.equal(await page.evaluate(()=>location.hostname),'frymastercheese.github.io','Back left the Bebo site');
-      await page.waitForFunction(()=>history.state?.beboPageRoute==='#/home'&&history.state?.beboPreviousRoute==='#/old-bebo',null,{timeout:10000});
-      assert.equal(await page.evaluate(()=>history.state?.beboPreviousRoute),'#/old-bebo',
-        'Home should retain its legitimate previous Bebo page');
-      await globalBack.click();
-      await page.waitForURL('**#/old-bebo',{timeout:10000});
-      assert.equal(await page.locator('#bebo-memory-search').count(),1,'Back from Home did not return to Bebo Memories');
-      item.backNavigation='PASS';
-      item.memorySearch='PASS';
-    }
     if(check.eraTest){
       await page.locator('.classic-home-2005').waitFor({state:'visible',timeout:15000});
       const fresh=await page.evaluate(()=>({
@@ -201,6 +148,12 @@ try{
       await page.waitForURL('**#/home',{timeout:10000});
       assert.equal(await page.evaluate(()=>location.hostname),'frymastercheese.github.io','Direct-link Back left Bebo');
       item.directBack='PASS';
+      // Legacy bookmarks to the retired feature should route safely home.
+      await page.goto(host+'?redirect-smoke=1#/old-bebo',{waitUntil:'domcontentloaded'});
+      await page.waitForURL('**#/home',{timeout:15000});
+      assert.equal(await page.locator('#bebo-memory-search').count(),0,'Retired form reappeared');
+      assert.equal(await page.locator('#nav [data-nav="old-bebo"]').count(),0,'Retired menu reappeared');
+      item.retiredFeatureRedirect='PASS';
     }
     if(check.guestAdmin){
       assert.equal(await page.locator('.bebo-admin-page').count(),0,'Private admin dashboard rendered for guest');
