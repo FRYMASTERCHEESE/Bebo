@@ -43,18 +43,19 @@ const makeRenderer=({approved=false,pending=false,visitingOther=false,guest=fals
   const helpers={
     me,profile:owner,app,userViewed:null,query,safe:escape,note:()=>'',panel,
     handlePattern:x=>x,verified,safety:{myBlocks:async()=>new Set(),profileTools:async()=>''},
-    classic:{publicModules:async()=>''},retro:{sharedPanel:async()=>'',imageStyle:()=> 'linear-gradient(#f0f,#fff)'},
+    classic:{publicModules:async()=>''},videos:{profilePanel:async()=>'<section class="panel">🎬 My Bebo Videos</section>'},retro:{sharedPanel:async()=>'',imageStyle:()=> 'linear-gradient(#f0f,#fff)'},
     getSkin:()=>['classic','Classic','#ffdeee','#c33062','#862453','','','♥'],
     grad:()=> 'linear-gradient(#fff,#eaa)',
     badge:()=>'<div class="avatar">B</div>',btn:()=>'<button>Add friend</button>',time:()=>'',userViewed:null
   };
-  const fn=new Function('deps','const {me,profile,app,query,safe,note,panel,handlePattern,verified,safety,classic,retro,getSkin,grad,badge,btn,time}=deps;let userViewed=null;'+rendererSource+'\nreturn showProfile;')(helpers);
+  const fn=new Function('deps','const {me,profile,app,query,safe,note,panel,handlePattern,verified,safety,classic,videos,retro,getSkin,grad,badge,btn,time}=deps;let userViewed=null;'+rendererSource+'\nreturn showProfile;')(helpers);
   return {app,run:()=>fn(visitingOther?'opal':undefined)};
 };
 const fresh=makeRenderer();
 await fresh.run();
 const doc=fresh.app.innerHTML;
 assert(doc.includes('✎ Edit my profile'),'Edit profile disappeared');
+assert(doc.includes('🎬 My Bebo Videos'),'Profile Bebo Videos panel disappeared');
 assert(doc.includes('🎨 Change my skin'),'Change my skin disappeared');
 assert(doc.includes('✓ Request Bebo Verified'),'Missing verification request next to profile actions');
 assert(doc.includes('data-action="verified-profile-toggle"'),'No clickable verification control');
