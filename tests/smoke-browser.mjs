@@ -5,7 +5,9 @@ import fs from 'node:fs/promises';
 const host='https://frymastercheese.github.io/Bebo/';
 const tests=[
 {path:'home', label:'Homepage',match:/welcome to bebo|people on bebo/i},
-{path:'u/bebo',label:'Profile',match:/bebo.s profile|my profile picture|about me/i},
+{path:'u/bebo',label:'Profile',match:/bebo.s profile|my profile picture|about me/i,verifiedBadge:true},
+{path:'transparency/bebo',label:'Verified profile transparency',match:/Bebo Verified since|Profile transparency/i},
+{path:'verification-policy',label:'Bebo Verified rules',match:/not Meta Verified|What the badge means/i},
 {path:'skins',label:'Skins',match:/bebo skin gallery/i,skins:true},
 {path:'polls',label:'Polls',match:/bebo polls/i},
 {path:'quizzes',label:'Quizzes',match:/bebo quizzes|how well do you know me/i},
@@ -18,7 +20,7 @@ const tests=[
 {path:'admin',label:'Admin guest denial',match:/join bebo|create your account|admin only/i,guestAdmin:true}
 ];
 // Wait until GitHub Pages publishes the matching revision; Actions can run before Pages.
-const expectedCSS='Touchscreen fix: prevent regular Bebo words being selected on smaller screens.';
+const expectedCSS='Bebo Verified transparency dialog: a mobile bottom sheet with genuine public profile facts.';
 let releaseReady=false;
 for(let n=0;n<40;n++){
   try{
@@ -46,6 +48,24 @@ try{
     const inner=await page.locator('#app').innerText();
     assert(!/Could not load this page|me is not defined|ReferenceError|TypeError/i.test(inner),'Fatal error shown: '+inner.slice(0,450));
     assert(check.match.test(inner),'Missing expected '+check.label+': '+inner.slice(0,300));
+    if(check.verifiedBadge){
+      const badge=page.locator('#app .bebo-nameplate [data-action="verified-info"]');
+      await badge.waitFor({state:'visible',timeout:10000});
+      assert.equal(await badge.getAttribute('role'),'button','Verified badge is not accessible');
+      await badge.click();
+      const dialog=page.locator('#bebo-verified-overlay [role="dialog"]');
+      await dialog.waitFor({state:'visible',timeout:12000});
+      const trustText=await dialog.innerText();
+      for(const required of ['Bebo is Bebo Verified','Profile transparency','Profile created','Bebo Verified since','Learn about Bebo Verified']){
+        assert(trustText.includes(required),'Verified sheet missing: '+required);
+      }
+      assert(!trustText.includes('Dhar Mann'),'Example person name was copied into Bebo');
+      assert(!trustText.includes('Official Meta'),'Bebo is being misrepresented as Meta');
+      await page.screenshot({path:'test-results/'+device.name+'-verified-sheet.png'});
+      await page.keyboard.press('Escape');
+      assert.equal(await page.locator('#bebo-verified-overlay').count(),0,'Escape did not close the sheet');
+      item.verifiedSheet='PASS';
+    }
     if(check.skins){const n=await page.locator('.skin-card').count();assert(n>=50,'Expected at least 50 skins, found '+n);item.skins=n;}
     if(check.signup){
       const password=page.locator('form[data-form="signup"] input[name="password"]');
