@@ -49,9 +49,12 @@ function authPage(){
 function welcome(){return panel('Welcome back to Bebo ♥',`<p>Your favourite Bebo features are here: the Top 16, three Luv a day, colourful custom skins, Whiteboards, music, Flashboxes, quizzes, polls, Bands and Authors.</p>
  <p>Use the navigation to discover members, design a profile skin, or visit your own profile.</p>
  <p>${btn('Create your profile','go','profile')}${btn('Browse people','go','friends','secondary')}${btn('Create a skin','go','skins','secondary')}</p>`)}
-function createProfile(){return panel('Choose your Bebo name ♥',`<p>Make your new profile. Usernames must be unique and contain 3–25 lowercase letters, numbers or underscores.</p>
- <form class="fields" data-form="create-profile"><label>Username<input name="username" pattern="[a-z0-9_]{3,25}" required placeholder="my_bebo_name" minlength="3" maxlength="25"></label>
- <label>Display name<input name="display_name" maxlength="60" required></label><button class="button">Create my profile</button></form>`)}
+function createProfile(){return panel('Choose your Bebo name ♥',`<p>Choose your own Bebo username and display name! ♥ Usernames are unique, and <strong>capital letters are welcome</strong>.</p>
+ <form class="fields" data-form="create-profile"><label>Username<input name="username" required placeholder="Rose_red or Rose Red" minlength="3" maxlength="25" autocomplete="nickname" autocapitalize="words"></label>
+ <p class="muted">3–25 characters. Capitals, numbers, underscores, dots and hyphens are allowed. Spaces are automatically changed to underscores (Rose Red becomes Rose_Red). Each username must be unique, ignoring capitals.</p>
+ <label>Display name<input name="display_name" maxlength="60" required placeholder="Opal 💕, Rose Red, or any name you like" autocomplete="nickname"></label>
+ <p class="muted">Make it your own! Display names can have spaces, capitals, symbols and emojis (up to 60 characters).</p>
+ <button class="button">Create my profile ♥</button></form>`)}
 function editProfile(){return panel('Edit My Profile',`<form class="fields" data-form="edit-profile">
  <label>Display name<input name="display_name" required maxlength="60" value="${safe(profile.display_name)}"></label>
  <label>Status<input name="status" maxlength="180" value="${safe(profile.status)}"></label>
@@ -278,9 +281,17 @@ document.addEventListener('submit',async e=>{
   const {data,error}=await sb.auth.signInWithPassword({email:String(d.get('email')).trim(),password:String(d.get('password'))});
   if(error)throw error;me=data.user;await loadMine();message='Welcome back to Bebo ♥';success=true;location.hash='#/profile';
  }else if(type==='create-profile'){
-  const username=clamp(d.get('username'),25).toLowerCase();
-  if(!/^[a-z0-9_]{3,25}$/.test(username))throw Error('Choose a valid username.');
-  await query('bebo_profiles',q=>q.insert({id:me.id,username,display_name:clamp(d.get('display_name'),60)}));
+  if(!me)throw Error('Log in or confirm your email before creating a profile.');
+  const username=clamp(d.get('username'),25).replace(/\s+/g,'_');
+  if(!/^[A-Za-z0-9_.-]{3,25}$/.test(username))throw Error('Your username needs 3–25 letters, numbers, dots, hyphens or underscores. Use any symbols and emojis you like in your display name instead.');
+  const displayName=clamp(d.get('display_name'),60);
+  if(!displayName)throw Error('Please choose a display name.');
+  try{
+    await query('bebo_profiles',q=>q.insert({id:me.id,username,display_name:displayName}));
+  }catch(error){
+    if(error?.code==='23505')throw Error('That Bebo username is already taken. Try a different one ♥');
+    throw error;
+  }
   await loadMine();message='Your Bebo profile is ready ♥';success=true;location.hash='#/profile';
  }else if(type==='edit-profile'){
   const musicUrl=String(d.get('music_url')||'').trim();
