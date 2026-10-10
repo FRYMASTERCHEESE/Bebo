@@ -284,6 +284,33 @@ function filterSkins(category){
  });
  const count=document.querySelector('#skin-count');if(count)count.textContent=`${showing} of ${skins.length} skins`;
 }
+function gettingStartedPage(){
+ // All links are ordinary Bebo hash routes. This page is public and makes no database writes.
+ const member=Boolean(me);
+ const primary=member
+  ? '<a href="#/profile">♥ Open my profile</a><a href="#/friends">👥 Find friends</a>'
+  : '<a href="#/signup">♥ Create a free account</a><a href="#/signin">Already a member? Sign in</a>';
+ const first=member
+  ? '<p>Your account is signed in. Make your profile your own, then find some mates.</p>'+
+    '<p><a href="#/'+(profile?'edit':'profile')+'">'+(profile?'Edit your profile':'Create your Bebo profile')+' »</a></p>'
+  : '<p>Sign up with an email address and a unique password. Confirm the email that arrives, then sign in.</p>'+
+    '<p><a href="#/signup">Sign up for Bebo »</a></p>';
+ return '<div class="bebo-start-guide">'+
+  panel('♥ New here? Start with Bebo.nz',
+   '<p>Welcome to an <strong>independent, fan-made Bebo-inspired community</strong>. Bring back the colourful profile experience, make new connections and share your creativity — all on your phone or computer.</p>'+
+   '<div class="bebo-start-actions">'+primary+'<a href="#/skins">🎨 Explore 56 skins</a></div>'+
+   '<p class="bebo-start-note">This is a <strong>new community</strong>, not the original Bebo service. Old Bebo accounts, friends, photos and passwords have not been transferred. Bebo.nz currently accepts members aged 18 and over.</p>')+
+  '<div class="bebo-start-grid">'+
+   '<section class="bebo-start-step"><h3>1 ♥ Make your profile</h3>'+first+'</section>'+
+   '<section class="bebo-start-step"><h3>2 ★ Make it your own</h3><p>Try the classic 2005 or 2007 look, find your favourite skin, then personalise your profile.</p><p><a href="#/skins">Browse profile skins »</a></p></section>'+
+   '<section class="bebo-start-step"><h3>3 👥 Find your people</h3><p>Explore profiles, add friends, share the Luv and try blogs, photos and quizzes.</p><p><a href="#/friends">Find friends »</a></p></section>'+
+  '</div>'+
+  panel('♥ Help make Bebo.nz better',
+   '<p>Have an idea or found a bug? <a href="#/suggestions">Send a suggestion</a> so the Bebo team can review it. You will need to sign in to submit feedback.</p>'+
+   '<p>Stay safe: do not publish private addresses, phone numbers or account passwords. Use the Report or Block controls when needed. <a href="#/safety">Read our Community Rules &amp; Privacy guide »</a></p>'+
+   '<p>Forgot your password? <a href="#/signin">Open Sign In</a> and choose <strong>Forgot password?</strong>.</p>')+
+  '</div>';
+}
 function safetyInfoPage(){
  return panel('Bebo Community Rules & Privacy',`<p><strong>Be respectful.</strong> No bullying, harassment, hate, threats, sexual exploitation, impersonation, scams, malware or sharing someone else's private information.</p>
  <p><strong>Safety tools:</strong> Use Block on a member profile to prevent friend requests, Luv, drawings and wall posts between you. Use Report on comments or profiles to flag issues. Blocking does not make public content private.</p>
@@ -303,6 +330,7 @@ async function refresh(){
  page=raw||'home';
  if(!configured){app.innerHTML=note()+authPage();return}
  if(page==='safety'){app.innerHTML=note()+safetyInfoPage();return}
+ if(page==='start'){app.innerHTML=note()+gettingStartedPage();return}
  if(page==='reset-password'){app.innerHTML=note()+passwordRecoveryPage();return}
  if(page==='suggestions'){app.innerHTML=note()+await suggestions.page(me,profile);return}
  if(page==='videos'||page==='videos-review'||page==='videos-insights'||page.startsWith('videos/u/')){

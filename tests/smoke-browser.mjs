@@ -20,6 +20,7 @@ const tests=[
 {path:'groups',label:'Groups',match:/groups/i},
 {path:'creators',label:'Bands and Authors',match:/bands|authors|creators/i},
 {path:'safety',label:'Privacy',match:/community rules.*privacy/i},
+{path:'start',label:'Bebo first-visit guide',match:/new here.*start with bebo.nz/i,firstVisit:true},
  {path:'suggestions',label:'Public suggestion page',match:/suggest an improvement/i,suggestions:true},
 {path:'account',label:'Signup and sign-in',match:/join bebo|create your account/i,signup:true},
 {path:'signin',label:'Top Sign In destination',match:/sign in to bebo|already a member/i,headerSignin:true},
@@ -34,7 +35,7 @@ for(let n=0;n<40;n++){
   try{
     const html=await (await fetch(host+'?wait-for-css='+Date.now(),{cache:'no-store'})).text();
     const aboutIsPublished=html.includes('<a class="bebo-about-link" href="./about.html">About Bebo</a>');
-    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261011-header-logout-v1');
+    const videoIsPublished=html.includes('data-nav="videos"')&&html.includes('20261011-first-visit-v1');
     if(html.includes(expectedCSS)&&aboutIsPublished&&videoIsPublished){releaseReady=true;break;}
   }catch(error){console.warn('Waiting for Bebo Pages:',String(error));}
   await new Promise(resolve=>setTimeout(resolve,3000));
@@ -98,6 +99,20 @@ try{
     assert(backPosition.belowContent,'Back/Home buttons overlap page content');
     assert(backPosition.height>=42,'Bebo Back button target too small for phone tapping');
     assert(!backPosition.horizontalOverflow,'Footer controls introduced horizontal scrolling');
+    if(check.firstVisit){
+      const guide=page.locator('#app .bebo-start-guide');
+      assert.equal(await guide.count(),1,'First-visit guide missing');
+      assert.equal(await page.locator('#nav [data-nav="start"]').count(),1,'Start Here top nav missing');
+      for(const link of ['#/signup','#/signin','#/skins','#/friends','#/safety','#/suggestions']){
+        assert.equal(await guide.locator('a[href="'+link+'"]').count()>0,true,
+          'Missing first-visit shortcut '+link);
+      }
+      const info=await guide.innerText();
+      assert(info.includes('Old Bebo accounts'),'Do not imply old Bebo users were imported');
+      assert(info.includes('18 and over'),'Missing adult community guidance');
+      assert(info.includes('fan-made'),'Independent community clarity missing');
+      assert.equal(await guide.locator('form').count(),0,'Guide must not submit or change member data');
+    }
     if(check.path==='home'){
       const live=await page.locator('#app').innerText();
       assert(live.includes('Trending Bebo Videos'),'Missing organic trending videos on home');

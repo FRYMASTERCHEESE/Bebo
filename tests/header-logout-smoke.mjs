@@ -43,6 +43,12 @@ try {
    await login.locator('button:not([data-toggle-password])').click();
    await logout.waitFor({state:'visible',timeout:30000});
    assert.equal(await guest.isVisible(),false,'Sign In/Up must disappear after signing in');
+   await page.goto(SITE+'?start-member-ci=20261011#/start',{waitUntil:'domcontentloaded'});
+   await page.locator('.bebo-start-guide').waitFor({state:'visible',timeout:20000});
+   assert.equal(await page.locator('.bebo-start-guide a[href="#/profile"]').count(),1,
+     'Signed-in start guide must link to member profile');
+   assert.equal(await guest.isVisible(),false,'New member guide must not reveal guest actions');
+   assert.equal(await logout.isVisible(),true,'Member top logout must remain visible on Start Here');
    const layout=await logout.evaluate(el=>{
     const rect=el.getBoundingClientRect(),top=document.querySelector('nav.nav').getBoundingClientRect();
     return {height:rect.height,x:rect.x,right:rect.right,width:innerWidth,

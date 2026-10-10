@@ -326,10 +326,10 @@ export function createClassic(sb,{safe,panel,btn,query}) {
       '<a class="classic-home-secondary" href="#/skins">🎨 Choose a skin</a></div></div>'+
       '<div class="classic-home-heart-note"><span>♥</span> Friends · Luv · Skins · Whiteboards · Music</div></section>';
     const shortcuts=(isMember?[
-      ['★ My Profile','profile'],['✎ Edit Profile','edit'],['📸 My Photos','photos'],
+      ['★ My Profile','profile'],['♥ Start Here','start'],['✎ Edit Profile','edit'],['📸 My Photos','photos'],
       ['✉ My Mail','messages'],['♥ My Other Half','other-half'],['✿ My Blog','blogs'],['🎬 Bebo Videos','videos'],['📊 Video Stats','videos-insights']
     ]:[
-      ['♥ Join Bebo','account'],['🎨 Profile Skins','skins'],
+      ['♥ Join Bebo','account'],['★ Start Here','start'],['🎨 Profile Skins','skins'],
       ['🎬 Watch Bebo Videos','videos'],
       ['📸 Browse Photos','photos'],['✎ Read Blogs','blogs'],
       ['★ Groups','groups'],['❓ Quizzes','quizzes']
@@ -441,7 +441,8 @@ export function createClassic(sb,{safe,panel,btn,query}) {
           (isMember?'Go to my profile »':'Join Bebo — it’s free »')+'</a>'+
         '</div></section>';
       const features='<ul class="bebo05-bullets">'+
-        '<li><a href="#/profile">Share photos privately or publicly</a></li>'+
+        '<li><a href="#/start">New here? Start with Bebo.nz</a></li>'+
+        '<li><a href="#/photos">Explore photo albums</a></li>'+
         '<li><a href="#/edit">Create a profile about yourself</a></li>'+
         '<li><a href="#/friends">Find friends and send messages</a></li>'+
         '<li><a href="#/groups">Join groups and make connections</a></li>'+
