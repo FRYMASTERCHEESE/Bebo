@@ -246,6 +246,11 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
         const {data,error}=await sb.from('bebo_verified_profiles').delete().eq('user_id',id).select('user_id').maybeSingle();
         if(error)throw error;
         if(!data)throw Error('The badge was already removed.');
+        const existing=await request(sb.from('bebo_verification_requests').select('user_id').eq('user_id',id));
+        if(existing.length){
+          const {error:reviewError}=await sb.from('bebo_verification_requests').update({status:'declined',reviewed_at:new Date().toISOString()}).eq('user_id',id);
+          if(reviewError)throw reviewError;
+        }
         return {message:'Bebo Verified badge and discovery boost removed.'};
       }
       if(name==='admin-verified-decline'){
