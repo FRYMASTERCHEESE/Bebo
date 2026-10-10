@@ -31,6 +31,24 @@ export function createVideos(sb,{safe,panel,query}) {
   const people=await rows('bebo_profiles',q=>q.select('id,username,display_name').in('id',ids));
   return new Map(people.map(p=>[p.id,p]));
  }
+ async function metrics(videos){
+  const ids=videos.map(v=>v.id);
+  if(!ids.length||typeof sb.rpc!=='function')return new Map();
+  const {data,error}=await sb.rpc('bebo_video_stats',{p_video_ids:ids.slice(0,40)});
+  if(error){console.warn('Video analytics temporarily unavailable',error.message);return new Map();}
+  return new Map((data||[]).map(item=>[item.video_id,item]));
+ }
+ const countMetric=(v,k)=>Number(v?.[k]||0);
+ const statsLine=(v,id)=>{
+  const count=countMetric(v,'views'),unique=countMetric(v,'unique_members');
+  const hearts=countMetric(v,'hearts'),comments=countMetric(v,'comments');
+  return '<div class="bebo-video-metrics" aria-label="Video engagement statistics">'+
+   '<span>👁 <strong data-video-views="'+safe(id)+'">'+count+'</strong> member views</span>'+
+   '<span>👥 '+unique+' unique members</span>'+
+   '<span>♥ '+hearts+' hearts</span><span>💬 '+comments+' comments</span>'+
+   '<span>📊 '+(count?Number(v.engagement_rate).toFixed(1)+'%':'—')+' interactions per view</span>'+
+   '</div>';
+ };
  async function signed(videos){
   const result=new Map();
   await Promise.all(videos.map(async video=>{
@@ -43,7 +61,7 @@ export function createVideos(sb,{safe,panel,query}) {
   if(!videos.length)return '<p class="muted">'+(review?'Nothing awaiting review.':pending?'You have no videos awaiting approval.':'No videos published yet. Be the first!')+'</p>';
   const ids=videos.map(x=>x.id);
   const authors=await names([...new Set(videos.map(x=>x.owner_id))]);
-  const urls=await signed(videos);
+  const [urls,stats]=await Promise.all([signed(videos),metrics(videos)]);
   const liveIds=videos.filter(x=>x.status==='approved').map(x=>x.id);
   const [comments,hearts]=await Promise.all([
    liveIds.length?rows('bebo_video_comments',q=>q.select('id,video_id,author_id,body,created_at').in('video_id',liveIds).order('created_at',{ascending:false}).limit(120)):[],
@@ -59,17 +77,18 @@ export function createVideos(sb,{safe,panel,query}) {
    const allComments=(commentByVideo.get(v.id)||[]).slice(0,5);
    const likes=heartsByVideo.get(v.id)||[];
    const liked=likes.some(x=>x.member_id===ctx?.me?.id);
+   const measured=stats.get(v.id);
    const url=urls.get(v.id);
    return '<article class="bebo-video-card">'+
     '<div class="bebo-video-top"><div><h3>'+safe(v.title)+'</h3>'+
     '<p class="muted">🎬 '+(owner?link(owner):'Bebo member')+' · '+date(v.created_at)+'</p></div>'+
     '<span class="bebo-video-status '+safe(v.status)+'">'+
     (v.status==='approved'?'Public':v.status==='pending'?'Awaiting approval':'Not approved')+'</span></div>'+
-    (url?'<video class="bebo-video-player" controls playsinline preload="metadata" controlsList="nodownload" src="'+safe(url)+'" aria-label="'+safe(v.title)+'"></video>':
+    (url?'<video class="bebo-video-player" controls playsinline preload="metadata" controlsList="nodownload" data-bebo-video-id="'+safe(v.id)+'" src="'+safe(url)+'" aria-label="'+safe(v.title)+'"></video>':
      '<div class="bebo-video-unavailable">Video preview unavailable. Try refreshing.</div>')+
     (v.caption?'<p class="bebo-video-caption">'+safe(v.caption)+'</p>':'')+
-    '<p class="muted">Up to 60 seconds · '+Math.ceil(v.size_bytes/1048576)+' MB uploaded</p>'+
-    (permitted?'<div class="bebo-video-actions"><strong>♥ '+likes.length+' hearts</strong> '+
+    '<p class="muted">Up to 60 seconds · '+Math.ceil(v.size_bytes/1048576)+' MiB uploaded</p>'+statsLine(measured,v.id)+
+    (permitted?'<div class="bebo-video-actions"><strong>♥ '+countMetric(measured,'hearts')+' hearts</strong> '+
       (ctx?.me?'<button class="button secondary" data-action="'+(liked?'video-unheart':'video-heart')+'" data-id="'+safe(v.id)+'">'+(liked?'Unlike':'♥ Luv this video')+'</button> '+
        (!own?'<button class="button secondary" data-action="video-report" data-id="'+safe(v.id)+'">Report</button>':''):
        '<a href="#/account">Sign in to react</a>')+
@@ -140,10 +159,34 @@ export function createVideos(sb,{safe,panel,query}) {
     (own?uploadForm()+'<h3>My pending / rejected videos</h3>'+await videoCards(mine,ctx,{pending:true}):'')+
     '<h3>Public videos</h3>'+await videoCards(videoList,ctx));
  }
+ async function homePanel(ctx){
+  // Show only approved videos in the home feed. No autoplay or fake views.
+  const clips=await rows('bebo_videos',q=>q.select('id,title,owner_id,object_path,created_at,status')
+   .eq('status','approved').order('created_at',{ascending:false}).limit(24));
+  if(!clips.length)return panel('🔥 Trending on Bebo','<p>The first approved Bebo videos will appear here. <a href="#/videos">Visit Bebo Videos »</a></p>');
+  const stats=await metrics(clips);
+  const ranked=[...clips].sort((a,b)=>countMetric(stats.get(b.id),'ranking_score')-countMetric(stats.get(a.id),'ranking_score')||
+    String(b.created_at).localeCompare(String(a.created_at))).slice(0,2);
+  const [users,urls]=await Promise.all([names([...new Set(ranked.map(x=>x.owner_id))]),signed(ranked)]);
+  const items=ranked.map((clip,index)=>{
+   const user=users.get(clip.owner_id),m=stats.get(clip.id),url=urls.get(clip.id);
+   return '<article class="bebo-home-video-item"><h3>'+(index===0?'★ Featured · ':'')+safe(clip.title)+'</h3>'+
+     '<p class="muted">By '+(user?link(user):'Bebo member')+'</p>'+
+     (url?'<video class="bebo-video-player" controls playsinline preload="metadata" data-bebo-video-id="'+safe(clip.id)+
+      '" src="'+safe(url)+'" aria-label="'+safe(clip.title)+'"></video>':'')+
+     statsLine(m,clip.id)+
+     '<p><a href="#/videos">Watch and join the discussion »</a></p></article>';
+  }).join('');
+  return panel('🔥 Trending Bebo Videos ♥',items+
+   '<p class="muted">Ranking: 2 × recent member views + 4 × hearts + 6 × comments + a small freshness bonus. Plays count once per signed-in member per day after meaningful playback. Rewatching, refreshing and anonymous plays do not add views. No paid boosts.</p>'+
+   '<p><a href="#/videos">See all Bebo videos 🎬 »</a></p>');
+ }
  async function profilePanel(who,ctx){
   const count=await rows('bebo_videos',q=>q.select('id').eq('owner_id',who.id).eq('status','approved').limit(20));
+  const stats=await metrics(count);
+  const memberViews=count.reduce((n,v)=>n+countMetric(stats.get(v.id),'views'),0);
   const label=safe(who.display_name)+'’s videos';
-  return panel('🎬 My Bebo Videos ♥','<p>'+count.length+' published clip'+(count.length===1?'':'s')+'</p>'+
+  return panel('🎬 My Bebo Videos ♥','<p>'+count.length+' published clip'+(count.length===1?'':'s')+' · '+memberViews+' counted member views</p>'+
     '<p><a href="#/videos/u/'+encodeURIComponent(who.username)+'">▶ View '+label+' »</a></p>'+
     (who.id===ctx?.me?.id?'<p><a href="#/videos">+ Upload a video</a></p>':''));
  }
@@ -253,5 +296,5 @@ export function createVideos(sb,{safe,panel,query}) {
   }
   throw Error('Unknown video action.');
  }
- return {route,profilePanel,form,action,selectionHint:validateBeboVideoFile};
+ return {route,homePanel,profilePanel,form,action,selectionHint:validateBeboVideoFile};
 }
