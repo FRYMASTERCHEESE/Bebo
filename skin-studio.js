@@ -89,6 +89,8 @@ export async function generateSkinPictures(form,design) {
       ctx.restore();
     }
     ctx.globalAlpha=1;
+    const preview=form.querySelector(field==='banner'?'.skin-studio-preview-head':'.skin-studio-preview');
+    if(preview){preview.style.backgroundImage='url("'+canvas.toDataURL('image/png')+'")';preview.style.backgroundSize='cover';preview.style.backgroundPosition='center';}
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
     if(!blob||blob.size>5*1024*1024)throw Error('The generated picture was too large. Try again.');
     const file=new File([blob],`bebo-${field}-art.png`,{type:'image/png'});
