@@ -849,6 +849,43 @@ document.addEventListener('click',async e=>{
   if(!result?.cancelled){message=result?.message||'Admin action completed';success=true;render()}
   return;
  }
+ async function remoteSkinArt(form,prompt){
+  if(!sb||!me)return false;
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session?.access_token)return false;
+  const files=[];
+  for(const type of ['banner','background']){
+   const response=await fetch(SUPABASE_URL+'/functions/v1/bebo-generate-skin-image',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+session.access_token,'apikey':SUPABASE_PUBLISHABLE_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify({prompt,type})
+   });
+   if(!response.ok)return false;
+   const blob=await response.blob();
+   if(!blob.type.startsWith('image/')||blob.size>5*1024*1024||!blob.size)return false;
+   files.push({type,file:new File([blob],'bebo-ai-'+type+'.'+(blob.type.includes('png')?'png':'jpg'),{type:blob.type})});
+  }
+  if(typeof DataTransfer==='undefined')return false;
+  for(const entry of files){
+   const input=form.elements.namedItem(entry.type);
+   if(!input)return false;
+   const dt=new DataTransfer();dt.items.add(entry.file);input.files=dt.files;
+   if(!input.files.length)return false;
+   let img=form.querySelector('[data-generated-skin-image="'+entry.type+'"]');
+   if(!img){
+    const figure=document.createElement('figure');
+    const caption=document.createElement('figcaption');
+    caption.textContent=entry.type==='banner'?'AI-generated banner':'AI-generated background';
+    img=document.createElement('img');img.dataset.generatedSkinImage=entry.type;img.alt=caption.textContent;
+    img.style.cssText='display:block;max-width:100%;height:auto;border-radius:8px';
+    figure.append(caption,img);input.closest('label')?.insertAdjacentElement('afterend',figure);
+   }
+   const url=URL.createObjectURL(entry.file);img.src=url;img.onload=()=>URL.revokeObjectURL(url);
+   const preview=form.querySelector(entry.type==='banner'?'.skin-studio-preview-head':'.skin-studio-preview');
+   if(preview){preview.style.backgroundImage='url("'+url+'")';preview.style.backgroundSize='cover';}
+  }
+  return true;
+ }
  if(a==='skin-generate'){
   const form=document.querySelector('form[data-form="skin"]');
   const prompt=document.querySelector('#bebo-skin-prompt');
@@ -857,9 +894,12 @@ document.addEventListener('click',async e=>{
   try{
    const design=generateSkinFromPrompt(prompt.value);
    fillSkinStudio(form,design);
-   await generateSkinPictures(form,design);
+   if(status)status.textContent='Creating your pictures…';
+   let generated=false;
+   try{generated=await remoteSkinArt(form,prompt.value);}catch(error){console.warn('Image service unavailable',error)}
+   if(!generated)await generateSkinPictures(form,design);
    form.elements.namedItem('visibility').value='draft';
-   if(status)status.textContent='Your '+design.name+' skin and two original PNG pictures are ready! Adjust the colours below, then save your skin to upload the new banner and background ♥';
+   if(status)status.textContent=generated?'AI banner and background created! Save your skin to keep them ♥':'Your '+design.name+' skin has original local artwork. AI pictures require the image provider to be configured and a signed-in account. You can still save this skin ♥';
   }catch(error){
    if(status)status.textContent=error.message||'Please describe your skin first.';
   }
