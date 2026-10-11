@@ -82,7 +82,7 @@ export async function generateSkinPictures(form,design) {
       const size=8+((n*67+seed)%85);
       ctx.save();ctx.translate(x,y);ctx.rotate((n%9)*.3);
       ctx.beginPath();
-      if(motif==='cards'){ctx.roundRect(-size*.35,-size*.6,size*.7,size*1.2,Math.min(10,size*.1));ctx.stroke();}
+      if(motif==='cards'){ctx.rect(-size*.35,-size*.6,size*.7,size*1.2);ctx.stroke();}
       else if(motif==='orbs'){ctx.arc(0,0,size*.45,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(-size*.45,0);ctx.lineTo(size*.45,0);ctx.stroke();}
       else if(motif==='waves'){ctx.arc(0,0,size*.7,0,Math.PI);ctx.stroke();}
       else if(motif==='stars'){for(let j=0;j<10;j++){const angle=j*Math.PI/5-Math.PI/2,rad=j%2?size*.15:size*.42;const px=Math.cos(angle)*rad,py=Math.sin(angle)*rad;j?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.closePath();ctx.fill();}
@@ -95,7 +95,8 @@ export async function generateSkinPictures(form,design) {
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
     if(!blob||blob.size>5*1024*1024)throw Error('The generated picture was too large. Try again.');
     const file=new File([blob],`bebo-${field}-art.png`,{type:'image/png'});
-    const transfer=new DataTransfer();transfer.items.add(file);input.files=transfer.files;
+    try {const transfer=new DataTransfer();transfer.items.add(file);input.files=transfer.files;}
+    catch {throw Error('Your browser could not attach the generated pictures. Your theme preview still works; please use a browser with file-upload support to save pictures.');}
   }
   return true;
 }
