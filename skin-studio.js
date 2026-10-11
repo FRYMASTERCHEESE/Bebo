@@ -21,6 +21,7 @@ export function generateSkinFromPrompt(prompt) {
   const text=String(prompt||'').normalize('NFKC').toLowerCase().slice(0,500);
   if(!text.trim())throw Error('Describe the skin you want first.');
   const choices=[
+    {words:['yugioh','yu-gi-oh','yu gi oh','duel monster','duel','duelist','dark magician','blue eyes','trading cards'],colors:['#34204f','#c6a04c','#fff1c2'],name:'Duel Card Legend'},
     {words:['pokemon','pokémon','pikachu','pokeball','pokéball','pokedex','charizard','squirtle','bulbasaur'],colors:['#ffe45c','#ee5353','#fff9e4'],name:'Monster Catcher Adventure'},
     {words:['anime','manga','kawaii','cartoon'],colors:['#fbd9ff','#9b6ce4','#ffffff'],name:'Anime Dream'},
     {words:['goth','gothic','vampire','emo','black','dark','horror'],colors:['#292032','#7d295f','#f3d7ed'],name:'Midnight Gothic'},
@@ -46,7 +47,7 @@ export function generateSkinFromPrompt(prompt) {
   if(quotedHex[1])secondary_color=quotedHex[1];
   if(quotedHex[2])accent_color=quotedHex[2];
   const layout=/right|other side/.test(text)?'right':'left';
-  const motion=/pokemon|pokémon|pikachu|sparkle|glitter|glow|animate|moving|stars/.test(text)&&!/no animation|no movement|still|static/.test(text)?'soft':'off';
+  const motion=/yugioh|yu-gi-oh|pokemon|pokémon|pikachu|sparkle|glitter|glow|animate|moving|stars/.test(text)&&!/no animation|no movement|still|static/.test(text)?'soft':'off';
   return skinDesign({name:winning.name,primary_color,secondary_color,accent_color,layout,motion});
 }
 
