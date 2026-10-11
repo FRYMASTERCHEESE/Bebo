@@ -67,5 +67,5 @@ const source=readFileSync(new URL('../social.js',import.meta.url),'utf8');
 assert(source.includes("href=\"#/messages/to/'+encodeURIComponent(who.id)"),'profile Mail link must use stable account ID');
 assert(source.includes("classic-modules.js?v=20261011-profile-mail-fix-v1"),'classic module needs cache refresh');
 const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');
-assert(index.includes("social.js?v=20261011-profile-mail-fix-v1"),'browser must load updated JS');
+assert(/social\.js\?v=20261011-(?:profile-mail-fix|notifications)-v1/.test(index),'browser must load updated JS');
 console.log('PASS: 16 synthetic one-tap mail checks, valid dotted/uppercase username fallback and safe recipient identity');
