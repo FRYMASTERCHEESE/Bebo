@@ -50,6 +50,53 @@ export function generateSkinFromPrompt(prompt) {
   return skinDesign({name:winning.name,primary_color,secondary_color,accent_color,layout,motion});
 }
 
+
+/** Draw original downloadable PNG artwork locally; no paid service or third-party image URLs. */
+export async function generateSkinPictures(form,design) {
+  const theme=skinDesign(design);
+  if(!form||!form.matches('form[data-form="skin"]'))throw Error('Open Bebo Skin Studio first.');
+  const outputs=[['banner',1200,360],['background',1200,900]];
+  for(const [field,width,height] of outputs){
+    const input=form.elements.namedItem(field);
+    if(!input)throw Error('Skin image field is missing: '+field);
+    const canvas=document.createElement('canvas');
+    canvas.width=width;canvas.height=height;
+    const ctx=canvas.getContext('2d');
+    if(!ctx)throw Error('Picture generator is unavailable in this browser.');
+    const gradient=ctx.createLinearGradient(0,0,width,height);
+    gradient.addColorStop(0,theme.primary_color);
+    gradient.addColorStop(.56,theme.secondary_color);
+    gradient.addColorStop(1,theme.primary_color);
+    ctx.fillStyle=gradient;ctx.fillRect(0,0,width,height);
+    const seed=[...theme.name].reduce((n,ch)=>(n*31+ch.charCodeAt(0))>>>0,7);
+    const motif=/duel|dragon|card|legend/i.test(theme.name)?'cards':
+      /monster|catcher|pokemon|pokémon/i.test(theme.name)?'orbs':
+      /galaxy|moon|star|cosmic/i.test(theme.name)?'stars':
+      /ocean|mermaid/i.test(theme.name)?'waves':'sparkles';
+    ctx.strokeStyle=theme.accent_color;ctx.fillStyle=theme.accent_color;
+    ctx.globalAlpha=.26;
+    for(let n=0;n<52;n++){
+      const x=((n*7919+seed*13)%10000)/10000*width;
+      const y=((n*3571+seed*7)%10000)/10000*height;
+      const size=8+((n*67+seed)%85);
+      ctx.save();ctx.translate(x,y);ctx.rotate((n%9)*.3);
+      ctx.beginPath();
+      if(motif==='cards'){ctx.roundRect(-size*.35,-size*.6,size*.7,size*1.2,Math.min(10,size*.1));ctx.stroke();}
+      else if(motif==='orbs'){ctx.arc(0,0,size*.45,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(-size*.45,0);ctx.lineTo(size*.45,0);ctx.stroke();}
+      else if(motif==='waves'){ctx.arc(0,0,size*.7,0,Math.PI);ctx.stroke();}
+      else if(motif==='stars'){for(let j=0;j<10;j++){const angle=j*Math.PI/5-Math.PI/2,rad=j%2?size*.15:size*.42;const px=Math.cos(angle)*rad,py=Math.sin(angle)*rad;j?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.closePath();ctx.fill();}
+      else {ctx.arc(0,0,size*.18,0,Math.PI*2);ctx.fill();}
+      ctx.restore();
+    }
+    ctx.globalAlpha=1;
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+    if(!blob||blob.size>5*1024*1024)throw Error('The generated picture was too large. Try again.');
+    const file=new File([blob],`bebo-${field}-art.png`,{type:'image/png'});
+    const transfer=new DataTransfer();transfer.items.add(file);input.files=transfer.files;
+  }
+  return true;
+}
+
 export function importSkinJSON(text) {
   let data;
   try {data=JSON.parse(text)} catch {throw Error('This is not a valid skin JSON file.')}
