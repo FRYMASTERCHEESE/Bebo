@@ -8,7 +8,7 @@ import { createSuggestions } from './suggestions.js?v=20261010-suggestions-v1';
 import { createVerification } from './verified.js?v=20261010-transparency-v1';
 import { createVideos } from './videos.js?v=20261010-analytics-v5';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
-import { skinDesign, studioPanels, previewSkinStudio, fillSkinStudio, importSkinJSON, downloadSkin } from './skin-studio.js?v=20261010-studio-v1';
+import { skinDesign, studioPanels, previewSkinStudio, fillSkinStudio, importSkinJSON, downloadSkin, generateSkinFromPrompt } from './skin-studio.js?v=20261012-prompt-v1';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
 const configured=/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL||'')&&SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_');
@@ -847,6 +847,21 @@ document.addEventListener('click',async e=>{
  if(a.startsWith('admin-')){
   const result=await admin.action(a,id,me);
   if(!result?.cancelled){message=result?.message||'Admin action completed';success=true;render()}
+  return;
+ }
+ if(a==='skin-generate'){
+  const form=document.querySelector('form[data-form="skin"]');
+  const prompt=document.querySelector('#bebo-skin-prompt');
+  const status=document.querySelector('#bebo-skin-prompt-status');
+  if(!form||!prompt)return;
+  try{
+   const design=generateSkinFromPrompt(prompt.value);
+   fillSkinStudio(form,design);
+   form.elements.namedItem('visibility').value='draft';
+   if(status)status.textContent='Your '+design.name+' skin is ready! Adjust the colours below, preview, then save your skin ♥';
+  }catch(error){
+   if(status)status.textContent=error.message||'Please describe your skin first.';
+  }
   return;
  }
  if(a==='skin-edit'){
