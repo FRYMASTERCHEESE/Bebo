@@ -8,7 +8,7 @@ import { createSuggestions } from './suggestions.js?v=20261010-suggestions-v1';
 import { createVerification } from './verified.js?v=20261010-transparency-v1';
 import { createVideos } from './videos.js?v=20261010-analytics-v5';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
-import { skinDesign, studioPanels, previewSkinStudio, fillSkinStudio, importSkinJSON, downloadSkin, generateSkinFromPrompt } from './skin-studio.js?v=20261012-prompt-v1';
+import { skinDesign, studioPanels, previewSkinStudio, fillSkinStudio, importSkinJSON, downloadSkin, generateSkinFromPrompt } from './skin-studio.js?v=20261012-pokemon-fix-v2';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
 const configured=/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL||'')&&SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_');
