@@ -29,7 +29,11 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
   async function members(me){
     let q=sb.from('bebo_profiles').select('id,username,display_name,created_at').order('created_at',{ascending:false}).limit(40);
     if(search)q=q.ilike('username','%'+search+'%');
-    const people=await request(q);
+    const [people,registrationNames]=await Promise.all([
+      request(q),
+      request(sb.rpc('bebo_admin_signup_directory'))
+    ]);
+    const namesByID=new Map(registrationNames.map(x=>[x.user_id,x.real_name]));
     const controlIDs=people.map(x=>x.id);
     const records=controlIDs.length?await request(sb.from('bebo_member_controls').select('member_id,status,reason,updated_at').in('member_id',controlIDs)):[];
     const byID=new Map(records.map(x=>[x.member_id,x]));
@@ -44,6 +48,7 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
        click('Restore member','admin-member-restore',p.id):
        click('Suspend','admin-member-suspend',p.id,'danger');
       return '<article class="admin-member-card"><div><b>'+link(p)+'</b>'+
+       '<p class="muted"><strong>Registration real name (private):</strong> '+safe(namesByID.get(p.id)||'Not provided before this update')+'</p>'+
        '<p class="muted">Joined '+day(p.created_at)+'</p>'+
        '<span class="admin-state admin-state-'+status+'">'+safe(status.toUpperCase())+'</span>'+ (isVerified?'<span class="admin-state admin-state-active">✓ BEBO VERIFIED</span>':'')+
        (restriction?.reason?'<p class="admin-member-reason">'+safe(restriction.reason)+'</p>':'')+'</div>'+
@@ -100,11 +105,22 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
     // GitHub Pages, and never try to query auth.users with a public anon key.
     const {count,error}=await sb.from('bebo_profiles').select('id',{count:'exact',head:true});
     if(error)throw error;
+    const entries=await request(sb.rpc('bebo_admin_signup_directory'));
+    const privateRows=entries.map(item=>{
+      const profileLabel=item.username
+        ?'<a href="#/u/'+encodeURIComponent(item.username)+'">'+safe(item.display_name||item.username)+' (@'+safe(item.username)+')</a>'
+        :'<span class="muted">Profile not created yet</span>';
+      return '<article class="admin-member-card"><div><strong>'+safe(item.real_name||'Name not provided (older signup)')+'</strong>'+
+        '<p class="muted">'+profileLabel+'</p><p class="muted">Signed up '+day(item.registered_at)+'</p></div></article>';
+    }).join('');
     const url='https://supabase.com/dashboard/project/rnxiggzyqqzjtgdbpedb/auth/users';
     return panel('📧 Sign-up Emails ♥',
       '<p><strong>See everyone who registered for Bebo</strong> — including people whose email is confirmed but who have not finished choosing a profile name yet.</p>'+
       '<div class="admin-signup-summary"><strong>'+Number(count||0).toLocaleString('en-NZ')+
       '</strong><span>Completed Bebo profiles</span></div>'+
+      '<h3>Private sign-up real names</h3>'+
+      '<p>These are the names members entered when registering. They are visible only to the authorised site owner, never on public profiles. A typed name is not proof of legal identity. Earlier accounts may have no name recorded.</p>'+
+      (privateRows||'<p class="muted">No registrations found.</p>')+
       '<p><strong>All registration emails and confirmation statuses:</strong></p>'+
       '<p><a class="button admin-signup-link" href="'+url+
       '" target="_blank" rel="noopener noreferrer">📧 Open Secure Sign-up Email List ↗</a></p>'+
