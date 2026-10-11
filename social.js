@@ -895,11 +895,11 @@ document.addEventListener('click',async e=>{
    const design=generateSkinFromPrompt(prompt.value);
    fillSkinStudio(form,design);
    if(status)status.textContent='Creating your pictures…';
-   let generated=false;
-   try{generated=await remoteSkinArt(form,prompt.value);}catch(error){console.warn('Image service unavailable',error)}
-   if(!generated)await generateSkinPictures(form,design);
+   // Free-only mode: do not call a metered image provider without owner opt-in.
+   const generated=false;
+   await generateSkinPictures(form,design);
    form.elements.namedItem('visibility').value='draft';
-   if(status)status.textContent=generated?'AI banner and background created! Save your skin to keep them ♥':'Your '+design.name+' skin has original local artwork. AI pictures require the image provider to be configured and a signed-in account. You can still save this skin ♥';
+   if(status)status.textContent=generated?'AI banner and background created! Save your skin to keep them ♥':'Your '+design.name+' skin has original local artwork. No paid API was used. Your generated banner and background are shown below and can be saved with the skin ♥';
   }catch(error){
    if(status)status.textContent=error.message||'Please describe your skin first.';
   }
