@@ -110,9 +110,17 @@ export function createAdmin(sb,{safe,panel}) {
       .select('id,caption,object_path,moderation_status').in('id',ids):{data:[],error:null};
     if(reported.error)throw reported.error;
     const byID=new Map((reported.data||[]).map(p=>[p.id,p]));
-    const photoPreview=p=>p?.object_path?
-      '<img loading="lazy" style="display:block;width:140px;max-width:100%;height:110px;object-fit:contain;margin:8px 0;border:1px solid #ddd" src="'+
-       safe(sb.storage.from('bebo-photos').getPublicUrl(p.object_path).data.publicUrl)+'" alt="Submitted member photo for moderator review">':'';
+    const paths=[...new Set([...pending,...(reported.data||[])].map(p=>p.object_path).filter(Boolean))];
+    const signed=paths.length?await sb.storage.from('bebo-photos').createSignedUrls(paths,120):
+      {data:[],error:null};
+    if(signed.error)throw signed.error;
+    const signedByPath=new Map((signed.data||[]).filter(x=>x.signedUrl).map(x=>[x.path,x.signedUrl]));
+    const photoPreview=p=>{
+      const url=p?.object_path&&signedByPath.get(p.object_path);
+      return url?'<img loading="lazy" style="display:block;width:140px;max-width:100%;height:110px;object-fit:contain;margin:8px 0;border:1px solid #ddd" src="'+
+       safe(url)+'" alt="Submitted member photo for moderator review">':
+       '<p class="muted">Photo preview unavailable. Refresh to retry.</p>';
+    };
     const buttons=p=>'<div class="admin-report-actions">'+
       '<button type="button" class="button" data-action="admin-photo-approve" data-id="'+safe(p.id)+'">Approve photo</button>'+
       '<button type="button" class="button danger" data-action="admin-photo-reject" data-id="'+safe(p.id)+'">Reject photo</button></div>';
@@ -132,7 +140,7 @@ export function createAdmin(sb,{safe,panel}) {
     }).join('');
     return panel('📸 Photo Approvals & Abuse Reports',
       '<p><strong>Member photos require a decision before appearing in public galleries.</strong>'+
-      ' Review the picture, any personal information and copyright concerns. The storage URL is technically shareable; an unapproved image is not truly private.</p>'+
+      ' Review the picture, any personal information and copyright concerns. Photo previews now use short-lived private links; do not share review URLs publicly.</p>'+
       '<h3>Awaiting approval ('+pending.length+')</h3>'+
       (pendingHTML||'<p class="admin-empty">No photos awaiting review.</p>')+
       '<h3>Open photo reports ('+reports.length+')</h3>'+

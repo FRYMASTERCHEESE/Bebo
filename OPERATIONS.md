@@ -50,3 +50,8 @@ Never paste private reset URLs, email confirmation tokens, session tokens or pas
 ## Current release verdict
 
 **Public beta / soft launch, not independently certified 100% production ready.** Automated tests and anonymous privacy checks cover known paths only; outstanding real-user, backup-restore, owner-only Auth and legal items should be tracked separately. Protect continuity: deploy incremental reviewed changes and never erase real member content to make test counters green.
+
+
+## Photo storage privacy update (12 October 2026 NZ)
+
+The bucket `bebo-photos` is now intended to be private. Object-access policies allow anon public media reads only for approved album photo metadata, and allow the owner/moderator to preview pending items; galleries and admin use 120-second signed URLs. On initial audit there were 0 album records and 0 photo-storage objects, so no existing album photos needed migration. Check the private bucket flag and new RLS policies in Supabase after applying the migration; record a live uploader/moderator/public test before marking complete. Signed links remain valid for their short expiry even after a takedown.

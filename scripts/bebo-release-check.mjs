@@ -99,6 +99,13 @@ check(read('classic-modules.js').includes('classic-report-content')&&
  read('admin.js').includes('admin-content-hide')&&
  read('admin.js').includes('admin-content-reviewed'),
  'Blog, comment, group reporting and moderator hide queue wired');
+check(read('classic-modules.js').includes('createSignedUrls')&&
+ read('admin.js').includes('createSignedUrls')&&
+ !read('classic-modules.js').includes(".getPublicUrl(")&&
+ !read('admin.js').includes(".getPublicUrl("),
+ 'Photo gallery and moderation panel use short-lived private storage URLs');
+check(existsSync('supabase/bebo_private_album_photo_storage_20261012.sql'),
+ 'Private album bucket security migration is recorded');
 check(read('classic-modules.js').includes('classic-report-photo')&&read('admin.js').includes('admin-photo-approve')&&read('admin.js').includes('admin-photo-hide'),'Member photo reports and owner approvals wired');
 check(existsSync('supabase/bebo_photos_owner_review_reports_20261011.sql'),'Applied photo moderation database migration documented');
 check(sitemap.includes('https://bebo.nz/'), 'Sitemap includes homepage');

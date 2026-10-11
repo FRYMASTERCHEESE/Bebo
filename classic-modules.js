@@ -13,16 +13,25 @@ export function createClassic(sb,{safe,panel,btn,query}) {
   const handlePattern=value=>String(value||'').replace(/[\\%_]/g,'\\$&');
   const allowedFile=f=>f instanceof File && f.size>0 && f.size<=5*1024*1024 && ['image/jpeg','image/png','image/webp'].includes(f.type);
   const fileExt=f=>({'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[f.type]);
-  const imgUrl=path=>sb.storage.from('bebo-photos').getPublicUrl(path).data.publicUrl;
+  // Only approved photos are accessible to guests; uploader/moderator can review pending ones.
+  // Even an approved link expires to limit circulation after takedown.
+  async function photoSignedUrls(records){
+    if(!records.length)return new Map();
+    const {data,error}=await sb.storage.from('bebo-photos')
+      .createSignedUrls(records.map(p=>p.object_path),120);
+    if(error)throw error;
+    return new Map((data||[]).filter(p=>p.signedUrl).map(p=>[p.path,p.signedUrl]));
+  }
   const postForm=(name,content,submit)=>'<form class="fields" data-form="'+name+'">'+content+'<button class="button">'+submit+'</button></form>';
   const teaser=(text,n)=>safe(String(text||'').slice(0,n))+(String(text||'').length>n?'…':'');
-  function photoTile(p){
+  function photoTile(p,signed){
     const review=p.moderation_status==='pending'?
       '<p class="muted">⏳ Awaiting moderator approval · not listed publicly</p>':
       p.moderation_status==='rejected'?'<p class="muted">⛔ Hidden by moderators</p>':'';
-    return '<div class="classic-photo"><a href="'+safe(imgUrl(p.object_path))+
-      '" target="_blank" rel="noopener noreferrer"><img loading="lazy" src="'+safe(imgUrl(p.object_path))+
-      '" alt="'+safe(p.caption||'Photo')+'"></a><div>'+teaser(p.caption,52)+'</div>'+review+'</div>';
+    const media=signed?'<a href="'+safe(signed)+'" target="_blank" rel="noopener noreferrer">'+
+      '<img loading="lazy" src="'+safe(signed)+'" alt="'+safe(p.caption||'Photo')+'"></a>':
+      '<p class="muted">Preview unavailable. Refresh or ask for help.</p>';
+    return '<div class="classic-photo">'+media+'<div>'+teaser(p.caption,52)+'</div>'+review+'</div>';
   }
   async function publicModules(who,me){
     const [albums,blogs,other]=await Promise.all([
@@ -71,6 +80,7 @@ export function createClassic(sb,{safe,panel,btn,query}) {
     if(!album)return panel('Photo album','Album not found.');
     const owner=await db('bebo_profiles',q=>q.select('id,username,display_name').eq('id',album.owner_id).maybeSingle());
     const photos=await db('bebo_photos',q=>q.select('*').eq('album_id',id).order('created_at',{ascending:false}).limit(96));
+    const signed=await photoSignedUrls(photos);
     const mine=me?.id===album.owner_id;
     const form=mine && photos.length<96?postForm('classic-photo',
       '<input type="hidden" name="album_id" value="'+id+'">'+
@@ -80,7 +90,7 @@ export function createClassic(sb,{safe,panel,btn,query}) {
     return panel('📸 '+safe(album.title),
       '<p><a href="#/photos/'+encodeURIComponent(owner?.username||'')+'">« All albums</a> | By '+(owner?link(owner):'Member')+'</p>'+
       '<p>'+safe(album.description)+'</p>'+form+
-      '<div class="classic-gallery">'+photos.map(p=>'<div>'+photoTile(p)+
+      '<div class="classic-gallery">'+photos.map(p=>'<div>'+photoTile(p,signed.get(p.object_path))+
        (mine?btn('Remove photo','classic-delete-photo',p.id,'secondary'):
         me&&p.moderation_status==='approved'?btn('🚩 Report photo','classic-report-photo',p.id,'secondary'):'')+
        '</div>').join('')+'</div>'+

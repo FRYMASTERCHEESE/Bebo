@@ -19,7 +19,7 @@ const photos=[
  {id:pending,album_id:album,owner_id:owner,object_path:owner+'/'+pending+'.png',
  caption:'Unreviewed personal photo',moderation_status:'pending',created_at:'2026-10-10T12:05:00Z'}
 ];
-let viewer=null;const reports=[];
+let viewer=null;const reports=[];let batchSignedCalls=0;
 const query=async(table,fn)=>{
  const tests=[];let single=false,orderKey='',desc=false,limit=1000,insert=null;
  const q={
@@ -47,7 +47,12 @@ const query=async(table,fn)=>{
 };
 const sb={storage:{from(bucket){
  assert.equal(bucket,'bebo-photos');
- return {getPublicUrl(path){return {data:{publicUrl:'https://example.invalid/objects/'+encodeURIComponent(path)}}}};
+ return {async createSignedUrls(paths,seconds){
+   assert.equal(seconds,120,'Private photo links should be short-lived');
+   batchSignedCalls++;
+   return {data:paths.map(path=>({path,signedUrl:'https://example.invalid/storage/v1/object/sign/bebo-photos/'+
+    encodeURIComponent(path)+'?token=synthetic'})),error:null};
+  }};
 }}};
 const classic=createClassic(sb,{safe:esc,panel:(title,body)=>'<section><h2>'+title+'</h2>'+body+'</section>',
  btn:(label,action,id)=>'<button data-action="'+esc(action)+'" data-id="'+esc(id)+'">'+label+'</button>',query});
@@ -55,6 +60,8 @@ viewer=null;
 const guest=await classic.route('album/'+album,null);
 assert(guest.includes('Welcome &lt;script&gt;alert(1)&lt;/script&gt;'),'Photo captions must be safely escaped');
 assert(!guest.includes('Unreviewed personal photo'),'Guest must not discover pending photos');
+assert(guest.includes('/storage/v1/object/sign/bebo-photos/'),'Approved photo must use signed private storage');
+assert(!guest.includes('/storage/v1/object/public/'),'Guest must never receive public bucket photo URL');
 assert(!guest.includes('classic-report-photo'),'Guests cannot file photo reports');
 viewer=owner;
 const mine=await classic.route('album/'+album,{id:owner});
@@ -70,6 +77,7 @@ await classic.action('classic-report-photo',approved,{me:{id:another}});
 assert.equal(reports.length,1);
 assert.equal(reports[0].photo_id,approved);
 assert.equal(reports[0].reporter_id,another);
+assert(batchSignedCalls>=3,'Gallery must sign photos per viewer instead of returning public URLs');
 const sql=readFileSync('supabase/bebo_photos_owner_review_reports_20261011.sql','utf8');
 const admin=readFileSync('admin.js','utf8');
 assert(sql.includes("moderation_status='approved'"),'Anonymous RLS must filter unapproved photos');
