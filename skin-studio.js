@@ -135,8 +135,22 @@ export async function generateSkinPictures(form,design) {
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
     if(!blob||blob.size>5*1024*1024)throw Error('The generated picture was too large. Try again.');
     const file=new File([blob],`bebo-${field}-art.png`,{type:'image/png'});
-    try {const transfer=new DataTransfer();transfer.items.add(file);input.files=transfer.files;}
-    catch {throw Error('Your browser could not attach the generated pictures. Your theme preview still works; please use a browser with file-upload support to save pictures.');}
+    try {
+      const transfer=new DataTransfer();transfer.items.add(file);input.files=transfer.files;
+      if(!input.files?.length||input.files[0].size!==blob.size)throw Error('File attachment not supported');
+    } catch {
+      throw Error('Your browser cannot attach generated pictures automatically. The preview is available, but the pictures were not saved.');
+    }
+    // Show the actual generated PNG separately from the styled mock profile.
+    let image=form.querySelector('[data-generated-skin-image="'+field+'"]');
+    if(!image){
+      const figure=document.createElement('figure');figure.className='skin-generated-image';
+      const heading=document.createElement('figcaption');heading.textContent=field==='banner'?'Generated banner picture':'Generated page background picture';
+      image=document.createElement('img');image.alt=heading.textContent;image.dataset.generatedSkinImage=field;
+      image.style.cssText='max-width:100%;height:auto;border-radius:8px;border:1px solid #999;display:block';
+      figure.append(heading,image);input.closest('label')?.insertAdjacentElement('afterend',figure);
+    }
+    if(image)image.src=canvas.toDataURL('image/png');
   }
   return true;
 }
