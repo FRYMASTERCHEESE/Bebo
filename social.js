@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
+import { createBeboNotifications } from './notifications.js?v=20261011-notices-v1';
 import { createRetro } from './nostalgia.js?v=20261010-polls-quizzes-v2';
 import { createSafety } from './safety.js';
 import { createClassic } from './classic-modules.js?v=20261011-profile-mail-fix-v1';
@@ -44,6 +45,7 @@ async function query(table,fn){const q=fn(sb.from(table));const {data,error}=awa
 const retro=createRetro(sb,{safe,panel,btn,query});
 const safety=createSafety(sb,{safe,panel,btn,query});
 const classic=createClassic(sb,{safe,panel,btn,query});
+const notifications=createBeboNotifications(sb,{safe,panel});
 const verified=createVerification(sb,{safe,panel,query});
 const videos=createVideos(sb,{safe,panel,query});
 const admin=createAdmin(sb,{safe,panel});
@@ -353,6 +355,7 @@ async function refresh(){
   }
   app.innerHTML=note()+authPage(page==='signin'?'signin':page==='signup'?'signup':'both');return
  }
+ if(page==='notifications'){app.innerHTML=note()+notifications.page();return}
  if(!profile){app.innerHTML=note()+createProfile();return}
  switch(page){
  case 'profile':await showProfile();break;
@@ -418,6 +421,13 @@ async function refreshBeboAnnouncement(){
   console.warn('Could not load public Bebo announcement',error);
  }
 }
+// Keep published site news and maintenance notices fresh even without navigating.
+window.setInterval(()=>{
+ if(!document.hidden)refreshBeboAnnouncement().catch(()=>{});
+},60000);
+document.addEventListener('visibilitychange',()=>{
+ if(!document.hidden){announcementsLastChecked=0;refreshBeboAnnouncement().catch(()=>{})}
+});
 /* Keep navigation orientation and loading state visible on every Bebo screen. */
 function updateActiveNav(){
  const section=(location.hash||'#/home').replace(/^#\/?/,'').split('/')[0]||'home';
@@ -446,7 +456,7 @@ function syncHeaderAuth(){
 let renderRevision=0;
 function render(){
  const revision=++renderRevision;
- syncAdminNav();updateActiveNav();syncHeaderAuth();
+ syncAdminNav();updateActiveNav();syncHeaderAuth();notifications.start(me?.id);
  app.setAttribute('aria-busy','true');
  document.body.classList.add('bebo-page-loading');
  refresh().then(()=>{
@@ -808,10 +818,18 @@ document.addEventListener('submit',async e=>{
 }
 });
 document.addEventListener('click',async e=>{
+ const opened=e.target.closest('[data-notice-open]');
+ if(opened){
+  e.preventDefault();
+  const target=opened.getAttribute('href')||'#/notifications';
+  try{await notifications.open(opened.dataset.noticeOpen)}catch(error){console.warn('Could not mark Bebo notification read',error)}
+  location.hash=target;return;
+ }
  const b=e.target.closest('[data-action]');if(!b)return;e.preventDefault();
  const a=b.dataset.action,id=b.dataset.id;
  try{
  if(a==='go'){location.hash='#/'+id;return}
+ if(a.startsWith('notice-')){message=await notifications.action(a,id);success=true;render();return}
  if(a==='verified-info'){await verified.openDialog(id);return}
  if(a==='verified-close'){verified.closeDialog();return}
  if(a==='verified-profile-toggle'){

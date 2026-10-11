@@ -24,6 +24,8 @@ on:
       - 'tests/auth-domain-flow.mjs'
       - 'tests/signup-real-name-smoke.mjs'
       - 'tests/mail-one-tap-smoke.mjs'
+      - 'notifications.js'
+      - 'tests/notifications-smoke.mjs'
       - 'tests/header-logout-smoke.mjs'
       - 'tests/recovery-callback-smoke.mjs'
       - 'tests/verified-smoke.mjs'
@@ -65,6 +67,8 @@ jobs:
         run: node tests/verified-transparency-smoke.mjs
       - name: Install headless Chromium
         run: npx playwright install --with-deps chromium
+      - name: Test private Bebo notification inbox and event triggers with synthetic members
+        run: node tests/notifications-smoke.mjs
       - name: Test profile Message one-tap recipient and username fallback with synthetic members
         run: node tests/mail-one-tap-smoke.mjs
       - name: Test Bebo required private signup-name contract without collecting real identities

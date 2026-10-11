@@ -788,6 +788,18 @@ main.wrap{max-width:1010px;background:#fff;min-height:80vh;border-left:1px solid
 }
 
 
+/* Bebo private activity notifications and unread bell. */
+.bebo-notice-count{display:inline-flex;align-items:center;justify-content:center;min-width:21px;height:21px;padding:0 5px;background:#bd235f;color:#fff;border-radius:20px;font:bold 12px Arial,sans-serif;margin-left:3px}
+.bebo-notice-count[hidden],#bebo-notification-nav[hidden]{display:none!important}
+.bebo-notice-item{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:14px;border:1px solid #d9cada;background:#fff;margin:10px 0;border-radius:8px;overflow-wrap:anywhere}
+.bebo-notice-unread{background:#fff0f7;border-color:#df97b8;border-left:4px solid #c72a66}
+.bebo-notice-item strong{color:#812950}
+.bebo-notice-item p{margin:5px 0;font-size:13px;line-height:1.5}
+.bebo-notice-item small{color:#667;display:block}
+.bebo-notice-actions{display:flex;flex-wrap:wrap;gap:7px;flex:0 0 auto}
+.bebo-notice-actions .button{white-space:normal}
+@media(max-width:600px){.bebo-notice-item{flex-direction:column}.bebo-notice-actions{width:100%}}
+
 /* Owner-only signup email shortcut: registrations remain inside Supabase Auth. */
 .admin-signup-summary{display:inline-flex;align-items:center;gap:12px;margin:10px 0 7px;padding:12px 17px;border:1px solid #d6a4bc;background:#fff3f9;color:#852958}
 .admin-signup-summary strong{font:700 30px Georgia,serif;color:#af3168}
@@ -1597,7 +1609,7 @@ html[data-bebo-era="2007"] .bebo-start-guide .bebo-start-actions a:first-child{b
 .bebo-password-toggle[aria-pressed="true"]{background:#fff0f5;border-color:#c48ea7;color:#8b2553}
 .bebo-password-toggle:focus-visible{outline:3px solid #f0ad2d;outline-offset:2px}
 </style>
-<script type="module" src="./social.js?v=20261011-profile-mail-fix-v1"></script></head>
+<script type="module" src="./social.js?v=20261011-notifications-v1"></script></head>
 <body><button type="button" class="bebo-skip-link">Skip to main content</button><header class="top"><div class="wrap head">
 <div class="brand" aria-label="Bebo"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-be">be</span><span class="brand-bo">bo</span><span class="brand-star" aria-hidden="true"> ★</span></div>
 <div class="brand-message"><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p><p class="bebo-independent-note">Independent community inspired by classic Bebo · Not affiliated with its original owners.</p></div>
@@ -1620,7 +1632,7 @@ html[data-bebo-era="2007"] .bebo-start-guide .bebo-start-actions a:first-child{b
     <button type="button" id="bebo-header-logout" class="bebo-header-logout" data-action="logout" hidden>↪ Log Out</button>
   </div>
 </nav>
-<nav class="nav" aria-label="Bebo sections"><div class="wrap" id="nav"><button data-nav="home">Home</button><button data-nav="start">♥ Start Here</button><button data-nav="profile">My Profile</button><button data-nav="friends">Friends</button><button data-nav="photos">Photos</button><button data-nav="videos">Videos 🎬</button><button data-nav="blogs">Blog</button><button data-nav="messages">Mail ✉</button><button data-nav="groups">Groups</button><button data-nav="other-half">Other Half ♥</button><button data-nav="skins">Skins</button><button data-nav="polls">Polls</button><button data-nav="quizzes">Quizzes</button><button data-nav="creators">Bands &amp; Authors</button><button data-nav="account">Account</button><button data-nav="suggestions">💡 Suggestions</button><button data-nav="safety">Safety &amp; Privacy</button><a class="bebo-about-link" href="./how-to.html">♥ How To</a><a class="bebo-about-link" href="./faq.html">FAQs</a><a class="bebo-about-link" href="./community-guidelines.html">Community Rules</a><a class="bebo-about-link" href="./privacy.html">Privacy &amp; Ads</a><a class="bebo-about-link" href="./about.html">About Bebo</a></div></nav>
+<nav class="nav" aria-label="Bebo sections"><div class="wrap" id="nav"><button data-nav="home">Home</button><button data-nav="start">♥ Start Here</button><button data-nav="profile">My Profile</button><button data-nav="friends">Friends</button><button data-nav="photos">Photos</button><button data-nav="videos">Videos 🎬</button><button data-nav="blogs">Blog</button><button data-nav="messages">Mail ✉</button><button data-nav="notifications" id="bebo-notification-nav" hidden>🔔 Notifications <span id="bebo-notification-count" class="bebo-notice-count" hidden>0</span></button><button data-nav="groups">Groups</button><button data-nav="other-half">Other Half ♥</button><button data-nav="skins">Skins</button><button data-nav="polls">Polls</button><button data-nav="quizzes">Quizzes</button><button data-nav="creators">Bands &amp; Authors</button><button data-nav="account">Account</button><button data-nav="suggestions">💡 Suggestions</button><button data-nav="safety">Safety &amp; Privacy</button><a class="bebo-about-link" href="./how-to.html">♥ How To</a><a class="bebo-about-link" href="./faq.html">FAQs</a><a class="bebo-about-link" href="./community-guidelines.html">Community Rules</a><a class="bebo-about-link" href="./privacy.html">Privacy &amp; Ads</a><a class="bebo-about-link" href="./about.html">About Bebo</a></div></nav>
 <div class="bebo-page-progress" aria-hidden="true"><span></span></div>
 <aside id="bebo-announcement-bar" class="bebo-announcement-strip" aria-label="Bebo announcements" hidden></aside>
 <main id="app" class="wrap" tabindex="-1"><section class="panel hero"><h1>Bebo Is Officially Back ❤️</h1><div class="body"><p>Welcome to an independent, fan-made social community inspired by classic Bebo. Create a real account, save your profile, add friends, send messages and explore 56 original skins.</p><p>Account and profile data is stored in Supabase; this is not just a browser simulation.</p><p><a href="./about.html">Learn about this independent Bebo revival</a>.</p><p class="muted">Loading your profile…</p></div></section></main>
