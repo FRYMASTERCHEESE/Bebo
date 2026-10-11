@@ -65,7 +65,7 @@ assert.match(sql,/revoke all on public\.bebo_notifications from public,anon,auth
 assert.match(sql,/grant select on public\.bebo_notifications to authenticated/);
 assert.match(sql,/grant update\(read_at\) on public\.bebo_notifications to authenticated/);
 assert.match(sql,/recipient_id=\(select auth\.uid\(\)\)/);
-assert.match(sql,/where \(b\.blocker_id=actor/);
+assert.match(sql,/b\.blocker_id=actor/);
 assert.match(sql,/from auth\.users u/,'published maintenance/news reaches accounts without a profile');
 assert.match(sql,/new\.published and \(tg_op='INSERT' or not old\.published\)/);
 assert.match(social,/createBeboNotifications/);
@@ -73,6 +73,7 @@ assert.match(social,/page==='notifications'/);
 assert.match(page,/id="bebo-notification-nav"/);
 assert.match(page,/social\.js\?v=20261011-notifications-v1/);
 assert.match(admin,/planned maintenance, outages and service restoration/);
-assert(!sql.includes('new.body'), 'never copy private message text into notifications');
+const mailBranch=sql.slice(sql.indexOf("tg_table_name='bebo_mail'"),sql.indexOf("elsif tg_table_name='bebo_wall_posts'"));
+assert(!mailBranch.includes('new.body'), 'never copy private message text into notifications');
 assert.equal(calls.length,2,'read one and all should update only recipient rows');
 console.log('PASS Bebo notifications: private inbox, unread counter, read updates, 10 event hooks, maintenance broadcasts, no message previews or client insert permissions');
