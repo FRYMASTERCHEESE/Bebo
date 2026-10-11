@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import { createRetro } from './nostalgia.js?v=20261010-polls-quizzes-v2';
 import { createSafety } from './safety.js';
 import { createClassic } from './classic-modules.js?v=20261011-ad-readiness-v2';
-import { createAdmin } from './admin.js?v=20261011-ad-readiness-v2';
+import { createAdmin } from './admin.js?v=20261011-signup-real-name-v1';
 import { createSuggestions } from './suggestions.js?v=20261010-suggestions-v1';
 import { createVerification } from './verified.js?v=20261010-transparency-v1';
 import { createVideos } from './videos.js?v=20261010-analytics-v5';
@@ -114,6 +114,8 @@ async function init(){
 function authPage(mode='both'){
  if(!configured)return panel('Bebo is being prepared',`<p>The public Bebo website is online, but its new community database is not connected yet. No accounts are being collected while setup is incomplete.</p><p>Come back soon when our account system is available.</p>`);
  const signUpPanel=panel('Create your account',`<form class="fields" data-form="signup">
+ <label>Real name (private to Bebo admins)<input type="text" name="real_name" required minlength="2" maxlength="100" autocomplete="name" placeholder="Your real name"></label>
+ <p class="muted">Use the name you go by in real life. Only the authorised site owner can view it; you can choose a different public profile name later. Names are self-reported, not identity-verified.</p>
  <label>Email address<input type="email" name="email" required maxlength="254" autocomplete="email"></label>
  <div class="bebo-password-field"><label>Password (8 characters minimum)<input type="password" name="password" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="At least 8 characters"></label><button type="button" class="bebo-password-toggle" data-toggle-password aria-pressed="false" aria-label="Show password">👁 Show password</button></div>
  <label><input type="checkbox" name="adult" required> I confirm I am 18 or older and agree to the <a href="#/safety">community rules and privacy information</a>.</label><button class="button">Join Bebo ♥</button></form><p class="muted">Confirm the email we send you, then return to <strong>this Bebo website</strong> and log in. If your confirmation link was issued before the move to bebo.nz, open https://bebo.nz and log in after confirming your email. Do not use your old Bebo password.</p>`);
@@ -671,8 +673,10 @@ document.addEventListener('submit',async e=>{
  try{
  if(type==='signup'){
   if(d.get('adult')!=='on')throw Error('Confirm you are 18 or older first.');
+  const realName=String(d.get('real_name')||'').trim().replace(/\s+/g,' ');
+  if(realName.length<2||realName.length>100||!/\p{L}/u.test(realName))throw Error('Please enter your real name (2 to 100 characters).');
   if(String(d.get('password')||'').length<8)throw Error('Choose a password with at least 8 characters.');
-  const {data,error}=await sb.auth.signUp({email:String(d.get('email')).trim(),password:String(d.get('password')),options:{emailRedirectTo:BEBO_SITE_URL}});
+  const {data,error}=await sb.auth.signUp({email:String(d.get('email')).trim(),password:String(d.get('password')),options:{emailRedirectTo:BEBO_SITE_URL,data:{bebo_real_name:realName}}});
   if(error)throw error;message='Check your email to confirm your new Bebo account, then log in.';success=true;
   if(data.session){me=data.user;await loadMine();}
  }else if(type==='recover-password'){
