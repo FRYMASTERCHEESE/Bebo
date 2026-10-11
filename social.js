@@ -8,7 +8,7 @@ import { createSuggestions } from './suggestions.js?v=20261010-suggestions-v1';
 import { createVerification } from './verified.js?v=20261010-transparency-v1';
 import { createVideos } from './videos.js?v=20261010-analytics-v5';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
-import { skinDesign, studioPanels, previewSkinStudio, fillSkinStudio, importSkinJSON, downloadSkin, generateSkinFromPrompt } from './skin-studio.js?v=20261012-pokemon-fix-v2';
+import { skinDesign, studioPanels, previewSkinStudio, fillSkinStudio, importSkinJSON, downloadSkin, generateSkinFromPrompt, generateSkinPictures } from './skin-studio.js?v=20261012-autoart-v1';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
 const configured=/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL||'')&&SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_');
@@ -857,8 +857,9 @@ document.addEventListener('click',async e=>{
   try{
    const design=generateSkinFromPrompt(prompt.value);
    fillSkinStudio(form,design);
+   await generateSkinPictures(form,design);
    form.elements.namedItem('visibility').value='draft';
-   if(status)status.textContent='Your '+design.name+' skin is ready! Adjust the colours below, preview, then save your skin ♥';
+   if(status)status.textContent='Your +design.name+' skin and two original PNG pictures are ready! Adjust the colours below, then save your skin to upload the new banner and background ♥';
   }catch(error){
    if(status)status.textContent=error.message||'Please describe your skin first.';
   }
