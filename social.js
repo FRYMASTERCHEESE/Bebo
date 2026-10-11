@@ -859,7 +859,7 @@ document.addEventListener('click',async e=>{
    fillSkinStudio(form,design);
    await generateSkinPictures(form,design);
    form.elements.namedItem('visibility').value='draft';
-   if(status)status.textContent='Your +design.name+' skin and two original PNG pictures are ready! Adjust the colours below, then save your skin to upload the new banner and background ♥';
+   if(status)status.textContent='Your '+design.name+' skin and two original PNG pictures are ready! Adjust the colours below, then save your skin to upload the new banner and background ♥';
   }catch(error){
    if(status)status.textContent=error.message||'Please describe your skin first.';
   }
