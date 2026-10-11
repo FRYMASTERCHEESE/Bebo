@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import { createRetro } from './nostalgia.js?v=20261010-polls-quizzes-v2';
 import { createSafety } from './safety.js';
-import { createClassic } from './classic-modules.js?v=20261011-ad-readiness-v2';
+import { createClassic } from './classic-modules.js?v=20261011-profile-mail-fix-v1';
 import { createAdmin } from './admin.js?v=20261011-signup-real-name-v1';
 import { createSuggestions } from './suggestions.js?v=20261010-suggestions-v1';
 import { createVerification } from './verified.js?v=20261010-transparency-v1';
@@ -223,7 +223,7 @@ async function showProfile(username){
   '<a href="#/videos/u/'+userURL+'">🎬 Videos</a>'+
   '<a href="#/blogs/'+userURL+'">✎ Blog</a>'+
   '<a href="#/friends">★ Friends</a>'+
-  (own?'<a href="#/skins">🎨 Skins</a>':me?'<a href="#/messages/'+userURL+'">✉ Mail</a>':'<a href="#/account">✉ Join Bebo</a>')+
+  (own?'<a href="#/skins">🎨 Skins</a>':me?'<a href="#/messages/to/'+encodeURIComponent(who.id)+'">✉ Message</a>':'<a href="#/account">✉ Join Bebo</a>')+
   '</nav>';
  app.innerHTML=note()+`<article class="themed-profile bebo-2007-profile" data-skin-layout="${layout}" data-skin-motion="${motion}" style="--retro-primary:${safe(themePrimary)};--retro-secondary:${safe(themeSecondary)};--retro-dark:${safe(skinPreset[4])};--skin-accent:${safe(accent)};--skin-page-bg:${safe(backdrop)}">
    <header class="profile-art bebo-profile-cover" data-decor="${safe(skinPreset[7])}" style="--banner:${safe(cover)}">
