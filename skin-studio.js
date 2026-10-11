@@ -74,6 +74,46 @@ export async function generateSkinPictures(form,design) {
       /monster|catcher|pokemon|pokémon/i.test(theme.name)?'orbs':
       /galaxy|moon|star|cosmic/i.test(theme.name)?'stars':
       /ocean|mermaid/i.test(theme.name)?'waves':'sparkles';
+    // Draw a foreground scene so generated pictures contain recognizable artwork, not only patterns.
+    ctx.save();
+    const horizon=height*.75;
+    if(motif==='waves'){
+      for(let layer=0;layer<3;layer++){
+        ctx.beginPath();ctx.moveTo(0,horizon+layer*height*.07);
+        for(let x=0;x<=width+20;x+=20)ctx.lineTo(x,horizon+layer*height*.07+Math.sin(x/75+layer*1.7)*height*.025);
+        ctx.lineTo(width,height);ctx.lineTo(0,height);ctx.closePath();
+        ctx.fillStyle=layer===0?theme.accent_color:layer===1?theme.secondary_color:theme.primary_color;
+        ctx.globalAlpha=layer===0?.28:.5;ctx.fill();
+      }
+    }else if(motif==='stars'){
+      const cx=width*.78,cy=height*.27,radius=Math.min(width,height)*.16;
+      ctx.globalAlpha=.65;ctx.fillStyle=theme.accent_color;
+      ctx.beginPath();ctx.arc(cx,cy,radius,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=.3;ctx.fillStyle=theme.primary_color;
+      ctx.beginPath();ctx.arc(cx+radius*.3,cy-radius*.18,radius*.9,0,Math.PI*2);ctx.fill();
+    }else if(motif==='cards'){
+      for(let n=0;n<5;n++){
+        const x=width*(.24+n*.125),y=height*(.43+Math.abs(2-n)*.025);
+        const w=Math.min(width*.11,height*.31),h=w*1.5;
+        ctx.save();ctx.translate(x,y);ctx.rotate((n-2)*.16);
+        ctx.globalAlpha=.82;ctx.fillStyle=theme.accent_color;ctx.fillRect(-w/2,-h/2,w,h);
+        ctx.globalAlpha=1;ctx.strokeStyle=theme.secondary_color;ctx.lineWidth=5;ctx.strokeRect(-w*.42,-h*.43,w*.84,h*.86);
+        ctx.beginPath();ctx.arc(0,0,w*.24,0,Math.PI*2);ctx.stroke();ctx.restore();
+      }
+    }else if(motif==='orbs'){
+      for(let n=0;n<4;n++){
+        const x=width*(.27+n*.18),y=height*(.48+(n%2)*.09),radius=Math.min(height*.2,width*.075);
+        ctx.globalAlpha=.9;ctx.fillStyle=n%2?theme.secondary_color:theme.accent_color;
+        ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle=theme.primary_color;ctx.lineWidth=8;ctx.stroke();
+        ctx.beginPath();ctx.moveTo(x-radius,y);ctx.lineTo(x+radius,y);ctx.stroke();
+        ctx.beginPath();ctx.arc(x,y,radius*.2,0,Math.PI*2);ctx.fillStyle=theme.primary_color;ctx.fill();
+      }
+    }else{
+      ctx.globalAlpha=.38;ctx.fillStyle=theme.accent_color;
+      for(let n=0;n<5;n++){const x=width*(.14+n*.18),y=height*(.35+(n%2)*.12);ctx.beginPath();ctx.arc(x,y,height*.07,0,Math.PI*2);ctx.fill();}
+    }
+    ctx.restore();
     ctx.strokeStyle=theme.accent_color;ctx.fillStyle=theme.accent_color;
     ctx.globalAlpha=.26;
     for(let n=0;n<52;n++){
