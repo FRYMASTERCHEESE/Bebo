@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
-import { createBeboNotifications } from './notifications.js?v=20261011-notices-v1';
+import { createBeboNotifications } from './notifications.js?v=20261011-notices-v2';
 import { createRetro } from './nostalgia.js?v=20261010-polls-quizzes-v2';
 import { createSafety } from './safety.js';
 import { createClassic } from './classic-modules.js?v=20261011-profile-mail-fix-v1';
@@ -8,7 +8,7 @@ import { createSuggestions } from './suggestions.js?v=20261010-suggestions-v1';
 import { createVerification } from './verified.js?v=20261010-transparency-v1';
 import { createVideos } from './videos.js?v=20261010-analytics-v5';
 import { skins, skinCategories, getSkin, skinArtwork } from './skin-library.js';
-import { skinDesign, studioPanels, previewSkinStudio, fillSkinStudio, importSkinJSON, downloadSkin } from './skin-studio.js?v=20261010-studio-v1';
+import { skinDesign, studioPanels, previewSkinStudio, previewSkinFiles, applySkinPalette, fillSkinStudio, importSkinJSON, downloadSkin } from './skin-studio.js?v=20261011-studio-v2';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 const app=document.querySelector('#app');
 const configured=/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL||'')&&SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_');
@@ -620,7 +620,11 @@ document.addEventListener('change',async e=>{
   finally{field.value=''}
   return;
  }
- if(field?.closest?.('form[data-form="skin"]'))previewSkinStudio(field.closest('form'));
+ if(field?.closest?.('form[data-form="skin"]')){
+  const form=field.closest('form');
+  previewSkinStudio(form);
+  if(field.matches('input[type="file"]'))previewSkinFiles(form);
+ }
  if(!field?.matches?.('form[data-form="video-upload"] input[name="file"]'))return;
  const status=field.closest('form')?.querySelector('.bebo-video-upload-status');
  if(!status)return;
@@ -855,6 +859,29 @@ document.addEventListener('click',async e=>{
   if(!row)throw Error('You can only edit your own skins.');
   editingSkinId=id;await showSkins();
   document.querySelector('form[data-form="skin"]')?.scrollIntoView({behavior:'smooth',block:'start'});return;
+ }
+ if(a==='skin-duplicate'){
+  if(!me||!profile)throw Error('Sign in first.');
+  const row=await query('bebo_skins',q=>q.select('*').eq('id',id).eq('creator_id',me.id).maybeSingle());
+  if(!row)throw Error('You can only copy your own skin designs.');
+  editingSkinId='';
+  await showSkins();
+  const form=document.querySelector('form[data-form="skin"]');
+  if(form){
+   fillSkinStudio(form,{...row,name:String(row.name||'My Skin').slice(0,58)+' Copy'});
+   form.scrollIntoView({behavior:'smooth',block:'start'});
+   form.elements.namedItem('name')?.focus({preventScroll:true});
+  }
+  return;
+ }
+ if(a==='skin-palette'){
+  applySkinPalette(document.querySelector('form[data-form="skin"]'),id);
+  return;
+ }
+ if(a==='skin-reset-colours'){
+  const form=document.querySelector('form[data-form="skin"]');
+  applySkinPalette(form,'pink');
+  return;
  }
  if(a==='skin-cancel'){editingSkinId='';await showSkins();return}
  if(a==='skin-swap'){const f=document.querySelector('form[data-form="skin"]');if(f){const el=f.elements.namedItem('layout');el.value=el.value==='right'?'left':'right';previewSkinStudio(f)}return}
