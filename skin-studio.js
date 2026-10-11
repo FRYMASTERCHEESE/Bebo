@@ -21,6 +21,8 @@ export function generateSkinFromPrompt(prompt) {
   const text=String(prompt||'').normalize('NFKC').toLowerCase().slice(0,500);
   if(!text.trim())throw Error('Describe the skin you want first.');
   const choices=[
+    {words:['pokemon','pokémon','pikachu','pokeball','pokéball','pokedex','charizard','squirtle','bulbasaur'],colors:['#ffe45c','#ee5353','#fff9e4'],name:'Monster Catcher Adventure'},
+    {words:['anime','manga','kawaii','cartoon'],colors:['#fbd9ff','#9b6ce4','#ffffff'],name:'Anime Dream'},
     {words:['goth','gothic','vampire','emo','black','dark','horror'],colors:['#292032','#7d295f','#f3d7ed'],name:'Midnight Gothic'},
     {words:['neon','cyber','gaming','gamer','futuristic','electric','glow'],colors:['#172446','#4b64eb','#a3eeff'],name:'Neon Dream'},
     {words:['ocean','beach','sea','underwater','mermaid','blue water'],colors:['#d8f8ff','#168ab9','#f4fdff'],name:'Ocean Escape'},
@@ -30,8 +32,9 @@ export function generateSkinFromPrompt(prompt) {
     {words:['purple','galaxy','space','stars','cosmic','moon'],colors:['#32204b','#8753c5','#efd5ff'],name:'Galaxy Magic'},
     {words:['minimal','simple','clean','modern','neutral'],colors:['#e8eaf0','#6c7187','#ffffff'],name:'Clean Classic'}
   ];
-  const score=entry=>entry.words.reduce((n,w)=>n+(text.includes(w)?1:0),0);
-  const winning=choices.reduce((best,entry)=>score(entry)>score(best)?entry:best,choices[choices.length-1]);
+  const matches=entry=>entry.words.reduce((n,w)=>n+(text.includes(w)?1:0),0);
+  const best=choices.reduce((winner,entry)=>matches(entry)>matches(winner)?entry:winner,choices[0]);
+  const winning=matches(best)>0?best:{colors:['#f6dcf0','#bb5696','#ffffff'],name:'My Dream Skin'};
   let [primary_color,secondary_color,accent_color]=winning.colors;
   // Explicit colour requests take priority, without permitting arbitrary CSS.
   const colors={red:'#d34057',pink:'#ec75bd',purple:'#8753c5',blue:'#347ed8',green:'#3e9571',orange:'#e38b42',yellow:'#e4be46',gold:'#d5a447',teal:'#269eae',black:'#26232c',white:'#f5f5fa'};
@@ -43,7 +46,7 @@ export function generateSkinFromPrompt(prompt) {
   if(quotedHex[1])secondary_color=quotedHex[1];
   if(quotedHex[2])accent_color=quotedHex[2];
   const layout=/right|other side/.test(text)?'right':'left';
-  const motion=/sparkle|glitter|glow|animate|moving|stars/.test(text)&&!/no animation|no movement|still|static/.test(text)?'soft':'off';
+  const motion=/pokemon|pokémon|pikachu|sparkle|glitter|glow|animate|moving|stars/.test(text)&&!/no animation|no movement|still|static/.test(text)?'soft':'off';
   return skinDesign({name:winning.name,primary_color,secondary_color,accent_color,layout,motion});
 }
 
