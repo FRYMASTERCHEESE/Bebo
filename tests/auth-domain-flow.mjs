@@ -18,7 +18,7 @@ try {
  await page.route(intercepted('signup'),async route=>{
   const r=route.request(),url=new URL(r.url());
   const data=r.postDataJSON();
-  traffic.push({kind:'signup',redirect:url.searchParams.get('redirect_to'),email:data.email});
+  traffic.push({kind:'signup',redirect:url.searchParams.get('redirect_to'),email:data.email,realName:data.data?.bebo_real_name||null});
   await route.fulfill({status:200,headers,body:JSON.stringify({
     user:{id:'12345678-1234-4234-8234-123456789012',email,identities:[{id:'test-ident',identity_id:'test-ident',provider:'email'}]},
     session:null
@@ -40,6 +40,9 @@ try {
  assert.equal(await page.locator('form[data-form="login"]').count(),1,'Login form missing');
 
  const signup=page.locator('form[data-form="signup"]');
+ const realNameInput=signup.locator('input[name="real_name"]');
+ const hasRealNameInput=(await realNameInput.count())>0;
+ if(hasRealNameInput)await realNameInput.fill('Synthetic Test Member');
  await signup.locator('input[name="email"]').fill(email);
  await signup.locator('input[name="password"]').fill(password);
  await signup.locator('input[name="adult"]').check();
@@ -49,6 +52,8 @@ try {
  assert(signupRequest,'Signup did not send its (intercepted) Supabase Auth request');
  assert.equal(signupRequest.redirect,SITE,'Signup confirmation must redirect to secure bebo.nz');
  assert.equal(signupRequest.email,email);
+ if(hasRealNameInput)assert.equal(signupRequest.realName,'Synthetic Test Member',
+  'A signup with the required real-name field must send that name as Auth metadata');
  console.log('PASS: Signup form sends correct https://bebo.nz/ confirmation redirect (intercepted, no email sent)');
 
  // A deliberately mocked invalid-login response tests error handling without creating a session.
