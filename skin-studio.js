@@ -15,6 +15,38 @@ export function skinDesign(input) {
   }
   return {name,primary_color:primary,secondary_color:secondary,accent_color:accent,layout,motion};
 }
+
+// Free, local prompt-to-theme generator. Never outputs user-supplied HTML, CSS or scripts.
+export function generateSkinFromPrompt(prompt) {
+  const text=String(prompt||'').normalize('NFKC').toLowerCase().slice(0,500);
+  if(!text.trim())throw Error('Describe the skin you want first.');
+  const choices=[
+    {words:['goth','gothic','vampire','emo','black','dark','horror'],colors:['#292032','#7d295f','#f3d7ed'],name:'Midnight Gothic'},
+    {words:['neon','cyber','gaming','gamer','futuristic','electric','glow'],colors:['#172446','#4b64eb','#a3eeff'],name:'Neon Dream'},
+    {words:['ocean','beach','sea','underwater','mermaid','blue water'],colors:['#d8f8ff','#168ab9','#f4fdff'],name:'Ocean Escape'},
+    {words:['forest','nature','green','leaves','garden','earth'],colors:['#e6f5dc','#3e8265','#fff4c5'],name:'Forest Garden'},
+    {words:['sunset','sunrise','summer','tropical','orange'],colors:['#ffd4a8','#e16c7d','#fff2d8'],name:'Sunset Glow'},
+    {words:['pink','butterfly','cute','girly','pastel','princess','sparkle','glitter'],colors:['#ffe4f4','#d058a4','#ffffff'],name:'Pastel Sparkle'},
+    {words:['purple','galaxy','space','stars','cosmic','moon'],colors:['#32204b','#8753c5','#efd5ff'],name:'Galaxy Magic'},
+    {words:['minimal','simple','clean','modern','neutral'],colors:['#e8eaf0','#6c7187','#ffffff'],name:'Clean Classic'}
+  ];
+  const score=entry=>entry.words.reduce((n,w)=>n+(text.includes(w)?1:0),0);
+  const winning=choices.reduce((best,entry)=>score(entry)>score(best)?entry:best,choices[choices.length-1]);
+  let [primary_color,secondary_color,accent_color]=winning.colors;
+  // Explicit colour requests take priority, without permitting arbitrary CSS.
+  const colors={red:'#d34057',pink:'#ec75bd',purple:'#8753c5',blue:'#347ed8',green:'#3e9571',orange:'#e38b42',yellow:'#e4be46',gold:'#d5a447',teal:'#269eae',black:'#26232c',white:'#f5f5fa'};
+  const requested=Object.keys(colors).filter(word=>new RegExp('\\b'+word+'\\b').test(text));
+  if(requested.length)secondary_color=colors[requested[0]];
+  if(requested.length>1)primary_color=colors[requested[1]];
+  const quotedHex=[...text.matchAll(/#[0-9a-f]{6}\b/g)].slice(0,3).map(x=>x[0]);
+  if(quotedHex[0])primary_color=quotedHex[0];
+  if(quotedHex[1])secondary_color=quotedHex[1];
+  if(quotedHex[2])accent_color=quotedHex[2];
+  const layout=/right|other side/.test(text)?'right':'left';
+  const motion=/sparkle|glitter|glow|animate|moving|stars/.test(text)&&!/no animation|no movement|still|static/.test(text)?'soft':'off';
+  return skinDesign({name:winning.name,primary_color,secondary_color,accent_color,layout,motion});
+}
+
 export function importSkinJSON(text) {
   let data;
   try {data=JSON.parse(text)} catch {throw Error('This is not a valid skin JSON file.')}
@@ -85,7 +117,7 @@ export function studioPanels(mine,editingId,safe,panel,photoStyle) {
     (owned||'<p class="muted">You have no custom designs yet. Create one below! ♥</p>'));
   const editor=panel('✎ Bebo Skin Studio'+(chosen?' — Editing '+safe(chosen.name):''),
     '<p>Create, preview, save privately or publish an original profile skin. Drag the ♥ Profile block to either side, or use the layout selector on mobile.</p>'+
-    '<form class="fields skin-studio-form" data-form="skin"><input type="hidden" name="skin_id" value="'+safe(chosen?.id||'')+'">'+
+    '<div class="skin-prompt-creator"><h3>✨ Describe your dream skin</h3><p class="muted">Type what you want. Generate a free design instantly, then fine-tune it manually before saving.</p><label for="bebo-skin-prompt">Your skin idea</label><textarea id="bebo-skin-prompt" rows="3" maxlength="500" placeholder="Black and purple galaxy with glowing stars, sparkles and a profile photo on the right"></textarea><button class="button" type="button" data-action="skin-generate">✨ Generate my skin</button><p class="muted" role="status" id="bebo-skin-prompt-status">No payment or AI account required. Design colours and layout are generated on your device.</p></div>'+\n    '<form class="fields skin-studio-form" data-form="skin"><input type="hidden" name="skin_id" value="'+safe(chosen?.id||'')+'">'+
     '<label>Skin name<input type="text" name="name" required maxlength="70" value="'+safe(d.name)+'"></label>'+
     '<div class="skin-studio-colours"><label>Main colour<input type="color" name="primary" value="'+safe(d.primary_color)+'"></label>'+
     '<label>Second colour<input type="color" name="secondary" value="'+safe(d.secondary_color)+'"></label>'+
