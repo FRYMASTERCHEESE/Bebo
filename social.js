@@ -421,6 +421,13 @@ async function refreshBeboAnnouncement(){
   console.warn('Could not load public Bebo announcement',error);
  }
 }
+// Keep published site news and maintenance notices fresh even without navigating.
+window.setInterval(()=>{
+ if(!document.hidden)refreshBeboAnnouncement().catch(()=>{});
+},60000);
+document.addEventListener('visibilitychange',()=>{
+ if(!document.hidden){announcementsLastChecked=0;refreshBeboAnnouncement().catch(()=>{})}
+});
 /* Keep navigation orientation and loading state visible on every Bebo screen. */
 function updateActiveNav(){
  const section=(location.hash||'#/home').replace(/^#\/?/,'').split('/')[0]||'home';
