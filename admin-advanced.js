@@ -164,7 +164,8 @@ export function createAdminAdvanced(sb,{safe,panel},requireOwner) {
       '<div class="admin-inline-actions">'+click(a.published?'Unpublish':'Publish', 'admin-announcement-toggle',a.id)+
       click('Delete','admin-announcement-delete',a.id,'danger')+'</div></article>').join('');
     return panel('📢 Bebo Announcements',
-      '<p>Publish an announcement to the site banner. Drafts stay private until you publish them.</p>'+
+      '<p>Publish an announcement to the public site banner <strong>and send a private Bebo notification to registered accounts</strong>. Use this for planned maintenance, outages and service restoration. Drafts stay private until published.</p>'+
+      '<p class="muted">Notifications are visible when people return to Bebo; optional browser alerts work while Bebo is open. This does not send offline push or email. Publish a new announcement to notify members of maintenance completion.</p>'+
       '<form class="fields" data-form="admin-announcement">'+
       '<label>Headline<input name="title" required minlength="3" maxlength="110" placeholder="Bebo news ♥"></label>'+
       '<label>Announcement<textarea name="body" required minlength="5" maxlength="1600" rows="4" placeholder="Share an update with members..."></textarea></label>'+
