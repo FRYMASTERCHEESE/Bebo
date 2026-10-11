@@ -1,4 +1,5 @@
-// Private, opt-in Bebo notifications. Polls only while the site is open.
+// Bebo in-site notifications are automatic for signed-in accounts.
+// Device notification permission is controlled by the browser, not the site.
 // Offline push notifications and email delivery require separately configured providers.
 export function createBeboNotifications(sb,{safe,panel}) {
   let memberId=null,timer=null,loaded=false,latestSeen=0,rows=[],unread=0,busy=false;
@@ -19,6 +20,21 @@ export function createBeboNotifications(sb,{safe,panel}) {
     }
     if(button)button.setAttribute('aria-label','Notifications'+(unread?' ('+unread+' unread)':''));
   }
+  // Always show new activity inside an open Bebo tab, without OS permission.
+  function showInSiteAlert(top,count) {
+    const root=document.querySelector('#bebo-in-app-alert');
+    if(!root||!memberId)return;
+    root.hidden=false;
+    root.innerHTML='<div class="bebo-in-app-alert-body" role="status"><strong>🔔 '+
+      esc(top.title)+'</strong><p>'+esc(top.body||'You have new Bebo activity.')+
+      (count>1?' ('+count+' new updates)':'')+
+      '</p><a class="button" href="#/notifications">View notifications</a>'+
+      '<button class="button secondary" type="button" data-action="notice-dismiss">Dismiss</button></div>';
+  }
+  function dismiss() {
+    const root=document.querySelector('#bebo-in-app-alert');
+    if(root){root.hidden=true;root.innerHTML=''}
+  }
   async function refresh() {
     if(!sb||!memberId||busy||document.hidden)return;
     const forMember=memberId;busy=true;
@@ -29,8 +45,9 @@ export function createBeboNotifications(sb,{safe,panel}) {
       if(error)throw error;
       if(memberId!==forMember)return;
       const next=data||[];
-      if(loaded&&next.length&&typeof Notification!=='undefined'&&Notification.permission==='granted'){
-        const newNotices=next.filter(n=>Number(n.id)>latestSeen&&!n.read_at);
+      const newNotices=loaded?next.filter(n=>Number(n.id)>latestSeen&&!n.read_at):[];
+      if(newNotices.length)showInSiteAlert(newNotices[0],newNotices.length);
+      if(newNotices.length&&typeof Notification!=='undefined'&&Notification.permission==='granted'){
         if(newNotices.length){
           // Show one discreet browser notification per polling batch; no private mail text.
           const top=newNotices[0];
@@ -53,7 +70,7 @@ export function createBeboNotifications(sb,{safe,panel}) {
     const next=id||null;
     if(next===memberId){badge();return}
     if(timer){clearInterval(timer);timer=null}
-    memberId=next;rows=[];unread=0;latestSeen=0;loaded=false;busy=false;badge();
+    memberId=next;rows=[];unread=0;latestSeen=0;loaded=false;busy=false;dismiss();badge();
     if(memberId){
       refresh().catch(()=>{});
       timer=setInterval(()=>{if(!document.hidden)refresh().catch(()=>{})},20000);
@@ -74,14 +91,18 @@ export function createBeboNotifications(sb,{safe,panel}) {
   function page(){
     if(!memberId)return panel('🔔 Notifications','<p><a href="#/signin">Sign in</a> to see your private Bebo notifications.</p>');
     const state=typeof Notification==='undefined'?'unavailable':Notification.permission;
-    const optin=state==='default'
-      ?'<button class="button secondary" type="button" data-action="notice-enable-browser">Enable browser alerts (optional)</button>'
-      :state==='granted'?'<p class="muted">✓ Browser alerts enabled while Bebo is open.</p>'
-      :'<p class="muted">Browser alerts are '+(state==='denied'?'blocked in your browser settings':'not supported here')+'. Your in-site notifications still work.</p>';
+    const phone=state==='default'
+      ?'<div class="bebo-alert-permission"><strong>📱 Turn on phone/browser alerts</strong>'+
+       '<p>Tap below to ask your browser to show Bebo alerts while you have the site open. Your device must grant permission.</p>'+
+       '<button class="button" type="button" data-action="notice-enable-browser">🔔 Allow browser alerts</button></div>'
+      :state==='granted'?'<p class="notice good">✓ Browser alerts enabled while Bebo is open.</p>'
+      :'<p class="muted">Browser alert permission is '+(state==='denied'?'blocked in device settings':'not supported by this browser')+
+       '. Your Bebo inbox and in-site alerts remain active.</p>';
     return panel('🔔 My Bebo Notifications ♥',
       '<p>Private notifications for Bebo Mail, profile comments, friend requests, Luv, blog/video comments, and announcements including maintenance.</p>'+
-      '<p class="muted">Alerts update while this Bebo tab is open. Offline phone push notifications and email are not currently enabled.</p>'+
-      optin+' <button type="button" class="button secondary" data-action="notice-read-all">Mark all read</button>'+
+      '<p class="notice good">✓ In-site notifications are automatically enabled for every signed-in Bebo member.</p>'+
+      '<p class="muted">Live alerts appear while Bebo is open. Your browser must approve device permission; offline phone push or email delivery is not enabled yet.</p>'+
+      phone+' <button type="button" class="button secondary" data-action="notice-read-all">Mark all read</button>'+
       '<div id="bebo-notifications-live" aria-live="polite">'+listMarkup()+'</div>');
   }
   async function markRead(id){
@@ -106,6 +127,7 @@ export function createBeboNotifications(sb,{safe,panel}) {
   }
   // Only the click path can ask for browser permission.
   async function action(kind,id){
+    if(kind==='notice-dismiss'){dismiss();return ''}
     if(kind==='notice-read'){await markRead(id);return 'Notification marked read.'}
     if(kind==='notice-read-all'){await markAll();return 'Notifications marked read.'}
     if(kind==='notice-enable-browser')return enableBrowser();
