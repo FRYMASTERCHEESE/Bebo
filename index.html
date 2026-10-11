@@ -1535,6 +1535,27 @@ body.bebo-page-loading .bebo-page-progress{opacity:1}
 }
 
 
+
+/* Auto-enabled in-site alerts, accessible on phone without browser notification permission. */
+.bebo-in-app-alert[hidden]{display:none!important}
+.bebo-in-app-alert{position:fixed;z-index:950;bottom:18px;right:18px;max-width:min(370px,calc(100vw - 30px));padding:14px;border:2px solid #c13c75;border-radius:11px;background:#fff8fd;box-shadow:0 6px 27px #2a102755;color:#38263a}
+.bebo-in-app-alert-body strong{display:block;color:#932d65;font-size:15px}
+.bebo-in-app-alert-body p{margin:7px 0 12px;font-size:13px;line-height:1.5}
+.bebo-in-app-alert-body .button{display:inline-flex;padding:9px 12px;margin:3px;min-height:42px;align-items:center}
+.bebo-alert-permission{border-left:4px solid #5296be;background:#eaf7ff;padding:13px;margin:12px 0;border-radius:5px}
+.bebo-alert-permission p{font-size:13px;line-height:1.6;margin:7px 0}
+.bebo-alert-permission .button{min-height:46px}
+.skin-palette-picker{border:1px solid #ddbad0;background:#fff6fb;border-radius:9px;padding:13px;margin:12px 0}
+.skin-palette-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:11px}
+.skin-palette-btn{appearance:none;background:#fff;border:1px solid #c9adbd;border-radius:7px;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 4px;font-size:12px;font-weight:bold;color:#543248;cursor:pointer;min-height:78px}
+.skin-palette-btn:hover,.skin-palette-btn:focus-visible{border-color:#ab3871;outline:2px solid #e0a6c6;outline-offset:2px}
+.skin-palette-swatch{width:40px;height:36px;border-radius:6px;background:linear-gradient(135deg,var(--palette-main) 45%,var(--palette-second) 45%);border:2px solid #fff;box-shadow:0 0 0 1px #bda1af}
+.skin-studio-design-tools{display:flex;gap:9px;flex-wrap:wrap;margin:10px 0}
+.skin-studio-preview-head{background-size:cover;background-position:center;min-height:68px}
+.skin-studio-preview{background-size:cover;background-position:center}
+.skin-studio-preview .skin-studio-preview-body{position:relative}
+@media(max-width:520px){.skin-palette-list{grid-template-columns:repeat(2,minmax(0,1fr))}.skin-palette-btn{min-height:72px}.bebo-in-app-alert{bottom:12px;left:12px;right:12px;max-width:none}}
+
 /* Bebo suggestions: member submissions and private Bebo owner review. */
 .bebo-suggestion-form{max-width:780px;padding:10px 2px}
 .bebo-suggestion-form label,.bebo-suggestion-admin-card label{display:block;font-weight:bold;font-size:12px}
@@ -1609,7 +1630,7 @@ html[data-bebo-era="2007"] .bebo-start-guide .bebo-start-actions a:first-child{b
 .bebo-password-toggle[aria-pressed="true"]{background:#fff0f5;border-color:#c48ea7;color:#8b2553}
 .bebo-password-toggle:focus-visible{outline:3px solid #f0ad2d;outline-offset:2px}
 </style>
-<script type="module" src="./social.js?v=20261011-notifications-v1"></script></head>
+<script type="module" src="./social.js?v=20261011-skin-notices-v2"></script></head>
 <body><button type="button" class="bebo-skip-link">Skip to main content</button><header class="top"><div class="wrap head">
 <div class="brand" aria-label="Bebo"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-be">be</span><span class="brand-bo">bo</span><span class="brand-star" aria-hidden="true"> ★</span></div>
 <div class="brand-message"><strong>Your profile. Your skin. Your friends.</strong><p>Bebo Is Officially Back</p><p class="bebo-independent-note">Independent community inspired by classic Bebo · Not affiliated with its original owners.</p></div>
@@ -1635,6 +1656,7 @@ html[data-bebo-era="2007"] .bebo-start-guide .bebo-start-actions a:first-child{b
 <nav class="nav" aria-label="Bebo sections"><div class="wrap" id="nav"><button data-nav="home">Home</button><button data-nav="start">♥ Start Here</button><button data-nav="profile">My Profile</button><button data-nav="friends">Friends</button><button data-nav="photos">Photos</button><button data-nav="videos">Videos 🎬</button><button data-nav="blogs">Blog</button><button data-nav="messages">Mail ✉</button><button data-nav="notifications" id="bebo-notification-nav" hidden>🔔 Notifications <span id="bebo-notification-count" class="bebo-notice-count" hidden>0</span></button><button data-nav="groups">Groups</button><button data-nav="other-half">Other Half ♥</button><button data-nav="skins">Skins</button><button data-nav="polls">Polls</button><button data-nav="quizzes">Quizzes</button><button data-nav="creators">Bands &amp; Authors</button><button data-nav="account">Account</button><button data-nav="suggestions">💡 Suggestions</button><button data-nav="safety">Safety &amp; Privacy</button><a class="bebo-about-link" href="./how-to.html">♥ How To</a><a class="bebo-about-link" href="./faq.html">FAQs</a><a class="bebo-about-link" href="./community-guidelines.html">Community Rules</a><a class="bebo-about-link" href="./privacy.html">Privacy &amp; Ads</a><a class="bebo-about-link" href="./about.html">About Bebo</a></div></nav>
 <div class="bebo-page-progress" aria-hidden="true"><span></span></div>
 <aside id="bebo-announcement-bar" class="bebo-announcement-strip" aria-label="Bebo announcements" hidden></aside>
+<aside id="bebo-in-app-alert" class="bebo-in-app-alert" aria-label="New Bebo notification" hidden></aside>
 <main id="app" class="wrap" tabindex="-1"><section class="panel hero"><h1>Bebo Is Officially Back ❤️</h1><div class="body"><p>Welcome to an independent, fan-made social community inspired by classic Bebo. Create a real account, save your profile, add friends, send messages and explore 56 original skins.</p><p>Account and profile data is stored in Supabase; this is not just a browser simulation.</p><p><a href="./about.html">Learn about this independent Bebo revival</a>.</p><p class="muted">Loading your profile…</p></div></section></main>
 <footer class="footer"><strong>Bebo Is Officially Back ❤️</strong><p>Independent, fan-made Bebo-inspired community. Not affiliated with the original Bebo company or its owners.</p><p><a href="./about.html">About this Bebo revival</a> · <a href="./how-to.html">How to use Bebo</a> · <a href="./faq.html">FAQ</a> · <a href="./community-guidelines.html">Community Rules &amp; Reporting</a> · <a href="./privacy.html">Privacy &amp; Advertising</a> · <a href="#/suggestions">💡 Feedback</a></p><span>&copy; 2026 Corey Mark Cleave Gage-Brown</span>
 <div class="bebo-quick-nav" role="navigation" aria-label="Quick Bebo navigation">
