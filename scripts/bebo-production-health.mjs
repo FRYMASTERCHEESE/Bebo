@@ -32,7 +32,7 @@ for(let attempt=0;attempt<40;attempt++){
    get(origin+'/?release-wait='+Date.now(),{headers:{accept:'text/html'}}),
    get(origin+'/ads.txt',{headers:{accept:'text/plain'}})]);
   const html=await res.text(),sellers=await ads.text();
-  if(res.ok&&ads.ok&&html.includes('20261011-adsense-verification-v2')&&
+  if(res.ok&&ads.ok&&html.includes('20261012-private-album-v1')&&
      html.includes('google-adsense-account')&&
      sellers.includes('pub-4051392846058327')){published=true;break;}
  }catch{}

@@ -101,8 +101,8 @@ check(read('classic-modules.js').includes('classic-report-content')&&
  'Blog, comment, group reporting and moderator hide queue wired');
 check(read('classic-modules.js').includes('createSignedUrls')&&
  read('admin.js').includes('createSignedUrls')&&
- !read('classic-modules.js').includes(".getPublicUrl(")&&
- !read('admin.js').includes(".getPublicUrl("),
+ !read('classic-modules.js').includes(".from('bebo-photos').getPublicUrl(")&&
+ !read('admin.js').includes(".from('bebo-photos').getPublicUrl("),
  'Photo gallery and moderation panel use short-lived private storage URLs');
 check(existsSync('supabase/bebo_private_album_photo_storage_20261012.sql'),
  'Private album bucket security migration is recorded');

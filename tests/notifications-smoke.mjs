@@ -71,7 +71,7 @@ assert.match(sql,/new\.published and \(tg_op='INSERT' or not old\.published\)/);
 assert.match(social,/createBeboNotifications/);
 assert.match(social,/page==='notifications'/);
 assert.match(page,/id="bebo-notification-nav"/);
-assert.match(page,/social\.js\?v=20261011-notifications-v1/);
+assert.match(page,/social\.js\?v=20261012-private-album-v1/);
 assert.match(admin,/planned maintenance, outages and service restoration/);
 const mailBranch=sql.slice(sql.indexOf("tg_table_name='bebo_mail'"),sql.indexOf("elsif tg_table_name='bebo_wall_posts'"));
 assert(!mailBranch.includes('new.body'), 'never copy private message text into notifications');
