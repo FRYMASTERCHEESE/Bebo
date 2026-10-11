@@ -40,7 +40,7 @@ export function createClassic(sb,{safe,panel,btn,query}) {
     const blogShort='<p><a href="#/blogs/'+encodeURIComponent(who.username)+'">Read all blogs »</a></p>';
     const photos=panel('📸 My Photos',albumList||'<p class="muted">No photo albums yet.</p>'+shortcuts)+shortcuts;
     const blog=panel('✎ My Blog',blogList||'<p class="muted">No blog entries yet.</p>'+blogShort)+blogShort;
-    const mail=me&&me.id!==who.id?'<p>'+btn('Send a private message ✉','classic-message-to',who.username,'secondary')+'</p>':'';
+    const mail=me&&me.id!==who.id?'<p>'+btn('Send a private message ✉','classic-message-to',who.id,'secondary')+'</p>':'';
     return '<div class="classic-modules"><div>'+top+photos+'</div><div>'+blog+mail+'</div></div>';
   }
   async function albumsPage(me,username){
@@ -164,8 +164,31 @@ export function createClassic(sb,{safe,panel,btn,query}) {
     const allIDs=[...new Set([...inbox.map(x=>x.sender_id),...sent.map(x=>x.recipient_id)])];
     const people=allIDs.length?await db('bebo_profiles',q=>q.select('id,username,display_name').in('id',allIDs)):[];
     const byID=new Map(people.map(x=>[x.id,x]));
+    // Profile links carry the member ID, not their editable display name or a manually typed handle.
+    // Legacy #/messages/Username links still resolve, including capital letters, dots and hyphens.
+    let to=null;
+    if(personUsername){
+      if(personUsername.startsWith('to/')){
+        const id=personUsername.slice(3);
+        if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
+          throw Error('Invalid Bebo message recipient.');
+        to=await db('bebo_profiles',q=>q.select('id,username,display_name').eq('id',id).maybeSingle());
+      }else{
+        to=await db('bebo_profiles',q=>q.select('id,username,display_name')
+          .ilike('username',handlePattern(personUsername)).maybeSingle());
+      }
+      if(!to)throw Error('That Bebo member could not be found.');
+      if(to.id===me.id)throw Error('Choose another member to message.');
+    }
+    const destination=to
+      ?'<div class="item bebo-mail-selected"><strong>To: '+safe(to.display_name||to.username)+
+       ' (@'+safe(to.username)+')</strong><p class="muted">Recipient selected from their Bebo profile. '+
+       '<a href="#/messages">Write to another member</a></p></div>'+
+       '<input type="hidden" name="recipient_id" value="'+safe(to.id)+'">'
+      :'<label>To (Bebo username)<input name="recipient" maxlength="25" '+
+       'pattern="[A-Za-z0-9_.-]{3,25}" required placeholder="Bebo username"></label>';
     const composer=postForm('classic-mail',
-      '<label>To (Bebo username)<input name="recipient" maxlength="25" pattern="[a-z0-9_]{3,25}" required value="'+safe(personUsername||'')+'" placeholder="your_mate"></label>'+
+      destination+
       '<label>Subject<input name="subject" required maxlength="120" placeholder="heyyy ♥"></label>'+
       '<label>Message<textarea name="body" required maxlength="4000" rows="4" placeholder="Write something..."></textarea></label>',
       'Send private message ✉');
@@ -238,10 +261,22 @@ export function createClassic(sb,{safe,panel,btn,query}) {
       return 'Other Half request sent ♥';
     }
     if(type==='classic-mail'){
-      const recipient=clean(d.get('recipient'),25).replace(/^@/,'');
-      const p=await db('bebo_profiles',q=>q.select('id').ilike('username',handlePattern(recipient)).maybeSingle());
-      if(!p)throw Error('That Bebo username does not exist.');
-      await db('bebo_mail',q=>q.insert({sender_id:me.id,recipient_id:p.id,subject:clean(d.get('subject'),120),body:clean(d.get('body'),4000)}));
+      const recipientID=clean(d.get('recipient_id'),36);
+      let p;
+      if(recipientID){
+        if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(recipientID))
+          throw Error('Invalid Bebo message recipient.');
+        p=await db('bebo_profiles',q=>q.select('id').eq('id',recipientID).maybeSingle());
+      }else{
+        const recipient=clean(d.get('recipient'),25).replace(/^@/,'');
+        if(!/^[A-Za-z0-9_.-]{3,25}$/.test(recipient))throw Error('Enter a valid Bebo username.');
+        p=await db('bebo_profiles',q=>q.select('id').ilike('username',handlePattern(recipient)).maybeSingle());
+      }
+      if(!p)throw Error('That Bebo member does not exist.');
+      if(p.id===me.id)throw Error('Choose another member to message.');
+      const subject=clean(d.get('subject'),120),body=clean(d.get('body'),4000);
+      if(!subject||!body)throw Error('Add a subject and message before sending.');
+      await db('bebo_mail',q=>q.insert({sender_id:me.id,recipient_id:p.id,subject,body}));
       return 'Private message sent ✉';
     }
     if(type==='classic-group'){
@@ -252,7 +287,11 @@ export function createClassic(sb,{safe,panel,btn,query}) {
   }
   async function action(name,id,ctx){
     const me=ctx.me;needMe(me);
-    if(name==='classic-message-to'){location.hash='#/messages/'+encodeURIComponent(id);return 'Write a message to your mate ♥';}
+    if(name==='classic-message-to'){
+      if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))throw Error('Invalid recipient.');
+      location.hash='#/messages/to/'+encodeURIComponent(id);
+      return 'Write a message to your mate ♥';
+    }
     if(name==='classic-delete-album'){
       if(!confirm('Delete this album? Delete its individual photos first.'))return 'Cancelled.';
       const pics=await db('bebo_photos',q=>q.select('id').eq('album_id',id).limit(1));
