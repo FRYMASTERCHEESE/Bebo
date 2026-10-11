@@ -21,6 +21,6 @@ assert.match(schema,/grant execute on function public\.bebo_admin_signup_directo
 assert.match(schema,/create trigger bebo_store_signup_name after insert on auth\.users/);
 assert.match(policy,/self-reported real name/,'privacy must disclose requested real names');
 assert.match(policy,/not shown on public profiles/,'privacy must distinguish real vs display names');
-assert.match(page,/social\.js\?v=20261011-(?:signup-real-name|profile-mail-fix)-v1/,'live browsers need fresh signup code');
+assert.match(page,/social\.js\?v=20261011-(?:signup-real-name|profile-mail-fix|notifications)-v1/,'live browsers need fresh signup code');
 assert.doesNotMatch(social,/(?:select\(|insert\()\s*['"](?:bebo_signup_names|auth\.users)/,'no client-side query of private names');
 console.log('PASS 17/17: real-name signup data, owner-only directory, privacy and existing profile separation');
